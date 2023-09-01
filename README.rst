@@ -1,7 +1,7 @@
 .. README.rst
 
-native-networking
-=================
+networking
+==========
 
 C/C++ networking examples for educational purposes.
 
