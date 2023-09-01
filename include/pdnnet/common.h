@@ -17,6 +17,13 @@
 #define PDNNET_EXTERN_C_END
 #endif  // __cplusplus
 
+// C++ standard detection. MSVC sets __cplusplus incorrectly
+#if defined(_MSVC_LANG)
+#define PDNNET_CPLUSPLUS _MSVC_LANG
+#else
+#define PDNNET_CPLUSPLUS __cplusplus
+#endif  // !defined(_MSVC_LANG)
+
 // stringification macros
 #define PDNNET_STRINGIFY_I(x) #x
 #define PDNNET_STRINGIFY(x) PDNNET_STRINGIFY_I(x)
