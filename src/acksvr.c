@@ -12,6 +12,10 @@
  * On modern Linux systems, -lsocket need not be specified.
  */
 
+#ifndef __unix__
+#error "acksvr.c cannot be compiled for non-Unix platforms"
+#endif  // __unix__
+
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -30,6 +34,7 @@
 #include "pdnnet/common.h"
 #include "pdnnet/error.h"
 #include "pdnnet/features.h"
+#include "pdnnet/inet.h"
 
 // program name
 #ifndef PROGRAM_NAME
@@ -353,10 +358,7 @@ main(int argc, char **argv)
     PDNNET_ERRNO_EXIT(errno, "Could not open socket");
   // zero and fill in server socket address struct (IPv4)
   struct sockaddr_in serv_addr;
-  memset(&serv_addr, 0, sizeof serv_addr);
-  serv_addr.sin_family = AF_INET;
-  serv_addr.sin_addr.s_addr = INADDR_ANY;
-  serv_addr.sin_port = htons(port_value);
+  pdnnet_set_sockaddr_in(&serv_addr, INADDR_ANY, port_value);
   // bind socket + listen for connections
   if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof serv_addr) < 0)
     PDNNET_ERRNO_EXIT(errno, "Could not bind socket");
