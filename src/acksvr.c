@@ -274,6 +274,14 @@ handle_client(int cli_sock, const struct sockaddr_in *cli_addr)
   return 0;
 }
 
+/**
+ * Main event loop.
+ *
+ * After accepting a client connection, a fork is performed to handle the
+ * client with `handle_client`, with the child reaped later.
+ *
+ * @param sockfd Server socket file descriptor
+ */
 static int
 event_loop(int sockfd)
 {
