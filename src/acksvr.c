@@ -79,6 +79,7 @@ print_usage()
     "Simple server program that forks for every client connection.\n"
     "\n"
     "Reads up to READ_SIZE bytes from a client and sends an acknowledgement.\n"
+    "This program is very simple and forks to handle client requests.\n"
     "\n"
     "Options:\n"
     "\n"
