@@ -23,7 +23,6 @@ if(MSVC)
         # Spectre mitigation, winbase.h macro expansion issue
         /wd5045 /wd5105
         # /Od applied by default when using Debug config, /O2 for Release
-        $<$<NOT:$<CONFIG:Release>>:/DEBUG>
     )
     # no ENABLE_ASAN for Windows yet. have had problems before getting it to
     # work nicely with Google Test and the Windows implementation is missing
