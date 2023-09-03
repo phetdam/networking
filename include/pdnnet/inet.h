@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "pdnnet/common.h"
+#include "pdnnet/sa.h"
 
 #ifdef __unix__
 #include <arpa/inet.h>
@@ -23,12 +24,15 @@ PDNNET_EXTERN_C_BEGIN
 /**
  * Populate the `sockaddr_in` members to represent an IPv4 address.
  *
+ * @note Parameters are not checked so caller must ensure their correctness.
+ *
  * @param sa Address to `sockaddr_in` struct
  * @param addr IP host address, e.g. `INADDR_ANY`, `INADDR_LOOPBACK`
  * @param port Port number in host byte order
  */
 PDNNET_INLINE void
-pdnnet_set_sockaddr_in(struct sockaddr_in *sa, in_addr_t addr, in_port_t port)
+pdnnet_set_sockaddr_in(
+  PDNNET_SA(Out) struct sockaddr_in *sa, in_addr_t addr, in_port_t port)
 {
   memset(sa, 0, sizeof *sa);
   sa->sin_family = AF_INET;
