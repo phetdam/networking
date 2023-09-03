@@ -8,9 +8,20 @@
 #ifndef PDNNET_ERROR_H_
 #define PDNNET_ERROR_H_
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+/**
+ * Return `-errno` if `expr` is less than zero.
+ *
+ * Most C library functions return `-1` on error and set `errno`. These
+ * functions are suitable for use with this convenience macro.
+ *
+ * @param expr Expression evaluating to a signed integer
+ */
+#define PDNNET_ERRNO_RETURN(expr) if ((expr) < 0) return -errno
 
 /**
  * Print an error to `stderr` and exit with `EXIT_FAILURE`.

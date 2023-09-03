@@ -76,10 +76,12 @@ print_usage()
   printf(
     "Usage: %s [-h] [-p PORT] [-m MAX_CONNECT] [-r READ_SIZE]\n"
     "\n"
-    "Simple server program that forks for every client connection.\n"
+    "Simple server that sends an acknowledgement to every connected client.\n"
     "\n"
-    "Reads up to READ_SIZE bytes from a client and sends an acknowledgement.\n"
-    "This program is very simple and forks to handle client requests.\n"
+    "Reads an arbitrary amount of bytes from a client connected via IPv4 and\n"
+    "sends an acknowledgement, forking to handle each client separately. The\n"
+    "client is expected to signal end of tranmission after writing, e.g. with\n"
+    "shutdown(sockfd, SHUT_WR), to inform " PROGRAM_NAME " it is done writing.\n"
     "\n"
     "Options:\n"
     "\n"
@@ -89,7 +91,7 @@ print_usage()
     "                      Max number of connections to accept, default "
       PDNNET_STRINGIFY(MAX_CONNECT_DEFAULT) "\n"
     "  -r, --read-size READ_SIZE\n"
-    "                      Number of bytes to read from a client message,\n"
+    "                      Number of bytes requested per read() to a client,\n"
     "                      default " PDNNET_STRINGIFY(READ_SIZE_DEFAULT)
       " bytes, maximum " PDNNET_STRINGIFY(MAX_READ_SIZE) " bytes\n",
     PROGRAM_NAME
@@ -247,6 +249,10 @@ parse_args(int argc, char **argv)
 /**
  * Read the client's message and send an acknowledgement to the client.
  *
+ * The client is expected to be well-behaved and shutdown the pipe on its end
+ * with `SHUT_WR` to signal end of transmission. After sending the
+ * acknowledgment, the forked server process will shutdown with `SHUT_RDWR`.
+ *
  * @param cli_sock Client socket file descriptor
  * @param cli_addr Client socket address
  * @returns 0 on success, -EINVAL if argument is invalid
@@ -259,24 +265,35 @@ handle_client(int cli_sock, const struct sockaddr_in *cli_addr)
   // static buffers for client message + acknowledgment message
   static char msg_buf[MAX_READ_SIZE + 1];
   static const char ack_buf[] = "Acknowledged message received";
-  // number of chars read and written
-  ssize_t n;
-  // clear and read client message. extra NULL in msg_buf to treat as string
-  memset(msg_buf, 0, read_size_value + 1);
-  if ((n = read(cli_sock, msg_buf, read_size_value)) < 0)
-    return -errno;
-// print client address if possible
-#ifdef PDNNET_BSD_DEFAULT_SOURCE
-  printf(
-    "%s: Received from %s: %s\n",
-    PROGRAM_NAME, inet_ntoa(cli_addr->sin_addr), msg_buf
-  );
-#else
-  printf("%s: Received from [unknown]: %s\n", PROGRAM_NAME, msg_buf);
-#endif  // PDNNET_BSD_DEFAULT_SOURCE
-  // send acknowledgment
-  if (write(cli_sock, ack_buf, sizeof ack_buf - 1) < 0)
-    return -errno;
+  // number of chars read in one chunk + total number of chars read
+  ssize_t n_read;
+  size_t n_total_read = 0;
+  // until client signals end of transmission
+  do {
+    // clear and read client message. extra NULL in msg_buf to treat as string
+    memset(msg_buf, 0, read_size_value + 1);
+    if ((n_read = read(cli_sock, msg_buf, read_size_value)) < 0) {
+      PDNNET_ERRNO_RETURN(shutdown(cli_sock, SHUT_RDWR));
+      return -errno;
+    }
+    // for first chunk, print header with client address if possible
+    if (!n_total_read)
+  #ifdef PDNNET_BSD_DEFAULT_SOURCE
+      printf(
+        "%s: Received from %s: ", PROGRAM_NAME, inet_ntoa(cli_addr->sin_addr)
+      );
+  #else
+      printf("%s: Received from [unknown]: ", PROGRAM_NAME);
+  #endif  // PDNNET_BSD_DEFAULT_SOURCE
+    // print chunk + update total read
+    printf("%s", msg_buf);
+    n_total_read += (size_t) n_read;
+  } while(n_read);
+  // trailing newline to finish off
+  puts("");
+  // send acknowledgment + shutdown completely to end transmission
+  PDNNET_ERRNO_RETURN(write(cli_sock, ack_buf, sizeof ack_buf - 1));
+  PDNNET_ERRNO_RETURN(shutdown(cli_sock, SHUT_RDWR));
   return 0;
 }
 
@@ -315,6 +332,8 @@ event_loop(int sockfd)
         PDNNET_ERRNO_EXIT(errno, "Failed to close server socket fd");
       if ((status = handle_client(cli_sockfd, &cli_addr)))
         PDNNET_ERRNO_EXIT(-status, "handle_client() argument invalid");
+      // don't forget to close child socket too
+      close(cli_sockfd);
       return EXIT_SUCCESS;
     }
     // parent: close socket but also reap the child
