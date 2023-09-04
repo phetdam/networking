@@ -8,8 +8,6 @@
  * Robert Ingalls which can be downloaded from the following link:
  *
  * https://www.cs.rpi.edu/~moorthy/Courses/os98/Pgms/server2.c
- *
- * On modern Linux systems, -lsocket need not be specified.
  */
 
 // include first for platform detection macros
