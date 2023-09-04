@@ -29,11 +29,7 @@
 #include <string.h>
 #include <strings.h>
 
-void error(const char *msg)
-{
-  perror(msg);
-  exit(EXIT_FAILURE);
-}
+#include "pdnnet/error.h"
 
 int
 main(int argc, char **argv)
@@ -51,16 +47,16 @@ main(int argc, char **argv)
   portno = atoi(argv[2]);
   sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0)
-    error("Error: Failed to open socket");
+    PDNNET_ERRNO_EXIT(errno, "Failed to open socket");
   server = gethostbyname(argv[1]);
   if (!server)
-    error("Error: No such host");
+    PDNNET_ERRNO_EXIT(errno, "No such host");
   memset(&serv_addr, 0, sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;
   memcpy(&serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
   serv_addr.sin_port = htons(portno);
   if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
-    error("Error: Could not connect to socket");
+    PDNNET_ERRNO_EXIT(errno, "Could not connect to socket");
   printf("Please enter the message: ");
   memset(buffer, 0, sizeof buffer);
   // fgets reads sizeof buffer - 1 chars at max and adds a '\0'
@@ -71,10 +67,10 @@ main(int argc, char **argv)
     buffer[buf_size - 1] = '\0';
   n = write(sockfd, buffer, strlen(buffer));
   if (n < 0)
-    error("ERROR writing to socket");
+    PDNNET_ERRNO_EXIT(errno, "Socket write failed");
   // close write end to signal end of transmission
   if (shutdown(sockfd, SHUT_WR) < 0)
-    error("Error: SHUT_WR shutdown() failed");
+    PDNNET_ERRNO_EXIT(errno, "Shutdown with SHUT_WR failed");
   // number of chars read in one chunk + total number of chars read
   ssize_t n_read;
   size_t n_total_read = 0;
@@ -84,8 +80,8 @@ main(int argc, char **argv)
     memset(buffer, 0, sizeof buffer);
     if ((n_read = read(sockfd, buffer, sizeof buffer - 1)) < 0) {
       if (shutdown(sockfd, SHUT_RDWR) < 0)
-        error("Error: SHUT_RDWR shutdown() after read() failed");
-      error("Error: Read failed");
+        PDNNET_ERRNO_EXIT(errno, "Shutdown with SHUT_RDWR after read failed");
+      PDNNET_ERRNO_EXIT(errno, "Read failed");
     }
     // print chunk + update total read
     printf("%s", buffer);
@@ -95,6 +91,6 @@ main(int argc, char **argv)
   puts("");
   // done with the socket, so just close
   if (close(sockfd) < 0)
-    error("Error: close() failed on socket fd");
+    PDNNET_ERRNO_EXIT(errno, "Failed to close socket");
   return EXIT_SUCCESS;
 }
