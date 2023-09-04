@@ -1,7 +1,7 @@
 /**
  * @file ackserver.c
  * @author Derek Huang
- * @brief Simple server that prints client messages and sends acknowledgment
+ * @brief Toy server that prints client messages and sends acknowledgment
  * @copyright MIT License
  *
  * This is based off of a heavily modified version of a toy server program by
