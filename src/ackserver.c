@@ -1,5 +1,5 @@
 /**
- * @file acksvr.c
+ * @file ackserver.c
  * @author Derek Huang
  * @brief Simple server that prints client messages and sends acknowledgment
  * @copyright MIT License
@@ -12,9 +12,12 @@
  * On modern Linux systems, -lsocket need not be specified.
  */
 
-#ifndef __unix__
-#error "acksvr.c cannot be compiled for non-Unix platforms"
-#endif  // __unix__
+// include first for platform detection macros
+#include "pdnnet/platform.h"
+
+#ifndef PDNNET_UNIX
+#error "ackserver.c cannot be compiled for non-Unix platforms"
+#endif  // PDNNET_UNIX
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -24,7 +27,9 @@
 #include <unistd.h>
 
 #include <errno.h>
+#include <float.h>
 #include <limits.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -38,7 +43,7 @@
 
 // program name
 #ifndef PROGRAM_NAME
-#define PROGRAM_NAME "acksvr"
+#define PROGRAM_NAME "ackserver"
 #endif  // PROGRAM_NAME
 
 // maximum read chunk size in bytes
@@ -134,7 +139,7 @@ parse_max_connect_value(const char *arg)
   int value = atoi(arg);
   // zero on error
   if (!value) {
-    fprintf(stderr, "Error: Unable to convert %s to number of max connects\n", arg);
+    fprintf(stderr, "Error: Can't convert %s to number of max connects\n", arg);
     return false;
   }
   // must be positive
@@ -255,7 +260,7 @@ parse_args(int argc, char **argv)
  *
  * @param cli_sock Client socket file descriptor
  * @param cli_addr Client socket address
- * @returns 0 on success, -EINVAL if argument is invalid
+ * @returns 0 on success, -EINVAL if argument invalid, -errno on error
  */
 static int
 handle_client(int cli_sock, const struct sockaddr_in *cli_addr)
@@ -304,6 +309,7 @@ handle_client(int cli_sock, const struct sockaddr_in *cli_addr)
  * client with `handle_client`, with the child reaped later.
  *
  * @param sockfd Server socket file descriptor
+ * @returns `EXIT_SUCCESS` from child, unreachable from parent
  */
 static int
 event_loop(int sockfd)
@@ -331,7 +337,7 @@ event_loop(int sockfd)
       if (close(sockfd) < 0)
         PDNNET_ERRNO_EXIT(errno, "Failed to close server socket fd");
       if ((status = handle_client(cli_sockfd, &cli_addr)))
-        PDNNET_ERRNO_EXIT(-status, "handle_client() argument invalid");
+        PDNNET_ERRNO_EXIT(-status, "handle_client() error");
       // don't forget to close child socket too
       close(cli_sockfd);
       return EXIT_SUCCESS;

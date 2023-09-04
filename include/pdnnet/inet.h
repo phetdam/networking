@@ -11,16 +11,17 @@
 #include <string.h>
 
 #include "pdnnet/common.h"
+#include "pdnnet/platform.h"
 #include "pdnnet/sa.h"
 
-#ifdef __unix__
+#ifdef PDNNET_UNIX
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#endif  // __unix__
+#endif  // PDNNET_UNIX
 
 PDNNET_EXTERN_C_BEGIN
 
-#ifdef __unix__
+#ifdef PDNNET_UNIX
 /**
  * Populate the `sockaddr_in` members to represent an IPv4 address.
  *
@@ -39,7 +40,7 @@ pdnnet_set_sockaddr_in(
   sa->sin_addr.s_addr = addr;
   sa->sin_port = htons(port);
 }
-#endif  // __unix__
+#endif  // PDNNET_UNIX
 
 PDNNET_EXTERN_C_END
 
