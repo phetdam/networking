@@ -17,6 +17,13 @@ project(
     LANGUAGES C CXX
 )
 
+option(BUILD_SHARED_LIBS "Build pdnnet support library as a shared library" ON)
+if(BUILD_SHARED_LIBS)
+    message(STATUS "pdnnet library configuration: SHARED")
+else()
+    message(STATUS "pdnnet library configuration: STATIC")
+endif()
+
 # set some system information variables used for the version info. note the
 # relevant CMake variables used will be empty if used before project()
 set(PDNNET_SYSTEM_NAME ${CMAKE_SYSTEM_NAME})

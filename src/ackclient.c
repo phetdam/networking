@@ -30,6 +30,7 @@
 #include <strings.h>
 
 #include "pdnnet/error.h"
+#include "pdnnet/socket.h"
 
 int
 main(int argc, char **argv)
@@ -71,22 +72,13 @@ main(int argc, char **argv)
   // close write end to signal end of transmission
   if (shutdown(sockfd, SHUT_WR) < 0)
     PDNNET_ERRNO_EXIT(errno, "Shutdown with SHUT_WR failed");
-  // number of chars read in one chunk + total number of chars read
-  ssize_t n_read;
-  size_t n_total_read = 0;
-  // until server signals end of transmission
-  do {
-    // clear and read client message. extra NULL in msg_buf to treat as string
-    memset(buffer, 0, sizeof buffer);
-    if ((n_read = read(sockfd, buffer, sizeof buffer - 1)) < 0) {
-      if (shutdown(sockfd, SHUT_RDWR) < 0)
-        PDNNET_ERRNO_EXIT(errno, "Shutdown with SHUT_RDWR after read failed");
-      PDNNET_ERRNO_EXIT(errno, "Read failed");
-    }
-    // print chunk + update total read
-    printf("%s", buffer);
-    n_total_read += (size_t) n_read;
-  } while(n_read);
+  // read and print each received message chunk
+  if (pdnnet_socket_fwrite(sockfd, stdout) < 0)
+  {
+    if (shutdown(sockfd, SHUT_RDWR) < 0)
+      PDNNET_ERRNO_EXIT(errno, "Shutdown with SHUT_RDWR after read failed");
+    PDNNET_ERRNO_EXIT(errno, "Read failed");
+  }
   // trailing newline to finish off
   puts("");
   // done with the socket, so just close
