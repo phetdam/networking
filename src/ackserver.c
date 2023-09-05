@@ -198,6 +198,7 @@ parse_read_size(const char *arg)
  *
  * @param argc Arg count
  * @param argv Arg vector
+ * @returns `true` if parsing was successful, `false` otherwise
  */
 static bool
 parse_args(int argc, char **argv)
