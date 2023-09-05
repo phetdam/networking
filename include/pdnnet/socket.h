@@ -61,7 +61,7 @@ typedef struct {
  * Function pointer typedef for use with `pdnnet_socket_onlread[2]`.
  *
  * Describes the declaration of the functions passed to the `read_action` and
- * `final_read_action` parameters. These functions take the address of the
+ * `post_action` parameters. These functions take the address of the
  * `pdnnet_socket_read_state` describing the read state. External state can be
  * passed through the `void *` second parameter, which depending on the use can
  * be `NULL`. If unused, then `NULL` should always be passed.
@@ -111,8 +111,8 @@ pdnnet_socket_onlread(
  * @param read_size Number of bytes each `read` call should request
  * @param read_action Function to invoke after each successful `read` call
  * @param read_action_param Parameter to pass to `read_action`
- * @param final_read_action Function to invoke after the final `read_action`
- * @param final_read_action_param Parameter to pass to `final_read_action`
+ * @param post_action Function to invoke after the final `read_action`
+ * @param post_action_param Parameter to pass to `post_action`
  * @returns 0 on success, -ENOMEM on buffer allocation failure, -errno on error
  */
 PDNNET_PUBLIC
@@ -122,8 +122,8 @@ pdnnet_socket_onlread2(
   size_t read_size,
   PDNNET_SA(In) pdnnet_socket_onlread_func read_action,
   PDNNET_SA(Opt(In_Out)) void *read_action_param,
-  PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func final_read_action,
-  PDNNET_SA(Opt(In_Out)) void *final_read_action_param);
+  PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func post_action,
+  PDNNET_SA(Opt(In_Out)) void *post_action_param);
 
 /**
  * Read from a socket until end of transmission and write bytes to a stream.
