@@ -34,7 +34,10 @@
  *    Indicates a pointer argument is an output but can be `NULL`.
  *
  * `PDNNET_SA(In_Out)`
- *    Indicates a pointer argument is input and output. Must be non-`NULL`.
+ *    Indicates a pointer argument is input and output and must be non-`NULL`.
+ *
+ * `PDNNET_SA(Opt(In_Out))`
+ *    Indicates a pointer argument is input and output but can be `NULL`.
  */
 #define PDNNET_SA(...)
 
