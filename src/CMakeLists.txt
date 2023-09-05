@@ -8,6 +8,7 @@ if(UNIX)
     target_link_libraries(ackclient PRIVATE pdnnet)
     # toy acknowledgment server
     add_executable(ackserver ackserver.c)
+    target_link_libraries(ackserver PRIVATE pdnnet)
     # unnecessary but we explicitly set the max bytes to read() we can use
     target_compile_definitions(ackserver PRIVATE MAX_READ_SIZE=4096)
 endif()

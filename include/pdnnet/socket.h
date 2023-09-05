@@ -41,6 +41,8 @@ PDNNET_EXTERN_C_BEGIN
  *    terminator so it can be treated as a string if expected to contain text.
  * `msg_buf_size`
  *    Buffer size, not including final null terminator
+ * `n_reads`
+ *    Number of successful `read()` calls made
  * `n_read_msg`
  *    Number of bytes last read, i.e. `read()` return value
  * `n_read_total`
@@ -50,6 +52,7 @@ typedef struct {
   int sockfd;
   void *msg_buf;
   size_t msg_buf_size;
+  size_t n_reads;
   ssize_t n_read_msg;
   size_t n_read_total;
 } pdnnet_socket_read_state;

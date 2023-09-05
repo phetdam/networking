@@ -69,8 +69,8 @@ pdnnet_socket_onlread(
  * @param read_size Number of bytes each `read` call should request
  * @param read_action Function to invoke after each successful `read` call
  * @param read_action_param Parameter to pass to `read_action`
- * @param final_read_action Function to invoke after the final `read_action`
- * @param final_read_action_param Parameter to pass to `final_read_action`
+ * @param post_action Function to invoke after the final `read_action`
+ * @param post_action_param Parameter to pass to `post_action`
  * @returns 0 on success, -ENOMEM on buffer allocation failure, -errno on error
  */
 int
@@ -79,8 +79,8 @@ pdnnet_socket_onlread2(
   size_t read_size,
   PDNNET_SA(In) pdnnet_socket_onlread_func read_action,
   PDNNET_SA(Opt(In_Out)) void *read_action_param,
-  PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func final_read_action,
-  PDNNET_SA(Opt(In_Out)) void *final_read_action_param)
+  PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func post_action,
+  PDNNET_SA(Opt(In_Out)) void *post_action_param)
 {
   if (!read_size || !read_action)
     return -EINVAL;
@@ -94,24 +94,22 @@ pdnnet_socket_onlread2(
   read_state.msg_buf = malloc(read_size + 1);
   if (!read_state.msg_buf)
     return -ENOMEM;
-  read_state.n_read_total = 0;
+  read_state.n_reads = read_state.n_read_total = 0;
   // until client signals end of transmission
   do {
     // clear and read client message
     memset(read_state.msg_buf, 0, read_size + 1);
     if ((read_state.n_read_msg = read(sockfd, read_state.msg_buf, read_size)) < 0)
       return -errno;
-    // update number of total bytes read
+    // update number of reads and total bytes read
+    read_state.n_reads += 1;
     read_state.n_read_total += read_state.n_read_msg;
     // call user-specified action
     if ((status = read_action(&read_state, read_action_param)) < 0)
       goto end;
   } while(read_state.n_read_msg);
-  // if there is a final action, call that
-  if (
-    final_read_action &&
-    (status = final_read_action(&read_state, final_read_action_param)) < 0
-  )
+  // if there is a post action, call that
+  if (post_action && (status = post_action(&read_state, post_action_param)) < 0)
     goto end;
 end:
   free(read_state.msg_buf);

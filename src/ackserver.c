@@ -38,6 +38,7 @@
 #include "pdnnet/error.h"
 #include "pdnnet/features.h"
 #include "pdnnet/inet.h"
+#include "pdnnet/socket.h"
 
 // program name
 #ifndef PROGRAM_NAME
@@ -250,6 +251,28 @@ parse_args(int argc, char **argv)
 }
 
 /**
+ * Used by the `pdnnet_socket_onlread` call to print the client message chunks.
+ */
+static
+PDNNET_SOCKET_ONLREAD_FUNC(print_client_msg)
+{
+  // for first chunk, print header with client address if possible
+  if (state->n_reads == 1)
+#ifdef PDNNET_BSD_DEFAULT_SOURCE
+    printf(
+      "%s: Received from %s: ",
+      PROGRAM_NAME,
+      inet_ntoa(((const struct sockaddr_in *) data)->sin_addr)
+    );
+#else
+    printf("%s: Received from [unknown]: ", PROGRAM_NAME);
+  #endif  // PDNNET_BSD_DEFAULT_SOURCE
+  // print actual message content
+  printf("%s", (const char *) state->msg_buf);
+  return 0;
+}
+
+/**
  * Read the client's message and send an acknowledgement to the client.
  *
  * The client is expected to be well-behaved and shutdown the pipe on its end
@@ -265,33 +288,23 @@ handle_client(int cli_sock, const struct sockaddr_in *cli_addr)
 {
   if (!cli_sock || cli_sock < 0 || !cli_addr)
     return -EINVAL;
-  // static buffers for client message + acknowledgment message
-  static char msg_buf[MAX_READ_SIZE + 1];
+  // static buffers for acknowledgment message
+  // static char msg_buf[MAX_READ_SIZE + 1];
   static const char ack_buf[] = "Acknowledged message received";
-  // number of chars read in one chunk + total number of chars read
-  ssize_t n_read;
-  size_t n_total_read = 0;
-  // until client signals end of transmission
-  do {
-    // clear and read client message. extra NULL in msg_buf to treat as string
-    memset(msg_buf, 0, read_size_value + 1);
-    if ((n_read = read(cli_sock, msg_buf, read_size_value)) < 0) {
-      PDNNET_ERRNO_RETURN(shutdown(cli_sock, SHUT_RDWR));
-      return -errno;
-    }
-    // for first chunk, print header with client address if possible
-    if (!n_total_read)
-  #ifdef PDNNET_BSD_DEFAULT_SOURCE
-      printf(
-        "%s: Received from %s: ", PROGRAM_NAME, inet_ntoa(cli_addr->sin_addr)
-      );
-  #else
-      printf("%s: Received from [unknown]: ", PROGRAM_NAME);
-  #endif  // PDNNET_BSD_DEFAULT_SOURCE
-    // print chunk + update total read
-    printf("%s", msg_buf);
-    n_total_read += (size_t) n_read;
-  } while(n_read);
+  // read client message and print each received chunk
+  if (
+    pdnnet_socket_onlread2(
+      cli_sock,
+      read_size_value,
+      print_client_msg,
+      (void *) cli_addr,  // not modified by print_client_msg
+      NULL,
+      NULL
+    ) < 0
+  ) {
+    PDNNET_ERRNO_RETURN(shutdown(cli_sock, SHUT_RDWR));
+    return -errno;
+  }
   // trailing newline to finish off
   puts("");
   // send acknowledgment + shutdown completely to end transmission
