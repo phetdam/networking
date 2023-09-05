@@ -293,13 +293,11 @@ handle_client(int cli_sock, const struct sockaddr_in *cli_addr)
   static const char ack_buf[] = "Acknowledged message received";
   // read client message and print each received chunk
   if (
-    pdnnet_socket_onlread2(
+    pdnnet_socket_onlread_s(
       cli_sock,
       read_size_value,
       print_client_msg,
-      (void *) cli_addr,  // not modified by print_client_msg
-      NULL,
-      NULL
+      (void *) cli_addr  // not modified by print_client_msg
     ) < 0
   ) {
     PDNNET_ERRNO_RETURN(shutdown(cli_sock, SHUT_RDWR));

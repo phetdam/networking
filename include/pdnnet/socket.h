@@ -104,6 +104,25 @@ pdnnet_socket_onlread(
 /**
  * Read from a socket until end of transmission.
  *
+ * Allows manual specification of max bytes each `read` call should request.
+ *
+ * @param sockfd Socket file descriptor to read from
+ * @param read_size Number of bytes each `read` call should request
+ * @param read_action Function to invoke after each successful `read` call
+ * @param read_action_param Parameter to pass to `read_action`
+ * @returns 0 on success, -ENOMEM on buffer allocation failure, -errno on error
+ */
+PDNNET_PUBLIC
+int
+pdnnet_socket_onlread_s(
+  int sockfd,
+  size_t read_size,
+  PDNNET_SA(In) pdnnet_socket_onlread_func read_action,
+  PDNNET_SA(Opt(In_Out)) void *read_action_param);
+
+/**
+ * Read from a socket until end of transmission.
+ *
  * This function provides more control over the reads and allows calling the
  * `read_action_param` function after all the reads have been completed.
  *
