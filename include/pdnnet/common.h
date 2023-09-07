@@ -42,4 +42,13 @@
 // macro to indicate extern inline, i.e. never static inline
 #define PDNNET_EXTERN_INLINE inline
 
+// path separator as char and string
+#if defined(_WIN32)
+#define PDNNET_PATH_SEP_CHAR '\\'
+#define PDNNET_PATH_SET_STRING "\\"
+#else
+#define PDNNET_PATH_SEP_CHAR '/'
+#define PDNNET_PATH_SEP_STRING "/"
+#endif  // !defined(_WIN32)
+
 #endif  // PDNNET_COMMON_H_
