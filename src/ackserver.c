@@ -84,7 +84,7 @@ print_usage()
     "\n"
     "Reads an arbitrary amount of bytes from a client connected via IPv4 and\n"
     "sends an acknowledgement, forking to handle each client separately. The\n"
-    "client is expected to signal end of tranmission after writing, e.g. with\n"
+    "client is expected to signal end of transmission after writing, e.g. with\n"
     "shutdown(sockfd, SHUT_WR), to inform " PROGRAM_NAME " it is done writing.\n"
     "\n"
     "Options:\n"
