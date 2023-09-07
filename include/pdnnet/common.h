@@ -33,11 +33,11 @@
 #define PDNNET_CONCAT(x, y) PDNNET_CONCAT_I(x, y)
 
 // allow C++-like use of inline in C code
-#ifdef __cplusplus
+#if defined(__cplusplus)
 #define PDNNET_INLINE inline
 #else
 #define PDNNET_INLINE static inline
-#endif  // __cplusplus
+#endif  // !defined(__cplusplus)
 
 // macro to indicate extern inline, i.e. never static inline
 #define PDNNET_EXTERN_INLINE inline
