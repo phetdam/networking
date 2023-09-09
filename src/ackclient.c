@@ -24,38 +24,48 @@
 #include <unistd.h>
 
 #include <errno.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 
+#define PDNNET_HAS_PROGRAM_USAGE
+#define PDNNET_ADD_CLIOPT_HOST
+#define PDNNET_ADD_CLIOPT_PORT
+#define PDNNET_ADD_CLIOPT_MESSAGE_BYTES
+#include "pdnnet/cliopt.h"
 #include "pdnnet/error.h"
 #include "pdnnet/socket.h"
 
-int
-main(int argc, char **argv)
+PDNNET_PROGRAM_USAGE_DEF
+(
+  "Simple ackserver client that sends a message and expects a response.\n"
+  "\n"
+  "The message is defined by the user and truncated at 255 characters."
+)
+
+PDNNET_ARG_MAIN
 {
-  int sockfd, portno, n;
+  PDNNET_CLIOPT_PARSE_ARGS();
+
+  int sockfd;
 
   struct sockaddr_in serv_addr;
   struct hostent *server;
 
   char buffer[256];
-  if (argc < 3) {
-    fprintf(stderr,"usage %s hostname port\n", argv[0]);
-    return EXIT_SUCCESS;
-  }
-  portno = atoi(argv[2]);
   sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0)
     PDNNET_ERRNO_EXIT(errno, "Failed to open socket");
-  server = gethostbyname(argv[1]);
+  server = gethostbyname(PDNNET_CLIOPT(host));
   if (!server)
-    PDNNET_ERRNO_EXIT(errno, "No such host");
+    PDNNET_ERRNO_EXIT_EX(errno, "No such host %s", PDNNET_CLIOPT(host));
   memset(&serv_addr, 0, sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;
   memcpy(&serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
-  serv_addr.sin_port = htons(portno);
+  serv_addr.sin_port = htons(PDNNET_CLIOPT(port));
   if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
     PDNNET_ERRNO_EXIT(errno, "Could not connect to socket");
   printf("Please enter the message: ");
@@ -66,8 +76,7 @@ main(int argc, char **argv)
   size_t buf_size = strlen(buffer);
   if (buffer[buf_size - 1] == '\n')
     buffer[buf_size - 1] = '\0';
-  n = write(sockfd, buffer, strlen(buffer));
-  if (n < 0)
+  if (write(sockfd, buffer, strlen(buffer)) < 0)
     PDNNET_ERRNO_EXIT(errno, "Socket write failed");
   // close write end to signal end of transmission
   if (shutdown(sockfd, SHUT_WR) < 0)
