@@ -155,6 +155,19 @@ pdnnet_socket_onlread2(
 PDNNET_PUBLIC
 int
 pdnnet_socket_fwrite(int sockfd, PDNNET_SA(Out) FILE *f);
+
+/**
+ * Read from a socket until end of transmission and write bytes to a stream.
+ *
+ * @param sockfd Socket file descriptor to read from
+ * @param read_size Number of bytes each `read` call should request
+ * @param f File stream to write bytes read to
+ * @returns 0 on success, -ENOMEM on buffer allocation failure, -EINVAL if `f`
+ *  is `NULL`, -EIO if writing to `f` fails, -errno on error
+ */
+PDNNET_PUBLIC
+int
+pdnnet_socket_fwrite_s(int sockfd, size_t read_size, PDNNET_SA(Out) FILE *f);
 #endif  // PDNNET_UNIX
 
 PDNNET_EXTERN_C_END

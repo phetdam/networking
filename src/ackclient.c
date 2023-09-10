@@ -17,6 +17,7 @@
 #error "ackclient.c cannot be compiled for non-Unix platforms"
 #endif  // PDNNET_UNIX
 
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -34,54 +35,65 @@
 #define PDNNET_HAS_PROGRAM_USAGE
 #define PDNNET_ADD_CLIOPT_HOST
 #define PDNNET_ADD_CLIOPT_PORT
-#define PDNNET_ADD_CLIOPT_MESSAGE_BYTES
 #include "pdnnet/cliopt.h"
 #include "pdnnet/error.h"
+#include "pdnnet/features.h"
 #include "pdnnet/socket.h"
+
+#define MESSAGE_BUFFER_SIZE 256
 
 PDNNET_PROGRAM_USAGE_DEF
 (
   "Simple ackserver client that sends a message and expects a response.\n"
   "\n"
-  "The message is defined by the user and truncated at 255 characters."
+  "The message is read from stdin " PDNNET_STRINGIFY(MESSAGE_BUFFER_SIZE - 1)
+    " characters at a time."
 )
 
 PDNNET_ARG_MAIN
 {
   PDNNET_CLIOPT_PARSE_OPTIONS();
-
-  int sockfd;
-
-  struct sockaddr_in serv_addr;
-  struct hostent *server;
-
-  char buffer[256];
-  sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  // open IPv4 TCP/IP socket
+  int sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0)
     PDNNET_ERRNO_EXIT(errno, "Failed to open socket");
-  server = gethostbyname(PDNNET_CLIOPT(host));
-  if (!server)
+  // attempt to resolve host name to server address
+  struct hostent *serv_ent = gethostbyname(PDNNET_CLIOPT(host));
+  if (!serv_ent)
     PDNNET_ERRNO_EXIT_EX(errno, "No such host %s", PDNNET_CLIOPT(host));
+  // populate socket address struct
+  struct sockaddr_in serv_addr;
   memset(&serv_addr, 0, sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;
-  memcpy(&serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
+  memcpy(&serv_addr.sin_addr.s_addr, serv_ent->h_addr, serv_ent->h_length);
   serv_addr.sin_port = htons(PDNNET_CLIOPT(port));
+  // attempt connection
   if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
     PDNNET_ERRNO_EXIT(errno, "Could not connect to socket");
-  printf("Please enter the message: ");
-  memset(buffer, 0, sizeof buffer);
-  // fgets reads sizeof buffer - 1 chars at max and adds a '\0'
-  fgets(buffer, sizeof buffer, stdin);
-  // don't write an extra newline if any
-  size_t buf_size = strlen(buffer);
-  if (buffer[buf_size - 1] == '\n')
-    buffer[buf_size - 1] = '\0';
-  if (write(sockfd, buffer, strlen(buffer)) < 0)
-    PDNNET_ERRNO_EXIT(errno, "Socket write failed");
+  // read MESSAGE_BUFFER_SIZE - 1 chars
+  char buffer[MESSAGE_BUFFER_SIZE];
+  while (!feof(stdin)) {
+    memset(buffer, 0, sizeof buffer);
+    fread(buffer, 1U, sizeof buffer - 1, stdin);
+    // check for error if any
+    if (ferror(stdin))
+      PDNNET_ERRNO_EXIT(EIO, "Error reading from stdin");
+    if (write(sockfd, buffer, strlen(buffer)) < 0)
+      PDNNET_ERRNO_EXIT(errno, "Socket write failed");
+  }
   // close write end to signal end of transmission
   if (shutdown(sockfd, SHUT_WR) < 0)
     PDNNET_ERRNO_EXIT(errno, "Shutdown with SHUT_WR failed");
   // read and print each received message chunk
+#if defined(PDNNET_BSD_DEFAULT_SOURCE)
+  printf(
+    "%s: Received from %s: ",
+    PDNNET_PROGRAM_NAME,
+    inet_ntoa(serv_addr.sin_addr)
+  );
+#else
+  printf("%s: Received from [unknown]: ", PDNNET_PROGRAM_NAME);
+#endif  // !defined(PDNNET_BSD_DEFAULT_SOURCE)
   if (pdnnet_socket_fwrite(sockfd, stdout) < 0)
   {
     if (shutdown(sockfd, SHUT_RDWR) < 0)
