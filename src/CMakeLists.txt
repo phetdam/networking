@@ -9,6 +9,13 @@ if(UNIX)
     # toy acknowledgment server
     add_executable(ackserver ackserver.c)
     target_link_libraries(ackserver PRIVATE pdnnet)
-    # unnecessary but we explicitly set the max bytes to read() we can use
-    target_compile_definitions(ackserver PRIVATE MAX_READ_SIZE=4096)
+    # unnecessary, but demonstrate how we can redefine some command-line option
+    # default during compilation. here we update max read size, i.e. number of
+    # bytes every read/recv requests, and max number of allowed connections
+    target_compile_definitions(
+        ackserver
+        PRIVATE
+            PDNNET_CLIOPT_MAX_MESSAGE_BYTES=4096
+            PDNNET_ADD_CLIOPT_MAX_CONNECT_DEFAULT=5
+    )
 endif()
