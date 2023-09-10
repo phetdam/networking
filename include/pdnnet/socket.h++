@@ -19,6 +19,9 @@
 #undef WIN32_LEAN_AND_MEAN
 // for *nix systems, use standard socket API
 #else
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
 #include <unistd.h>
 #endif  // !defined(_WIN32)
 
@@ -63,6 +66,27 @@ close_handle(socket_handle handle) noexcept
 #endif  // !defined(_WIN32)
 }
 
+#ifdef PDNNET_UNIX
+/**
+ * Return a new `sockaddr_in`.
+ *
+ * Inputs should be in host byte order.
+ *
+ * @param family Address family, e.g. `AF_INET`
+ * @param address Internet address, e.g. `INADDR_ANY`
+ * @param port Port number, e.g. `8888`
+ */
+inline auto
+create_sockaddr_in(sa_family_t family, in_addr_t address, in_port_t port)
+{
+  sockaddr_in addr{};
+  addr.sin_family = family;
+  addr.sin_addr.s_addr = htons(address);
+  addr.sin_port = htons(port);
+  return addr;
+}
+#endif  // PDNNET_UNIX
+
 /**
  * Socket class maintaining unique ownership of a socket handle.
  */
@@ -75,7 +99,7 @@ public:
    *
    * @param handle Socket handle
    */
-  unique_socket(socket_handle handle) : handle_{handle} {}
+  explicit unique_socket(socket_handle handle) : handle_{handle} {}
 
   /**
    * Ctor.
@@ -106,6 +130,15 @@ public:
    * Deleted copy ctor.
    */
   unique_socket(const unique_socket& socket) = delete;
+
+  /**
+   * Move ctor.
+   */
+  unique_socket(unique_socket&& socket)
+  {
+    handle_ = socket.release();
+    released_ = false;
+  }
 
   /**
    * Dtor.
