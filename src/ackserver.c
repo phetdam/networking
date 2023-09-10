@@ -194,7 +194,7 @@ PDNNET_ARG_MAIN
   struct sockaddr_in serv_addr;
   pdnnet_set_sockaddr_in(&serv_addr, INADDR_ANY, PDNNET_CLIOPT(port));
   // bind socket + listen for connections
-  if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof serv_addr) < 0)
+  if (bind(sockfd, (const struct sockaddr *) &serv_addr, sizeof serv_addr) < 0)
     PDNNET_ERRNO_EXIT(errno, "Could not bind socket");
   if (listen(sockfd, (int) PDNNET_CLIOPT(max_connect)) < 0)
     PDNNET_ERRNO_EXIT(errno, "listen() failed");
