@@ -22,11 +22,18 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 #endif  // !defined(_WIN32)
 
 #include <cerrno>
+#include <cstdint>
 #include <cstring>
+#include <memory>
+#include <ostream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
 
 #include "pdnnet/platform.h"
 
@@ -49,13 +56,28 @@ using socket_handle = int;
 #endif  // !defined(_WIN32)
 
 /**
- * Macro with value of an invalid socket handle.
+ * Invalid socket handle constexpr global.
  */
 #if defined(_WIN32)
-#define PDNNET_BAD_SOCKET_HANDLE INVALID_SOCKET
+inline constexpr socket_handle bad_socket_handle = INVALID_SOCKET;
 #else
-#define PDNNET_BAD_SOCKET_HANDLE -1
+inline constexpr socket_handle bad_socket_handle = -1;
 #endif  // !defined(_WIN32)
+
+/**
+ * Macro for the default socket read/recv buffer size.
+ *
+ * This can be redefined at compile time. However, prefer to use the
+ * `socket_read_size` constexpr global in actual application code.
+ */
+#ifndef PDNNET_SOCKET_READ_SIZE
+#define PDNNET_SOCKET_READ_SIZE 512U
+#endif  // PDNNET_SOCKET_READ_SIZE
+
+/**
+ * Default socket read/recv buffer size.
+ */
+inline constexpr std::size_t socket_read_size = PDNNET_SOCKET_READ_SIZE;
 
 /**
  * Close the socket handle.
@@ -66,7 +88,7 @@ using socket_handle = int;
  * @returns 0 on success, -1 (*nix) or SOCKET_ERROR (Win32) on failure
  */
 inline int
-close_handle(socket_handle handle) noexcept
+close_handle( socket_handle handle) noexcept
 {
 #if defined(_WIN32)
   return closesocket(handle);
@@ -81,15 +103,14 @@ close_handle(socket_handle handle) noexcept
  *
  * Inputs should be in host byte order.
  *
- * @param family Address family, e.g. `AF_INET`
  * @param address Internet address, e.g. `INADDR_ANY`
  * @param port Port number, e.g. `8888`
  */
 inline auto
-create_sockaddr_in(sa_family_t family, in_addr_t address, in_port_t port)
+socket_address(in_addr_t address, in_port_t port)
 {
   sockaddr_in addr{};
-  addr.sin_family = family;
+  addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = htons(address);
   addr.sin_port = htons(port);
   return addr;
@@ -98,6 +119,8 @@ create_sockaddr_in(sa_family_t family, in_addr_t address, in_port_t port)
 
 /**
  * Socket class maintaining unique ownership of a socket handle.
+ *
+ * To ensure unique ownership, copying is prohibited.
  */
 class unique_socket {
 public:
@@ -152,7 +175,7 @@ public:
    */
   ~unique_socket()
   {
-    if (handle_ != PDNNET_BAD_SOCKET_HANDLE)
+    if (handle_ != bad_socket_handle)
       close_handle(handle_);
   }
 
@@ -160,7 +183,7 @@ public:
    * Return underlying socket handle.
    *
    * Provided to mimic the STL `unique_ptr` interface. If `release` has been
-   * called or if default-constructed, this returns `PDNNET_BAD_SOCKET_HANDLE`.
+   * called or if default-constructed, this returns `bad_socket_handle`.
    */
   auto
   get() const noexcept { return handle_; }
@@ -174,13 +197,15 @@ public:
   /**
    * Release ownership of the underlying socket handle.
    *
+   * @note Cannot use `auto` return type since it is used in move ctor.
+   *
    * Once released, destroying the `unique_socket` will not close the handle.
    */
-  auto
+  socket_handle
   release() noexcept
   {
     auto old_handle = handle_;
-    handle_ = PDNNET_BAD_SOCKET_HANDLE;
+    handle_ = bad_socket_handle;
     return old_handle;
   }
 
@@ -190,11 +215,143 @@ public:
    * `false` if `release` has been called or after default construction.
    */
   auto
-  valid() const noexcept { return handle_ == PDNNET_BAD_SOCKET_HANDLE; }
+  valid() const noexcept { return handle_ == bad_socket_handle; }
+
+  /**
+   * Syntactic sugar for compatibility with C socket functions.
+   */
+  operator socket_handle() const { return handle_; }
 
 private:
   socket_handle handle_;
 };
+
+#ifdef PDNNET_UNIX
+
+class socket_iobase {};
+
+// pdnnet::socket_reader reader{socket};
+// std::cout << reader;
+// reader.write(std::cout);
+// std::cout << pdnnet::socket_reader{socket};
+// std::string text = pdnnet::socket_reader{socket};
+class socket_reader {
+public:
+  socket_reader(socket_handle handle)
+    : socket_reader{handle, socket_read_size}
+  {}
+
+  socket_reader(socket_handle handle, std::size_t buf_size)
+    : handle_{handle},
+      buf_size_{buf_size},
+      buf_{std::make_unique<unsigned char[]>(buf_size_)}
+  {}
+
+  template <typename CharT, typename Traits>
+  auto&
+  write(std::basic_ostream<CharT, Traits>& out) const
+  {
+    // number of bytes read
+    ssize_t n_read;
+    // until client signals end of transmission
+    do {
+      // read and handle errors
+      if ((n_read = ::read(handle_, buf_.get(), sizeof(CharT) * buf_size_)) < 0)
+        throw std::runtime_error{
+          "read() failure: " + std::string{std::strerror(errno)}
+        };
+      // write to stream + clear buffer
+      out.write(reinterpret_cast<const CharT*>(buf_.get()), buf_size_);
+      memset(buf_.get(), 0, buf_size_);
+    }
+    while (n_read);
+    return *this;
+  }
+
+  template <typename CharT, typename Traits>
+  operator std::basic_string<CharT, Traits>() const
+  {
+    std::basic_stringstream<CharT, Traits> ss;
+    write(ss);
+    return ss.str();
+  }
+
+private:
+  socket_handle handle_;
+  std::size_t buf_size_;
+  std::unique_ptr<unsigned char[]> buf_;
+};
+
+template <typename CharT, typename Traits>
+inline auto&
+operator<<(std::basic_ostream<CharT, Traits>& out, const socket_reader& reader)
+{
+  reader.write(out);
+  return out;
+}
+
+template <typename CharT = char, typename Traits = std::char_traits<CharT>>
+inline auto
+socket_read(socket_handle handle, std::size_t buf_size)
+{
+  return socket_reader{handle, buf_size}.operator std::basic_string<CharT, Traits>();
+}
+
+template <typename CharT = char, typename Traits = std::char_traits<CharT>>
+inline auto
+socket_read(socket_handle handle)
+{
+  return socket_read<CharT, Traits>(handle, socket_read_size);
+}
+
+// pdnnet::socket_writer writer{socket};
+// writer.read("here is some input");
+// std::stringstream ss;
+// ss << "hello";
+// ss >> pdnnet::socket_writer{socket};
+class socket_writer {
+public:
+  socket_writer(socket_handle handle, bool close_after_write = false)
+    : handle_{handle}, close_after_write_{close_after_write}
+  {}
+
+  template <typename CharT, typename Traits>
+  auto&
+  read(const std::basic_string_view<CharT, Traits>& text) const
+  {
+    if (::write(handle_, text.data(), sizeof(CharT) * text.size()) < 0)
+      throw std::runtime_error{
+        "write() failure: " + std::string{std::strerror(errno)}
+      };
+    if (close_after_write_ && shutdown(handle_, SHUT_RDWR) < 0)
+      throw std::runtime_error{
+        "shutdown() with SHUT_RDWR failed: " +
+        std::string{std::strerror(errno)}
+      };
+    return *this;
+  }
+
+  template <typename CharT, typename Traits>
+  auto&
+  read(std::basic_stringstream<CharT, Traits>& in) const
+  {
+    return read(static_cast<std::basic_string_view<CharT, Traits>>(in.str()));
+  }
+
+private:
+  socket_handle handle_;
+  bool close_after_write_;
+};
+
+template <typename CharT, typename Traits>
+inline auto&
+operator>>(
+  std::basic_stringstream<CharT, Traits>& in, const socket_writer& writer)
+{
+  writer.read(in);
+  return in;
+}
+#endif  // PDNNET_UNIX
 
 }  // namespace pdnnet
 
