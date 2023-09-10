@@ -66,7 +66,20 @@ PDNNET_ARG_MAIN
   struct sockaddr_in serv_addr;
   memset(&serv_addr, 0, sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;
-  memcpy(&serv_addr.sin_addr.s_addr, serv_ent->h_addr, serv_ent->h_length);
+  memcpy(
+    &serv_addr.sin_addr.s_addr,
+// for glibc h_addr requires that _DEFAULT_SOURCE is defined, which is defined
+// by default unless __STRICT_ANSI__, _ISOC99_SOURCE, etc. are defined. see
+// feature_test_macros(7) man page for feature macro definition details. note
+// that in VS Code, none of these macros are defined, so this conditional block
+// is useful for avoiding the red squiggle that is otherwise caused.
+#if defined(h_addr)
+    serv_ent->h_addr,
+#else
+    serv_ent->h_addr_list[0],
+#endif  // !defined(h_addr)
+    serv_ent->h_length
+  );
   serv_addr.sin_port = htons(PDNNET_CLIOPT(port));
   // attempt connection
   if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
