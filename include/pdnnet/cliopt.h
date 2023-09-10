@@ -311,6 +311,8 @@ pdnnet_cliopt_parse_max_connect(const char *arg)
 /**
  * Parse incoming command-line arguments.
  *
+ * Conditional compilation is used to control which options are understood.
+ *
  * @param argc Argument count from `main`
  * @param argv Argument vector from `main`
  * @return `true` on success, `false` otherwise
@@ -448,9 +450,22 @@ pdnnet_cliopt_internal_print_usage(PDNNET_SA(In) char **argv, const char *desc)
 #undef PDNNET_CLIOPT_MESSAGE_BYTES_USAGE
 #undef PDNNET_ADD_CLIOPT_MAX_CONNECT_USAGE
 
+/**
+ * Print program usage.
+ *
+ * Intended to be called from `main` and masks the internal usage print call.
+ * Usually there is no need to call this directly.
+ */
 #define PDNNET_CLIOPT_PRINT_USAGE() \
   pdnnet_cliopt_internal_print_usage(PDNNET_ARGV, PDNNET_PROGRAM_USAGE)
 
+/**
+ * Macro for `main` that takes argument count and argument vector.
+ *
+ * Although seemingly redundant, the use of the `PDNNET_ARGC` and `PDNNET_ARGV`
+ * macros means that in the future, if the macros' definitions change, the rest
+ * of the corresponding `cliopt.h` API need not be refactored.
+ */
 #define PDNNET_ARG_MAIN \
   int \
   main(int PDNNET_ARGC, char **PDNNET_ARGV)
