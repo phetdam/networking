@@ -45,23 +45,6 @@
 #include "pdnnet/inet.h"
 #include "pdnnet/socket.h"
 
-/*
-// program name
-#ifndef PROGRAM_NAME
-#define PROGRAM_NAME "ackserver"
-#endif  // PROGRAM_NAME
-
-// maximum read chunk size in bytes
-#ifndef MAX_READ_SIZE
-#define MAX_READ_SIZE BUFSIZ
-#endif  // MAX_READ_SIZE
-
-// default values for command-line arguments
-#define PORT_DEFAULT 8888
-#define MAX_CONNECT_DEFAULT 5
-#define READ_SIZE_DEFAULT 256
-*/
-
 PDNNET_PROGRAM_USAGE_DEF
 (
   "Simple server that sends an acknowledgement to every connected client.\n"
@@ -71,39 +54,6 @@ PDNNET_PROGRAM_USAGE_DEF
   "client is expected to signal end of transmission after writing, e.g. with\n"
   "shutdown(sockfd, SHUT_WR), to inform the server it is done writing."
 )
-
-/**
- * Print program usage.
- */
-/*
-static void
-print_usage()
-{
-  printf(
-    "Usage: %s [-h] [-p PORT] [-m MAX_CONNECT] [-r READ_SIZE]\n"
-    "\n"
-    "Simple server that sends an acknowledgement to every connected client.\n"
-    "\n"
-    "Reads an arbitrary amount of bytes from a client connected via IPv4 and\n"
-    "sends an acknowledgement, forking to handle each client separately. The\n"
-    "client is expected to signal end of transmission after writing, e.g. with\n"
-    "shutdown(sockfd, SHUT_WR), to inform " PROGRAM_NAME " it is done writing.\n"
-    "\n"
-    "Options:\n"
-    "\n"
-    "  -p, --port PORT     Port number to bind to, default "
-      PDNNET_STRINGIFY(PORT_DEFAULT) "\n"
-    "  -m, --max-connect MAX_CONNECT\n"
-    "                      Max number of connections to accept, default "
-      PDNNET_STRINGIFY(MAX_CONNECT_DEFAULT) "\n"
-    "  -r, --read-size READ_SIZE\n"
-    "                      Number of bytes requested per read() to a client,\n"
-    "                      default " PDNNET_STRINGIFY(READ_SIZE_DEFAULT)
-      " bytes, maximum " PDNNET_STRINGIFY(MAX_READ_SIZE) " bytes\n",
-    PROGRAM_NAME
-  );
-}
-*/
 
 /**
  * Used by the `pdnnet_socket_onlread` call to print the client message chunks.
