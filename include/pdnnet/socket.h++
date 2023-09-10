@@ -49,6 +49,15 @@ using socket_handle = int;
 #endif  // !defined(_WIN32)
 
 /**
+ * Macro with value of an invalid socket handle.
+ */
+#if defined(_WIN32)
+#define PDNNET_BAD_SOCKET_HANDLE INVALID_SOCKET
+#else
+#define PDNNET_BAD_SOCKET_HANDLE -1
+#endif  // !defined(_WIN32)
+
+/**
  * Close the socket handle.
  *
  * Prefer using `unique_socket` instead of using raw socket handles directly.
@@ -134,11 +143,7 @@ public:
   /**
    * Move ctor.
    */
-  unique_socket(unique_socket&& socket)
-  {
-    handle_ = socket.release();
-    released_ = false;
-  }
+  unique_socket(unique_socket&& socket) { handle_ = socket.release(); }
 
   /**
    * Dtor.
@@ -147,14 +152,15 @@ public:
    */
   ~unique_socket()
   {
-    if (!released_)
+    if (handle_ != PDNNET_BAD_SOCKET_HANDLE)
       close_handle(handle_);
   }
 
   /**
    * Return underlying socket handle.
    *
-   * Provided to mimic the STL `unique_ptr` interface.
+   * Provided to mimic the STL `unique_ptr` interface. If `release` has been
+   * called or if default-constructed, this returns `PDNNET_BAD_SOCKET_HANDLE`.
    */
   auto
   get() const noexcept { return handle_; }
@@ -166,14 +172,6 @@ public:
   handle() const noexcept { return handle_; }
 
   /**
-   * Return `true` if handle ownership is released.
-   *
-   * If released, then upon destruction the handle is not closed.
-   */
-  auto
-  released() const noexcept { return released_; }
-
-  /**
    * Release ownership of the underlying socket handle.
    *
    * Once released, destroying the `unique_socket` will not close the handle.
@@ -181,13 +179,21 @@ public:
   auto
   release() noexcept
   {
-    released_ = true;
-    return handle_;
+    auto old_handle = handle_;
+    handle_ = PDNNET_BAD_SOCKET_HANDLE;
+    return old_handle;
   }
+
+  /**
+   * Return `true` if a valid socket handle is owned.
+   *
+   * `false` if `release` has been called or after default construction.
+   */
+  auto
+  valid() const noexcept { return handle_ == PDNNET_BAD_SOCKET_HANDLE; }
 
 private:
   socket_handle handle_;
-  bool released_;
 };
 
 }  // namespace pdnnet
