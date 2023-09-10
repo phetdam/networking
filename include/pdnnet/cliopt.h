@@ -455,7 +455,7 @@ pdnnet_cliopt_internal_print_usage(PDNNET_SA(In) char **argv, const char *desc)
   int \
   main(int PDNNET_ARGC, char **PDNNET_ARGV)
 
-#define PDNNET_CLIOPT_PARSE_ARGS() \
+#define PDNNET_CLIOPT_PARSE_OPTIONS() \
   do { \
     if (!pdnnet_cliopt_parse_args(PDNNET_ARGC, PDNNET_ARGV)) \
       return EXIT_FAILURE; \
