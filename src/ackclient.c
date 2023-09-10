@@ -95,8 +95,7 @@ PDNNET_ARG_MAIN
 #else
   printf("%s: Received from [unknown]: ", PDNNET_PROGRAM_NAME);
 #endif  // !defined(PDNNET_BSD_DEFAULT_SOURCE)
-  if (pdnnet_socket_fwrite_s(sockfd, PDNNET_CLIOPT(message_bytes), stdout) < 0)
-  {
+  if (pdnnet_socket_fwrite_s(sockfd, PDNNET_CLIOPT(message_bytes), stdout) < 0) {
     if (shutdown(sockfd, SHUT_RDWR) < 0)
       PDNNET_ERRNO_EXIT(errno, "Shutdown with SHUT_RDWR after read failed");
     PDNNET_ERRNO_EXIT(errno, "Read failed");
