@@ -34,12 +34,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define PDNNET_HAS_PROGRAM_USAGE
+#define PDNNET_ADD_CLIOPT_PORT
+#define PDNNET_ADD_CLIOPT_MESSAGE_BYTES
+#define PDNNET_ADD_CLIOPT_MAX_CONNECT
+#include "pdnnet/cliopt.h"
 #include "pdnnet/common.h"
 #include "pdnnet/error.h"
 #include "pdnnet/features.h"
 #include "pdnnet/inet.h"
 #include "pdnnet/socket.h"
 
+/*
 // program name
 #ifndef PROGRAM_NAME
 #define PROGRAM_NAME "ackserver"
@@ -54,26 +60,22 @@
 #define PORT_DEFAULT 8888
 #define MAX_CONNECT_DEFAULT 5
 #define READ_SIZE_DEFAULT 256
+*/
 
-// globals for command-line arguments
-bool print_usage_value = false;
-uint16_t port_value = PORT_DEFAULT;
-unsigned int max_connect_value = MAX_CONNECT_DEFAULT;
-size_t read_size_value = READ_SIZE_DEFAULT;
-
-/**
- * Enum for command-line option parsing mode.
- */
-typedef enum {
-  cliopt_parse_default,
-  cliopt_parse_port,
-  cliopt_parse_max_connect,
-  cliopt_parse_read_size
-} cliopt_parse_mode;
+PDNNET_PROGRAM_USAGE_DEF
+(
+  "Simple server that sends an acknowledgement to every connected client.\n"
+  "\n"
+  "Reads an arbitrary amount of bytes from a client connected via IPv4 and\n"
+  "sends an acknowledgement, forking to handle each client separately. The\n"
+  "client is expected to signal end of transmission after writing, e.g. with\n"
+  "shutdown(sockfd, SHUT_WR), to inform the server it is done writing."
+)
 
 /**
  * Print program usage.
  */
+/*
 static void
 print_usage()
 {
@@ -101,158 +103,13 @@ print_usage()
     PROGRAM_NAME
   );
 }
-
-/**
- * Parse port value.
- */
-static bool
-parse_port_value(const char *arg)
-{
-  int value = atoi(arg);
-  // on error, zero
-  if (!value) {
-    fprintf(stderr, "Error: Unable to convert %s to a port number\n", arg);
-    return false;
-  }
-  // can't be greater than UINT16_MAX
-  if (value > UINT16_MAX) {
-    fprintf(
-      stderr,
-      "Error: Port number %d exceeds max port number %d\n",
-      value,
-      UINT16_MAX
-    );
-    return false;
-  }
-  // update port_value + return
-  port_value = (uint16_t) value;
-  return true;
-}
-
-/**
- * Parse max accepted connections value.
- */
-static bool
-parse_max_connect_value(const char *arg)
-{
-  int value = atoi(arg);
-  // zero on error
-  if (!value) {
-    fprintf(stderr, "Error: Can't convert %s to number of max connects\n", arg);
-    return false;
-  }
-  // must be positive
-  if (value < 1) {
-    fprintf(stderr, "Error: Max connection value must be positive\n");
-    return false;
-  }
-  // must be within integer range
-  if (value > INT_MAX) {
-    fprintf(
-      stderr,
-      "Error: Max connect value %u exceeds allowed max %d\n",
-      value,
-      INT_MAX
-    );
-    return false;
-  }
-  // update max_connect_value + return
-  max_connect_value = (unsigned int) value;
-  return true;
-}
-
-/**
- * Parse number of bytes to `read()` from client sockets.
- */
-static bool
-parse_read_size(const char *arg)
-{
-  long long value = atoll(arg);
-  // zero on error
-  if (!value) {
-    fprintf(stderr, "Error: Unable to convert %s to read size\n", arg);
-    return false;
-  }
-  // must be positive
-  if (value < 1) {
-    fprintf(stderr, "Error: Read size value must be positive\n");
-    return false;
-  }
-  // must not exceed MAX_READ_SIZE
-  if (value > MAX_READ_SIZE) {
-    fprintf(
-      stderr,
-      "Error: Read value %lld exceeds allowed max %zu\n",
-      value,
-      (size_t) MAX_READ_SIZE
-    );
-    return false;
-  }
-  // update read_size_value + return
-  read_size_value = (size_t) value;
-  return true;
-}
-
-/**
- * Parse command line arguments.
- *
- * @param argc Arg count
- * @param argv Arg vector
- * @returns `true` if parsing was successful, `false` otherwise
- */
-static bool
-parse_args(int argc, char **argv)
-{
-  cliopt_parse_mode mode = cliopt_parse_default;
-  for (int i = 1; i < argc; i++) {
-    // help flag
-    if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
-      print_usage_value = true;
-      return true;
-    }
-    // port option
-    else if (!strcmp(argv[i], "-p") || !strcmp(argv[i], "--port"))
-      mode = cliopt_parse_port;
-    // max accepted connections
-    else if (!strcmp(argv[i], "-m") || !strcmp(argv[i], "--max-connect"))
-      mode = cliopt_parse_max_connect;
-    // read size
-    else if (!strcmp(argv[i], "-r") || !strcmp(argv[i], "--read-size"))
-      mode = cliopt_parse_read_size;
-    // parse based on parse mode
-    else {
-      switch (mode) {
-        // parse port value
-        case cliopt_parse_port:
-          if (!parse_port_value(argv[i]))
-            return false;
-          break;
-        // parse max connect value
-        case cliopt_parse_max_connect:
-          if (!parse_max_connect_value(argv[i]))
-            return false;
-          break;
-        // parse read size
-        case cliopt_parse_read_size:
-          if (!parse_read_size(argv[i]))
-            return false;
-          break;
-        // don't know this option
-        case cliopt_parse_default:
-          fprintf(stderr, "Error: Unknown option %s\n", argv[i]);
-          return false;
-        // unreachable
-        default:
-          fprintf(stderr, "Error: Unreachable branch reached\n");
-          return false;
-      }
-    }
-  }
-  return true;
-}
+*/
 
 /**
  * Used by the `pdnnet_socket_onlread` call to print the client message chunks.
+ *
+ * @note This function uses `PDNNET_PROGRAM_NAME` and so should not be called
+ *  on its own without calling `PDNNET_CLIOPT_PARSE_OPTIONS` first in `main`.
  */
 static
 PDNNET_SOCKET_ONLREAD_FUNC(print_client_msg)
@@ -262,11 +119,11 @@ PDNNET_SOCKET_ONLREAD_FUNC(print_client_msg)
 #ifdef PDNNET_BSD_DEFAULT_SOURCE
     printf(
       "%s: Received from %s: ",
-      PROGRAM_NAME,
+      PDNNET_PROGRAM_NAME,
       inet_ntoa(((const struct sockaddr_in *) data)->sin_addr)
     );
 #else
-    printf("%s: Received from [unknown]: ", PROGRAM_NAME);
+    printf("%s: Received from [unknown]: ", PDNNET_PROGRAM_NAME);
   #endif  // PDNNET_BSD_DEFAULT_SOURCE
   // print actual message content
   printf("%s", (const char *) state->msg_buf);
@@ -289,14 +146,13 @@ handle_client(int cli_sock, const struct sockaddr_in *cli_addr)
 {
   if (!cli_sock || cli_sock < 0 || !cli_addr)
     return -EINVAL;
-  // static buffers for acknowledgment message
-  // static char msg_buf[MAX_READ_SIZE + 1];
+  // static buffer for acknowledgment message
   static const char ack_buf[] = "Acknowledged message received";
   // read client message and print each received chunk
   if (
     pdnnet_socket_onlread_s(
       cli_sock,
-      read_size_value,
+      PDNNET_CLIOPT(message_bytes),
       print_client_msg,
       (void *) cli_addr  // not modified by print_client_msg
     ) < 0
@@ -364,17 +220,9 @@ event_loop(int sockfd)
   return EXIT_SUCCESS;
 }
 
-int
-main(int argc, char **argv)
+PDNNET_ARG_MAIN
 {
-  // parse command-line args
-  if (!parse_args(argc, argv))
-    return EXIT_FAILURE;
-  // print usage if specified
-  if (print_usage_value) {
-    print_usage();
-    return EXIT_SUCCESS;
-  }
+  PDNNET_CLIOPT_PARSE_OPTIONS();
   // run in background as a daemon automatically
 #ifdef PDNNET_BSD_DEFAULT_SOURCE
   if (daemon(true, true) < 0)
@@ -394,11 +242,11 @@ main(int argc, char **argv)
     PDNNET_ERRNO_EXIT(errno, "Could not open socket");
   // zero and fill in server socket address struct (IPv4)
   struct sockaddr_in serv_addr;
-  pdnnet_set_sockaddr_in(&serv_addr, INADDR_ANY, port_value);
+  pdnnet_set_sockaddr_in(&serv_addr, INADDR_ANY, PDNNET_CLIOPT(port));
   // bind socket + listen for connections
   if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof serv_addr) < 0)
     PDNNET_ERRNO_EXIT(errno, "Could not bind socket");
-  if (listen(sockfd, (int) max_connect_value) < 0)
+  if (listen(sockfd, (int) PDNNET_CLIOPT(max_connect)) < 0)
     PDNNET_ERRNO_EXIT(errno, "listen() failed");
   // run event loop
   return event_loop(sockfd);
