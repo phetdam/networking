@@ -34,6 +34,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 
 #include "pdnnet/platform.h"
 
@@ -88,13 +89,63 @@ inline constexpr std::size_t socket_read_size = PDNNET_SOCKET_READ_SIZE;
  * @returns 0 on success, -1 (*nix) or SOCKET_ERROR (Win32) on failure
  */
 inline int
-close_handle( socket_handle handle) noexcept
+close_handle(socket_handle handle) noexcept
 {
 #if defined(_WIN32)
   return closesocket(handle);
 #else
   return close(handle);
 #endif  // !defined(_WIN32)
+}
+
+/**
+ * Enum class indicating how to shut down a socket handle.
+ *
+ * Members ordered the same way *nix and Windows Sockets macros are ordered.
+ */
+enum class shutdown_type { read, write, read_write };
+
+/**
+ * Return underlying `shutdown_type` value type.
+ *
+ * @param how `shutdown_type` member
+ */
+inline auto
+shutdown_value(shutdown_type how)
+{
+  return static_cast<std::underlying_type_t<decltype(how)>>(how);
+}
+
+/**
+ * Shut down a socket handle.
+ *
+ * @param handle Socket handle
+ * @param how Shutdown method
+ */
+inline void
+shutdown(socket_handle handle, shutdown_type how)
+{
+  if (::shutdown(handle, shutdown_value(how)) < 0)
+    throw std::runtime_error{
+      "shutdown() with how=" + std::to_string(shutdown_value(how)) +
+      " failed: " +
+#if defined(_WIN32)
+      std:to_string(WSAGetLastError())
+#else
+      std::string{std::strerror(errno)}
+#endif  // !defined(_WIN32)
+    };
+}
+
+/**
+ * Shut down both receives and sends for a socket handle.
+ *
+ * @param handle Socket handle
+ */
+inline void
+shutdown(socket_handle handle)
+{
+  return shutdown(handle, shutdown_type::read_write);
 }
 
 #ifdef PDNNET_UNIX
@@ -132,6 +183,16 @@ public:
    * @param handle Socket handle
    */
   explicit unique_socket(socket_handle handle) : handle_{handle} {}
+
+  /**
+   * Ctor.
+   *
+   * Constructo directly using the `socket` function but with default protocol.
+   *
+   * @param af_domain Socket address family/domain, e.g. `AF_INET`, `AF_UNIX`
+   * @param type Socket type, e.g. `SOCK_STREAM`, `SOCK_RAW`
+   */
+  unique_socket(int af_domain, int type) : unique_socket{af_domain, type, 0} {}
 
   /**
    * Ctor.
@@ -227,26 +288,59 @@ private:
 };
 
 #ifdef PDNNET_UNIX
-
-class socket_iobase {};
-
-// pdnnet::socket_reader reader{socket};
-// std::cout << reader;
-// reader.write(std::cout);
-// std::cout << pdnnet::socket_reader{socket};
-// std::string text = pdnnet::socket_reader{socket};
+/**
+ * Socket reader class for abstracting raw socket reads.
+ *
+ * Can be streamed to an output stream or as a way to initialize a string, e.g.
+ *
+ * @code{.cc}
+ * pdnnet::unique_socket socket{AF_INET, SOCK_STREAM};
+ * pdnnet::socket_reader reader{socket};
+ * std::cout << reader;
+ * // reader.write(std::cout);
+ * // auto output = reader.operator std::string();
+ * @endcode
+ *
+ * An lvalue for the reader need not even be created, e.g.
+ *
+ * @code{.cc}
+ * pdnnet::unique_socket socket{AF_INET, SOCK_STREAM};
+ * std::cout << pdnnet::socket_reader{socket};
+ * @endcode
+ */
 class socket_reader {
 public:
-  socket_reader(socket_handle handle)
-    : socket_reader{handle, socket_read_size}
+  /**
+   * Ctor.
+   *
+   * @param handle Socket handle
+   */
+  socket_reader(socket_handle handle) : socket_reader{handle, socket_read_size}
   {}
 
+  /**
+   * Ctor.
+   *
+   * @param handle Socket handle
+   * @param buf_size Read buffer size, i.e. number of bytes per chunk read
+   */
   socket_reader(socket_handle handle, std::size_t buf_size)
     : handle_{handle},
       buf_size_{buf_size},
       buf_{std::make_unique<unsigned char[]>(buf_size_)}
   {}
 
+  /**
+   * Read from socket until end of transmission and write to stream.
+   *
+   * To write binary data, use a stream with `CharT = char`.
+   *
+   * @tparam CharT Char type
+   * @tparam Traits Char traits
+   *
+   * @param out Stream to write received data to
+   * @returns `*this` to support method chaining
+   */
   template <typename CharT, typename Traits>
   auto&
   write(std::basic_ostream<CharT, Traits>& out) const
@@ -268,6 +362,14 @@ public:
     return *this;
   }
 
+  /**
+   * Read from socket until end of transmission and return bytes as a string.
+   *
+   * @note Usually this does not need to be invoked directly.
+   *
+   * @tparam CharT Char type
+   * @tparam Traits Char traits
+   */
   template <typename CharT, typename Traits>
   operator std::basic_string<CharT, Traits>() const
   {
@@ -282,6 +384,15 @@ private:
   std::unique_ptr<unsigned char[]> buf_;
 };
 
+/**
+ * Read from socket until end of transmission and write to stream.
+ *
+ * @tparam CharT Char type
+ * @tparam Traits Char traits
+ *
+ * @param out Stream to write received data to
+ * @param reader Socket reader
+ */
 template <typename CharT, typename Traits>
 inline auto&
 operator<<(std::basic_ostream<CharT, Traits>& out, const socket_reader& reader)
@@ -292,29 +403,51 @@ operator<<(std::basic_ostream<CharT, Traits>& out, const socket_reader& reader)
 
 template <typename CharT = char, typename Traits = std::char_traits<CharT>>
 inline auto
-socket_read(socket_handle handle, std::size_t buf_size)
+read(socket_handle handle, std::size_t buf_size)
 {
   return socket_reader{handle, buf_size}.operator std::basic_string<CharT, Traits>();
 }
 
 template <typename CharT = char, typename Traits = std::char_traits<CharT>>
 inline auto
-socket_read(socket_handle handle)
+read(socket_handle handle)
 {
-  return socket_read<CharT, Traits>(handle, socket_read_size);
+  return read<CharT, Traits>(handle, socket_read_size);
 }
 
-// pdnnet::socket_writer writer{socket};
-// writer.read("here is some input");
-// std::stringstream ss;
-// ss << "hello";
-// ss >> pdnnet::socket_writer{socket};
+/**
+ * Socket writer class from abstracting writes to raw sockets.
+ *
+ * Can be streamed from an input stream or write from string contents, e.g.
+ *
+ * @code{.cc}
+ * pdnnet::unique_socket socket{AF_INET, SOCK_STREAM};
+ * std::stringstream ss;
+ * ss << "text content";
+ * ss >> pdnnet::socket_writer{socket};
+ * @endcode
+ *
+ * The `shutdown` function should be called afterwards on the socket handle
+ * appropriately to signal end of transmission to the socket receiver.
+ */
 class socket_writer {
 public:
-  socket_writer(socket_handle handle, bool close_after_write = false)
-    : handle_{handle}, close_after_write_{close_after_write}
-  {}
+  /**
+   * Ctor.
+   *
+   * @param handle Socket handle
+   */
+  socket_writer(socket_handle handle) : handle_{handle} {}
 
+  /**
+   * Write string view contents to socket.
+   *
+   * @tparam CharT Char type
+   * @tparam Traits Char traits
+   *
+   * @param text String view to read input from
+   * @returns `*this` to support method chaining
+   */
   template <typename CharT, typename Traits>
   auto&
   read(const std::basic_string_view<CharT, Traits>& text) const
@@ -323,14 +456,18 @@ public:
       throw std::runtime_error{
         "write() failure: " + std::string{std::strerror(errno)}
       };
-    if (close_after_write_ && shutdown(handle_, SHUT_RDWR) < 0)
-      throw std::runtime_error{
-        "shutdown() with SHUT_RDWR failed: " +
-        std::string{std::strerror(errno)}
-      };
     return *this;
   }
 
+  /**
+   * Write string stream contents to socket.
+   *
+   * @tparam CharT Char type
+   * @tparam Traits Char traits
+   *
+   * @param in String stream to read input from
+   * @returns `*this` to support method chaining
+   */
   template <typename CharT, typename Traits>
   auto&
   read(std::basic_stringstream<CharT, Traits>& in) const
@@ -340,9 +477,18 @@ public:
 
 private:
   socket_handle handle_;
-  bool close_after_write_;
 };
 
+/**
+ * Write string stream contents to socket.
+ *
+ * @param CharT Char type
+ * @tparam Traits Char traits
+ *
+ * @param in String stream to write
+ * @param writer Socket writer
+ * @returns `in` to support additional streaming
+ */
 template <typename CharT, typename Traits>
 inline auto&
 operator>>(
