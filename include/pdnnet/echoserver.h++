@@ -143,6 +143,7 @@ public:
    * started to handle the incoming client connection.
    *
    * @param max_connect Maximum number of connections to accept
+   * @returns `EXIT_SUCCESS` on success
    */
   int
   start(unsigned int max_connect = std::thread::hardware_concurrency())

@@ -25,6 +25,7 @@
 #ifndef PDNNET_CLIOPT_H_
 #define PDNNET_CLIOPT_H_
 
+#include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
