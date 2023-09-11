@@ -36,6 +36,7 @@
 
 #define PDNNET_HAS_PROGRAM_USAGE
 #define PDNNET_ADD_CLIOPT_PORT
+#define PDNNET_CLIOPT_PORT_DEFAULT 8888
 #define PDNNET_ADD_CLIOPT_MESSAGE_BYTES
 #define PDNNET_ADD_CLIOPT_MAX_CONNECT
 #include "pdnnet/cliopt.h"
@@ -174,7 +175,7 @@ PDNNET_ARG_MAIN
 {
   PDNNET_CLIOPT_PARSE_OPTIONS();
   // run in background as a daemon automatically
-#ifdef PDNNET_BSD_DEFAULT_SOURCE
+#if defined(PDNNET_BSD_DEFAULT_SOURCE)
   if (daemon(true, true) < 0)
     PDNNET_ERRNO_EXIT(errno, "daemon() failed");
 #else
@@ -185,7 +186,7 @@ PDNNET_ARG_MAIN
     // parent exits immediately to orphan child
     default: _exit(EXIT_SUCCESS);
   }
-#endif  // PDNNET_BSD_DEFAULT_SOURCE
+#endif  // !defined(PDNNET_BSD_DEFAULT_SOURCE)
   // create and bind socket
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0)

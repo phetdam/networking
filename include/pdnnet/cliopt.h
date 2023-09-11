@@ -106,9 +106,14 @@ static const char *PDNNET_CLIOPT(host) = PDNNET_CLIOPT_HOST_DEFAULT;
 #define PDNNET_CLIOPT_PORT_SHORT_OPTION "-p"
 #define PDNNET_CLIOPT_PORT_OPTION "--port"
 #define PDNNET_CLIOPT_PORT_ARG_NAME "PORT"
-#ifndef PDNNET_CLIOPT_PORT_DEFAULT
-#define PDNNET_CLIOPT_PORT_DEFAULT 8888
-#endif  // PDNNET_CLIOPT_PORT_DEFAULT
+// use value of zero to allow OS to select the next available port
+#if !defined(PDNNET_CLIOPT_PORT_DEFAULT)
+#define PDNNET_CLIOPT_PORT_DEFAULT 0
+// extra clarification on the port default value
+#define PDNNET_CLIOPT_PORT_DEFAULT_NOTE " (next free port)"
+#else
+#define PDNNET_CLIOPT_PORT_DEFAULT_NOTE
+#endif  // defined(PDNNET_CLIOPT_PORT_DEFAULT)
 static uint16_t PDNNET_CLIOPT(port) = PDNNET_CLIOPT_PORT_DEFAULT;
 #define PDNNET_CLIOPT_PORT_USAGE \
   "  " \
@@ -116,7 +121,8 @@ static uint16_t PDNNET_CLIOPT(port) = PDNNET_CLIOPT_PORT_DEFAULT;
     PDNNET_CLIOPT_PORT_OPTION " " \
     PDNNET_CLIOPT_PORT_ARG_NAME \
     "       Port number to bind to, default " \
-    PDNNET_STRINGIFY(PDNNET_CLIOPT_PORT_DEFAULT) "\n"
+    PDNNET_STRINGIFY(PDNNET_CLIOPT_PORT_DEFAULT) \
+    PDNNET_CLIOPT_PORT_DEFAULT_NOTE "\n"
 #else
 #define PDNNET_CLIOPT_PORT_USAGE ""
 #endif  // !defined(PDNNET_ADD_CLIOPT_PORT)
