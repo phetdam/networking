@@ -187,7 +187,7 @@ public:
   /**
    * Ctor.
    *
-   * Constructo directly using the `socket` function but with default protocol.
+   * Construct directly using the `socket` function but with default protocol.
    *
    * @param af_domain Socket address family/domain, e.g. `AF_INET`, `AF_UNIX`
    * @param type Socket type, e.g. `SOCK_STREAM`, `SOCK_RAW`
