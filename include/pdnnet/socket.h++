@@ -36,6 +36,7 @@
 #include <string>
 #include <type_traits>
 
+#include "pdnnet/error.h++"
 #include "pdnnet/platform.h"
 
 namespace pdnnet {
@@ -189,7 +190,7 @@ shutdown(socket_handle handle, shutdown_type how)
 #if defined(_WIN32)
       std:to_string(WSAGetLastError())
 #else
-      std::string{std::strerror(errno)}
+      errno_error()
 #endif  // !defined(_WIN32)
     };
 }
@@ -291,9 +292,7 @@ public:
       };
 #else
     if (handle_ < 0)
-      throw std::runtime_error{
-        "Could not open socket: " + std::string{std::strerror(errno)}
-      };
+      throw std::runtime_error{errno_error("Could not open socket")};
 #endif  // !defined(_WIN32)
   }
 
@@ -437,9 +436,7 @@ public:
         };
 #else
       if ((n_read = ::read(handle_, buf_.get(), sizeof(CharT) * buf_size_)) < 0)
-        throw std::runtime_error{
-          "read() failure: " + std::string{std::strerror(errno)}
-        };
+        throw std::runtime_error{errno_error("read() failure")};
 #endif  // !defined(_WIN32)
       // write to stream + clear buffer
       out.write(reinterpret_cast<const CharT*>(buf_.get()), buf_size_);
@@ -566,9 +563,7 @@ public:
       };
 #else
     if (::write(handle_, text.data(), sizeof(CharT) * text.size()) < 0)
-      throw std::runtime_error{
-        "write() failure: " + std::string{std::strerror(errno)}
-      };
+      throw std::runtime_error{errno_error("write() failure")};
 #endif  // !defined(_WIN32)
     return *this;
   }
