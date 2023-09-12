@@ -105,7 +105,7 @@ winsock_init(BYTE major, BYTE minor)
     {
       auto status = WSAStartup(MAKEWORD(major, minor), &wsa_data_);
       if (status)
-        throw std::runtime_error{"WSAStartup() failed: " + std::to_string(status)};
+        throw std::runtime_error{winsock_error("WSAStartup() failed")};
     }
 
     /**
@@ -188,7 +188,7 @@ shutdown(socket_handle handle, shutdown_type how)
       "shutdown() with how=" + std::to_string(shutdown_value(how)) +
       " failed: " +
 #if defined(_WIN32)
-      std:to_string(WSAGetLastError())
+      winsock_error()
 #else
       errno_error()
 #endif  // !defined(_WIN32)
@@ -287,9 +287,7 @@ public:
     handle_ = ::socket(af_domain, type, protocol);
 #if defined(_WIN32)
     if (handle_ == INVALID_SOCKET)
-      throw std::runtime_error{
-        "Could not open socket: " + std::to_string(WSAGetLastError())
-      };
+      throw std::runtime_error{winsock_error("Could not open socket")};
 #else
     if (handle_ < 0)
       throw std::runtime_error{errno_error("Could not open socket")};
@@ -431,9 +429,7 @@ public:
 #if defined(_WIN32)
       n_read = ::recv(handle_, buf.get(), sizeof(CharT) * buf_size_, 0);
       if (n_read == SOCKET_ERROR)
-        throw std::runtime_error{
-          "recv() failure: " + std::to_string(WSAGetLastError())
-        };
+        throw std::runtime_error{winsock_error("recv() failure")};
 #else
       if ((n_read = ::read(handle_, buf_.get(), sizeof(CharT) * buf_size_)) < 0)
         throw std::runtime_error{errno_error("read() failure")};
@@ -558,9 +554,7 @@ public:
   {
 #if defined(_WIN32)
     if (::send(handle_, text.data(), sizeof(CharT) * text.size(), 0) == SOCKET_ERROR)
-      throw std::runtime_error{
-        "recv() failure: " +_ std::to_string(WSAGetLastError());
-      };
+      throw std::runtime_error{winsock_error("recv() failure")};
 #else
     if (::write(handle_, text.data(), sizeof(CharT) * text.size()) < 0)
       throw std::runtime_error{errno_error("write() failure")};
