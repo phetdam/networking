@@ -38,11 +38,6 @@
 
 #include "pdnnet/platform.h"
 
-// not ready for Windows use yet
-#ifndef PDNNET_UNIX
-#error "socket.h++ cannot be used on non-Unix platforms yet"
-#endif  // PDNNET_UNIX
-
 namespace pdnnet {
 
 /**
