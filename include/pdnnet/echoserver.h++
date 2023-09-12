@@ -1,12 +1,12 @@
 /**
- * @file echo_server.h++
+ * @file echoserver.h++
  * @author Derek Huang
  * @brief C++ toy echo server
  * @copyright MIT License
  */
 
-#ifndef PDNNET_ECHO_SERVER_H_PP
-#define PDNNET_ECHO_SERVER_H_PP
+#ifndef PDNNET_ECHOSERVER_H_PP
+#define PDNNET_ECHOSERVER_H_PP
 
 #include <cerrno>
 #include <cstdint>
@@ -40,22 +40,22 @@ namespace pdnnet {
  * number of threads is reached, the oldest created thread is forced to join
  * before a new thread can be created for the incoming connection.
  */
-class echo_server {
+class echoserver {
 public:
   /**
    * Default ctor.
    *
    * Binds the created socket to the local address with a random free port.
    */
-  echo_server() : echo_server{0U} {}
+  echoserver() : echoserver{0U} {}
 
   /**
    * Ctor.
    *
    * @param port Port number in host byte order
    */
-  echo_server(std::uint16_t port)
-    : echo_server{
+  echoserver(std::uint16_t port)
+    : echoserver{
         port,
         static_cast<unsigned short>(std::thread::hardware_concurrency())
       }
@@ -67,7 +67,7 @@ public:
    * @param port Port number in host byte order
    * @param max_threads Maximum number of server threads
    */
-  echo_server(std::uint16_t port, unsigned short max_threads)
+  echoserver(std::uint16_t port, unsigned short max_threads)
     : socket_{AF_INET, SOCK_STREAM, 0}, address_{}, max_threads_{max_threads}
   {
     // set to local address with specified port
@@ -90,7 +90,7 @@ public:
    *
    * Ensures that all threads are joined.
    */
-  ~echo_server()
+  ~echoserver()
   {
     for (auto& thread : thread_queue_) {
       try { thread.join(); }
@@ -210,4 +210,4 @@ private:
 
 }  // namespace pdnnet
 
-#endif  // PDNNET_ECHO_SERVER_H_PP
+#endif  // PDNNET_ECHOSERVER_H_PP
