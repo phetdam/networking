@@ -14,7 +14,7 @@
 #define WIN32_LEAN_AND_MEAN
 #endif  // WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-#include <winsock2.h>
+#include <WinSock2.h>
 // don't pollute translation units
 #undef WIN32_LEAN_AND_MEAN
 // for *nix systems, use standard socket API
@@ -79,6 +79,68 @@ inline constexpr socket_handle bad_socket_handle = -1;
  * Default socket read/recv buffer size.
  */
 inline constexpr std::size_t socket_read_size = PDNNET_SOCKET_READ_SIZE;
+
+#ifdef _WIN32
+/**
+ * [Re]initialize Windows Sockets 2.
+ *
+ * After the first call, the parameters are ignored and this function can be
+ * used to retrieve a const reference to the relevant `WSADATA` struct.
+ *
+ * @param major Windows Sockets major version
+ * @param minor Windows Socket minor version
+ * @returns `WSADATA` const reference
+ */
+inline const auto&
+winsock_init(BYTE major, BYTE minor)
+{
+  /**
+   * Private class for initializing Windows Sockets.
+   */
+  class wsa_init {
+  public:
+    /**
+     * Ctor.
+     *
+     * @param major Windows Sockets major version
+     * @param minor Windows Sockets minor version
+     */
+    wsa_init(BYTE major, BYTE minor)
+    {
+      auto status = WSAStartup(MAKEWORD(major, minor), &wsa_data_);
+      if (status)
+        throw std::runtime_error{"WSAStartup() failed: " + std::to_string(status)};
+    }
+
+    /**
+     * Dtor.
+     *
+     * Performs the final cleanup of Windows Sockets.
+     */
+    ~wsa_init() { WSACleanup(); }
+
+    /**
+     * Return const reference to the `WSADATA` struct.
+     */
+    const auto&
+    wsa_data() const noexcept { return wsa_data_; }
+
+  private:
+    WSADATA wsa_data_;
+  };
+
+  static wsa_init init{major, minor};
+  return init.wsa_data();
+}
+
+/**
+ * [Re]initialize Windows Sockets 2.2.
+ *
+ * @returns `WSADATA` const reference
+ */
+inline const auto&
+winsock_init() { return winsock_init(2, 2); }
+#endif  // _WIN32
 
 /**
  * Close the socket handle.
@@ -148,7 +210,24 @@ shutdown(socket_handle handle)
   return shutdown(handle, shutdown_type::read_write);
 }
 
-#ifdef PDNNET_UNIX
+/**
+ * Internet address integral type.
+ */
+#if defined(_WIN32)
+using inet_addr_type = ULONG;
+#else
+using inet_addr_type = in_addr_t;
+#endif  // !defined(_WIN32)
+
+/**
+ * Internet port integral type.
+ */
+#if defined(_WIN32)
+using inet_port_type = USHORT;
+#else
+using inet_port_type = in_port_t;
+#endif  // !defined(_WIN32)
+
 /**
  * Return a new `sockaddr_in`.
  *
@@ -158,15 +237,14 @@ shutdown(socket_handle handle)
  * @param port Port number, e.g. `8888`
  */
 inline auto
-socket_address(in_addr_t address, in_port_t port)
+socket_address(inet_addr_type address, inet_port_type port)
 {
   sockaddr_in addr{};
   addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = htons(address);
+  addr.sin_addr.s_addr = htonl(address);
   addr.sin_port = htons(port);
   return addr;
 }
-#endif  // PDNNET_UNIX
 
 /**
  * Socket class maintaining unique ownership of a socket handle.
@@ -197,7 +275,8 @@ public:
   /**
    * Ctor.
    *
-   * Construct directly using the `socket` function.
+   * Construct directly using the `socket` function. On Windows, this ctor also
+   * ensures that Windows Sockets 2 is correctly initialized.
    *
    * @param af_domain Socket address family/domain, e.g. `AF_INET`, `AF_UNIX`
    * @param type Socket type, e.g. `SOCK_STREAM`, `SOCK_RAW`
@@ -206,11 +285,15 @@ public:
   unique_socket(int af_domain, int type, int protocol)
   {
     // attempt to create socket handle
+#ifdef _WIN32
+    winsock_init();
+#endif  // _WIN32
     handle_ = ::socket(af_domain, type, protocol);
 #if defined(_WIN32)
-    // TODO: add error handling for Windows Sockets using WSAGetLastError later
     if (handle_ == INVALID_SOCKET)
-      throw std::runtime_error{"Could not open socket"};
+      throw std::runtime_error{
+        "Could not open socket: " + std::to_string(WSAGetLastError())
+      };
 #else
     if (handle_ < 0)
       throw std::runtime_error{
@@ -287,7 +370,6 @@ private:
   socket_handle handle_;
 };
 
-#ifdef PDNNET_UNIX
 /**
  * Socket reader class for abstracting raw socket reads.
  *
@@ -312,6 +394,8 @@ class socket_reader {
 public:
   /**
    * Ctor.
+   *
+   * Buffer read size is given by `socket_read_size`.
    *
    * @param handle Socket handle
    */
@@ -350,10 +434,18 @@ public:
     // until client signals end of transmission
     do {
       // read and handle errors
+#if defined(_WIN32)
+      n_read = ::recv(handle_, buf.get(), sizeof(CharT) * buf_size_, 0);
+      if (n_read == SOCKET_ERROR)
+        throw std::runtime_error{
+          "recv() failure: " + std::to_string(WSAGetLastError())
+        };
+#else
       if ((n_read = ::read(handle_, buf_.get(), sizeof(CharT) * buf_size_)) < 0)
         throw std::runtime_error{
           "read() failure: " + std::string{std::strerror(errno)}
         };
+#endif  // !defined(_WIN32)
       // write to stream + clear buffer
       out.write(reinterpret_cast<const CharT*>(buf_.get()), buf_size_);
       memset(buf_.get(), 0, buf_size_);
@@ -401,13 +493,33 @@ operator<<(std::basic_ostream<CharT, Traits>& out, const socket_reader& reader)
   return out;
 }
 
+/**
+ * Read from socket until end of transmission and return contents as string.
+ *
+ * @tparam CharT Char type
+ * @tparam Traits Char traits
+ *
+ * @param handle Socket handle
+ * @param buf_size Read buffer size, i.e. number of bytes per chunk read
+ */
 template <typename CharT = char, typename Traits = std::char_traits<CharT>>
 inline auto
 read(socket_handle handle, std::size_t buf_size)
 {
-  return socket_reader{handle, buf_size}.operator std::basic_string<CharT, Traits>();
+  return socket_reader{handle, buf_size}
+    .operator std::basic_string<CharT, Traits>();
 }
 
+/**
+ * Read from socket until end of transmission and return contents as string.
+ *
+ * Buffer read size is given by `socket_read_size`.
+ *
+ * @tparam CharT Char type
+ * @tparam Traits Char traits
+ *
+ * @param handle Socket handle
+ */
 template <typename CharT = char, typename Traits = std::char_traits<CharT>>
 inline auto
 read(socket_handle handle)
@@ -452,10 +564,17 @@ public:
   auto&
   read(const std::basic_string_view<CharT, Traits>& text) const
   {
+#if defined(_WIN32)
+    if (::send(handle_, text.data(), sizeof(CharT) * text.size(), 0) == SOCKET_ERROR)
+      throw std::runtime_error{
+        "recv() failure: " +_ std::to_string(WSAGetLastError());
+      };
+#else
     if (::write(handle_, text.data(), sizeof(CharT) * text.size()) < 0)
       throw std::runtime_error{
         "write() failure: " + std::string{std::strerror(errno)}
       };
+#endif  // !defined(_WIN32)
     return *this;
   }
 
@@ -497,7 +616,6 @@ operator>>(
   writer.read(in);
   return in;
 }
-#endif  // PDNNET_UNIX
 
 }  // namespace pdnnet
 
