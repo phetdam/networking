@@ -18,4 +18,6 @@ if(UNIX)
             PDNNET_CLIOPT_MAX_MESSAGE_BYTES=4096
             PDNNET_ADD_CLIOPT_MAX_CONNECT_DEFAULT=5
     )
+    # toy echo server
+    add_executable(echoserver echoserver.cc)
 endif()

@@ -96,8 +96,12 @@ hresult_error(const std::string& message)
  *
  * If error code is unknown, a generic invalid error code message is returned.
  *
+ * @todo Probably not useful since `WSAGetLastError` values can be transformed
+ *  into `HRESULT` values using `HRESULT_FROM_WIN32` like with `GetLastError`.
+ *
  * @param wsa_err Windows Sockets error code
  */
+/*
 inline auto
 winsock_error_string(int wsa_err)
 {
@@ -107,43 +111,50 @@ winsock_error_string(int wsa_err)
     {WSA_INVALID_PARAMETER, "One or more parameters are invalid"},
     {WSA_OPERATION_ABORTED, "Overlapping operation aborted"},
     {WSA_IO_INCOMPLETE, "Overlapped I/O event object not in signaled state"},
-    {WSA_IO_PENDING, "Overlapped operations will complete late"},
+    {WSA_IO_PENDING, "Overlapped operations will complete later"},
     {WSAEINTR, "Blocking operation interrupted by WSACancelBlockingCall"},
-    {WSAEBADF, "File handle is not valid"}
+    {WSAEBADF, "File handle supplied is not valid"},
+    {WSAEACCES, "Permission denied"},
+    {WSAEFAULT, "Pointer argument is a bad address"},
+    {WSAEINVAL, "Invalid argument was supplied"},
+    {WSAEMFILE, "Too many open sockets"},
+    {WSAEWOULDBLOCK, "Nonblocking socket resource temporarily unavailable"},
+    {WSAEINPROGRESS, "Blocking operation now in progress"},
+    {WSAEALREADY, "Non-blocking socket operation already in progress"},
+    {WSAENOTSOCK, "Socket operation attempted on non-socket"},
+    {WSAEDESTADDRREQ, "Required destination address omitted"},
+    {WSAEMSGSIZE, "Datagram socket message too long"},
+    {WSAEPROTOTYPE, "Unsupported protocol for given socket type"},
+    {WSAENOPROTOOPT, "Bad protocol option for getsockopt or setsockopt call"}
   };
   if (err_map.find() != err_map.end())
     return err_map[wsa_err];
   return decltype(err_map)::mapped_type{"Invalid Windows Sockets error code"};
 }
+*/
 
 /**
- * Return string error message for a Windows Sockets error code.
+ * Return string error message with a Windows Sockets error code.
  *
  * @param wsa_err Windows Sockets error code
  * @param message Message describing the current error
  */
 inline auto
-winsock_error_string(int wsa_err, const std::string& message)
+winsock_error(int wsa_err, const std::string& message)
 {
-  return message + ": " + winsock_error_string(wsa_err);
+  return message + ". WinSock error: " + winsock_error_string(wsa_err);
 }
 
 /**
- * Return string error message describing the `WSAGetLastError` value.
+ * Return string error message with a `WSAGetLastError` error code.
  *
  * @param message Message describing the current error
  */
 inline auto
 winsock_error(const std::string& message)
 {
-  return winsock_error_string(WSAGetLastError(), message);
+  return winsock_error(WSAGetLastError(), message);
 }
-
-/**
- * Return string error message describing the `WSAGetLastError` value.
- */
-inline auto
-winsock_error() { return winsock_error_string(WSAGetLastError()); }
 #endif  // _WIN32
 
 }  // namespace pdnnet
