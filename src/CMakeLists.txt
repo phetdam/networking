@@ -18,6 +18,10 @@ if(UNIX)
             PDNNET_CLIOPT_MAX_MESSAGE_BYTES=4096
             PDNNET_ADD_CLIOPT_MAX_CONNECT_DEFAULT=5
     )
-    # toy echo server
-    add_executable(echoserver echoserver.cc)
+endif()
+# echoserver: toy echo server
+add_executable(echoserver echoserver.cc)
+# on Windows, ws2_32 DLL is needed to use Windows Sockets
+if(WIN32)
+    target_link_libraries(echoserver PRIVATE ws2_32)
 endif()

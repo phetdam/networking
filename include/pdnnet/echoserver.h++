@@ -26,6 +26,7 @@
 #endif  // WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <WinSock2.h>
+#include <WS2tcpip.h>
 #undef WIN32_LEAN_AND_MEAN
 #else
 #include <arpa/inet.h>
@@ -81,7 +82,7 @@ public:
     address_ = socket_address(INADDR_ANY, port);
     // attempt to bind socket
 #if defined(_WIN32)
-    if (bind(socket_, (const sockaddr*) &address, sizeof address) == SOCKET_ERROR)
+    if (bind(socket_, (const sockaddr*) &address_, sizeof address_) == SOCKET_ERROR)
       throw std::runtime_error{winsock_error("Could not bind socket")};
 #else
     if (bind(socket_, (const sockaddr*) &address_, sizeof address_) < 0)
@@ -90,7 +91,7 @@ public:
     // get the actual socket address, e.g. if port is 0 it is resolved
     socklen_t addr_size = sizeof address_;
 #if defined(_WIN32)
-    if (getsocketname(socket_, (sockaddr*) &address_, &addr_size) == SOCKET_ERROR)
+    if (getsockname(socket_, (sockaddr*) &address_, &addr_size) == SOCKET_ERROR)
       throw std::runtime_error{winsock_error("Could not retrieve socket address")};
 #else
     if (getsockname(socket_, (sockaddr*) &address_, &addr_size) < 0)

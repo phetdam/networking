@@ -142,7 +142,7 @@ winsock_error_string(int wsa_err)
 inline auto
 winsock_error(int wsa_err, const std::string& message)
 {
-  return message + ". WinSock error: " + winsock_error_string(wsa_err);
+  return message + ". WinSock error: " + std::to_string(wsa_err);
 }
 
 /**

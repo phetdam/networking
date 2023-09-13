@@ -76,6 +76,15 @@ inline constexpr socket_handle bad_socket_handle = -1;
  */
 inline constexpr std::size_t socket_read_size = PDNNET_SOCKET_READ_SIZE;
 
+/**
+ * Signed integral type returned by `read`, `recv`, etc.
+ */
+#if defined(_WIN32)
+using ssize_type = int;
+#else
+using ssize_type = ssize_t;
+#endif  // !defined(_WIN32)
+
 #ifdef _WIN32
 /**
  * [Re]initialize Windows Sockets 2.
@@ -186,11 +195,10 @@ shutdown(socket_handle handle, shutdown_type how)
   if (::shutdown(handle, shutdown_value(how)) < 0)
     throw std::runtime_error{
       "shutdown() with how=" + std::to_string(shutdown_value(how)) +
-      " failed: " +
 #if defined(_WIN32)
-      winsock_error()
+      winsock_error(" failed")
 #else
-      errno_error()
+      errno_error(" failed")
 #endif  // !defined(_WIN32)
     };
 }
@@ -422,12 +430,12 @@ public:
   write(std::basic_ostream<CharT, Traits>& out) const
   {
     // number of bytes read
-    ssize_t n_read;
+    ssize_type n_read;
     // until client signals end of transmission
     do {
       // read and handle errors
 #if defined(_WIN32)
-      n_read = ::recv(handle_, buf.get(), sizeof(CharT) * buf_size_, 0);
+      n_read = ::recv(handle_, (char*) buf_.get(), sizeof(CharT) * buf_size_, 0);
       if (n_read == SOCKET_ERROR)
         throw std::runtime_error{winsock_error("recv() failure")};
 #else
