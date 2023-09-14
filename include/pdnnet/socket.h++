@@ -38,6 +38,7 @@
 
 #include "pdnnet/error.h++"
 #include "pdnnet/platform.h"
+#include "pdnnet/warnings.h"
 
 namespace pdnnet {
 
@@ -435,7 +436,11 @@ public:
     do {
       // read and handle errors
 #if defined(_WIN32)
-      n_read = ::recv(handle_, (char*) buf_.get(), sizeof(CharT) * buf_size_, 0);
+      n_read = ::recv(handle_,
+        reinterpret_cast<char*>(buf_.get()),
+        static_cast<int>(sizeof(CharT) * buf_size_),
+        0
+      );
       if (n_read == SOCKET_ERROR)
         throw std::runtime_error{winsock_error("recv() failure")};
 #else
@@ -561,7 +566,14 @@ public:
   read(const std::basic_string_view<CharT, Traits>& text) const
   {
 #if defined(_WIN32)
-    if (::send(handle_, text.data(), sizeof(CharT) * text.size(), 0) == SOCKET_ERROR)
+    if (
+      ::send(
+        handle_,
+        text.data(),
+        static_cast<int>(sizeof(CharT) * text.size()),
+        0
+      ) == SOCKET_ERROR
+    )
       throw std::runtime_error{winsock_error("recv() failure")};
 #else
     if (::write(handle_, text.data(), sizeof(CharT) * text.size()) < 0)

@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION ${CMAKE_MINIMUM_REQUIRED_VERSION})
 
 if(MSVC)
-    # stop MSVC from warning about unsafe functions, C is unsafe by nature
-    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+    add_compile_definitions(
+        # stop MSVC from warning about unsafe functions, C is unsafe by nature
+        _CRT_SECURE_NO_WARNINGS
+        # disable warnings about deprecated Windows Sockets API functions
+        _WINSOCK_DEPRECATED_NO_WARNINGS
+    )
     add_compile_options(
         /Wall
         # enum value not explicitly handled in by case label in switch
@@ -20,6 +24,10 @@ if(MSVC)
         /wd4820
         # compiler may not enforce left-to-right eval in braced init list
         /wd4868
+        # pointer/reference to potentially throwing function passed to extern
+        # "C" function with /EHsc exception handling model. originally emitted
+        # by the winbase.h and WS2tcpip.h Win32 headers
+        /wd5039
         # Spectre mitigation, winbase.h macro expansion issue
         /wd5045 /wd5105
         # /Od applied by default when using Debug config, /O2 for Release
