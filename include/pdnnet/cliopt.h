@@ -511,7 +511,14 @@ pdnnet_cliopt_parse_args(int argc, PDNNET_SA(In) char **argv)
   return true;
 }
 
-// do NOT call yourself!
+/**
+ * Internal function for printing program usage.
+ *
+ * Prints a user-specified description before printing help for each option.
+ *
+ * @param argv `main()` argument vector
+ * @param desc Description to print before option help text
+ */
 static void
 pdnnet_cliopt_internal_print_usage(PDNNET_SA(In) char **argv, const char *desc)
 {
@@ -564,6 +571,11 @@ pdnnet_cliopt_internal_print_usage(PDNNET_SA(In) char **argv, const char *desc)
   int \
   main(int PDNNET_ARGC, char **PDNNET_ARGV)
 
+/**
+ * Parse command-line options and update the values of the target variables.
+ *
+ * Intended to be the first statement in `main` that is evaluated.
+ */
 #define PDNNET_CLIOPT_PARSE_OPTIONS() \
   do { \
     if (!pdnnet_cliopt_parse_args(PDNNET_ARGC, PDNNET_ARGV)) \
