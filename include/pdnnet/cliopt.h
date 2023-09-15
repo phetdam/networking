@@ -83,6 +83,23 @@ static bool PDNNET_CLIOPT(print_usage) = false;
  *    defined for each particular `<ARG>` option.
  */
 
+// verbosity level
+#if defined(PDNNET_ADD_CLIOPT_VERBOSE)
+#define PDNNET_CLIOPT_VERBOSE_SHORT_OPTION "-v"
+#define PDNNET_CLIOPT_VERBOSE_OPTION "--verbose"
+#define PDNNET_CLIOPT_VERBOSE_ARG_NAME "VERBOSE"
+static unsigned short PDNNET_CLIOPT(verbose) = 0;
+#define PDNNET_CLIOPT_VERBOSE_USAGE \
+  "  " \
+    PDNNET_CLIOPT_VERBOSE_SHORT_OPTION ", " \
+    PDNNET_CLIOPT_VERBOSE_OPTION " [" \
+    PDNNET_CLIOPT_VERBOSE_ARG_NAME "]\n" \
+    "                        Run verbosely, with larger values for greater\n" \
+    "                        verbosity. If specified without an argument,\n" \
+    "                        the verbosity level is set to 1.\n"
+#else
+#define PDNNET_CLIOPT_VERBOSE_USAGE ""
+#endif  // !defined(PDNNET_ADD_CLIOPT_VERBOSE)
 // host name
 #if defined(PDNNET_ADD_CLIOPT_HOST)
 #define PDNNET_CLIOPT_HOST_SHORT_OPTION "-H"
@@ -190,6 +207,42 @@ pdnnet_internal_set_program_name(PDNNET_SA(In) char **argv)
     PDNNET_PROGRAM_NAME++;
 }
 
+#ifdef PDNNET_ADD_CLIOPT_VERBOSE
+/**
+ * Parse verbosity level.
+ *
+ * Zero verbosity level is the same as not specifying the verbosity level.
+ *
+ * @param arg String verbosity level
+ * @returns `true` on successful parse, `false` otherwise
+ */
+static bool
+pdnnet_cliopt_parse_verbose(const char *arg)
+{
+  // zero is allowed. reassign to override previous values (if any)
+  if (!strcmp(arg, "0")) {
+    PDNNET_CLIOPT(verbose) = 0;
+    return true;
+  }
+  // get value + handle error
+  int value = atoi(arg);
+  if (!value) {
+    fprintf(stderr, "Error: Unable to convert %s to a verbosity level\n", arg);
+    return false;
+  }
+  // USHORT_MAX is max verbosity level
+  if (value > USHRT_MAX) {
+    fprintf(
+      stderr, "Error: Verbosity level %s exceeds maximum %u\n", arg, USHRT_MAX
+    );
+    return false;
+  }
+  // otherwise, assign verbosity level + return
+  PDNNET_CLIOPT(verbose) = (unsigned short) value;
+  return true;
+}
+#endif  // PDNNET_ADD_CLIOPT_VERBOSE
+
 #ifdef PDNNET_ADD_CLIOPT_HOST
 /**
  * Parse host name.
@@ -219,8 +272,13 @@ pdnnet_cliopt_parse_host(const char *arg)
 static bool
 pdnnet_cliopt_parse_port(const char *arg)
 {
+  // don't allow zero port value
+  if (!strcmp(arg, "0")) {
+    fprintf(stderr, "Error: Cannot specify 0 as a port value\n");
+    return false;
+  }
+  // get value + handle error
   int value = atoi(arg);
-  // on error, zero
   if (!value) {
     fprintf(stderr, "Error: Unable to convert %s to a port number\n", arg);
     return false;
@@ -251,8 +309,13 @@ pdnnet_cliopt_parse_port(const char *arg)
 static bool
 pdnnet_cliopt_parse_message_bytes(const char *arg)
 {
+  // don't allow zero message size
+  if (!strcmp(arg, "0")) {
+    fprintf(stderr, "Error: Cannot specify 0 as message size\n");
+    return false;
+  }
+  // get value + handle error
   long long value = atoll(arg);
-  // zero on error
   if (!value) {
     fprintf(stderr, "Error: Unable to convert %s to message size\n", arg);
     return false;
@@ -288,8 +351,13 @@ pdnnet_cliopt_parse_message_bytes(const char *arg)
 static bool
 pdnnet_cliopt_parse_max_connect(const char *arg)
 {
+  // don't allow zero max connections
+  if (!strcmp(arg, "0")) {
+    fprintf(stderr, "Error: Cannot specify 0 as number of max connects\n");
+    return false;
+  }
+  // get value + handle error
   int value = atoi(arg);
-  // zero on error
   if (!value) {
     fprintf(stderr, "Error: Can't convert %s to number of max connects\n", arg);
     return false;
@@ -336,6 +404,23 @@ pdnnet_cliopt_parse_args(int argc, PDNNET_SA(In) char **argv)
       PDNNET_CLIOPT(print_usage) = true;
       return true;
     }
+    // verbosity level
+#ifdef PDNNET_ADD_CLIOPT_VERBOSE
+    else if (
+      !strcmp(argv[i], PDNNET_CLIOPT_VERBOSE_SHORT_OPTION) ||
+      !strcmp(argv[i], PDNNET_CLIOPT_VERBOSE_OPTION)
+    ) {
+      // not enough arguments, so treat as 1
+      if (++i >= argc)
+        PDNNET_CLIOPT(verbose) = (unsigned short) 1;
+      // if argument starts with a dash, assume it is an option
+      else if (argv[i][0] == '-')
+        ;
+      // otherwise, try to parse the value
+      else if (!pdnnet_cliopt_parse_verbose(argv[i]))
+        return false;
+    }
+#endif  // PDNNET_ADD_CLIOPT_VERBOSE
     // host
 #ifdef PDNNET_ADD_CLIOPT_HOST
     else if (
@@ -440,6 +525,7 @@ pdnnet_cliopt_internal_print_usage(PDNNET_SA(In) char **argv, const char *desc)
     "Options:\n"
     "\n"
     "  -h, --help            Print this usage\n"
+      PDNNET_CLIOPT_VERBOSE_USAGE
       PDNNET_CLIOPT_HOST_USAGE
       PDNNET_CLIOPT_PORT_USAGE
       PDNNET_CLIOPT_MESSAGE_BYTES_USAGE
@@ -452,6 +538,7 @@ pdnnet_cliopt_internal_print_usage(PDNNET_SA(In) char **argv, const char *desc)
 
 // don't pollute namespace with help text macros. these are usually not helpful
 // for the user anyways, as they are intended to be printed with -h, --help
+#undef PDNNET_CLIOPT_VERBOSE_USAGE
 #undef PDNNET_CLIOPT_HOST_USAGE
 #undef PDNNET_CLIOPT_PORT_USAGE
 #undef PDNNET_CLIOPT_MESSAGE_BYTES_USAGE

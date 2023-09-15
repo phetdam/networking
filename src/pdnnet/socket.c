@@ -46,7 +46,7 @@
 int
 pdnnet_socket_onlread(
   int sockfd,
-  PDNNET_SA(In) pdnnet_socket_onlread_func read_action,
+  PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func read_action,
   PDNNET_SA(Opt(In_Out)) void *read_action_param)
 {
   return pdnnet_socket_onlread_s(
@@ -66,13 +66,14 @@ pdnnet_socket_onlread(
  * @param read_size Number of bytes each `read` call should request
  * @param read_action Function to invoke after each successful `read` call
  * @param read_action_param Parameter to pass to `read_action`
- * @returns 0 on success, -ENOMEM on buffer allocation failure, -errno on error
+ * @returns 0 on success, -EINVAL if `read_size` is zero, -ENOMEM on buffer
+ *  allocation failure, -errno for other errors
  */
 int
 pdnnet_socket_onlread_s(
   int sockfd,
   size_t read_size,
-  PDNNET_SA(In) pdnnet_socket_onlread_func read_action,
+  PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func read_action,
   PDNNET_SA(Opt(In_Out)) void *read_action_param)
 {
   return pdnnet_socket_onlread2(
@@ -97,18 +98,19 @@ pdnnet_socket_onlread_s(
  * @param read_action_param Parameter to pass to `read_action`
  * @param post_action Function to invoke after the final `read_action`
  * @param post_action_param Parameter to pass to `post_action`
- * @returns 0 on success, -ENOMEM on buffer allocation failure, -errno on error
+ * @returns 0 on success, -EINVAL if `read_size` is zero, -ENOMEM on buffer
+ *  allocation failure, -errno for other errors
  */
 int
 pdnnet_socket_onlread2(
   int sockfd,
   size_t read_size,
-  PDNNET_SA(In) pdnnet_socket_onlread_func read_action,
+  PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func read_action,
   PDNNET_SA(Opt(In_Out)) void *read_action_param,
   PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func post_action,
   PDNNET_SA(Opt(In_Out)) void *post_action_param)
 {
-  if (!read_size || !read_action)
+  if (!read_size)
     return -EINVAL;
   // return status
   int status;
@@ -130,8 +132,8 @@ pdnnet_socket_onlread2(
     // update number of reads and total bytes read
     read_state.n_reads += 1;
     read_state.n_read_total += read_state.n_read_msg;
-    // call user-specified action
-    if ((status = read_action(&read_state, read_action_param)) < 0)
+    // call user-specified action if any
+    if (read_action && (status = read_action(&read_state, read_action_param)) < 0)
       goto end;
   } while(read_state.n_read_msg);
   // if there is a post action, call that

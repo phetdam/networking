@@ -35,6 +35,7 @@
 #include <string.h>
 
 #define PDNNET_HAS_PROGRAM_USAGE
+#define PDNNET_ADD_CLIOPT_VERBOSE
 #define PDNNET_ADD_CLIOPT_PORT
 #define PDNNET_CLIOPT_PORT_DEFAULT 8888
 #define PDNNET_ADD_CLIOPT_MESSAGE_BYTES
@@ -99,12 +100,16 @@ handle_client(int cli_sock, const struct sockaddr_in *cli_addr)
     return -EINVAL;
   // static buffer for acknowledgment message
   static const char ack_buf[] = "Acknowledged message received";
-  // read client message and print each received chunk
+  // action to perform while reading client messages. if verbose, will just
+  // print, otherwise nothing will be done
+  pdnnet_socket_onlread_func read_action;
+  read_action = (PDNNET_CLIOPT(verbose)) ? print_client_msg : NULL;
+  // read client message and print each received chunk if running verbosely
   if (
     pdnnet_socket_onlread_s(
       cli_sock,
       PDNNET_CLIOPT(message_bytes),
-      print_client_msg,
+      read_action,
       (void *) cli_addr  // not modified by print_client_msg
     ) < 0
   ) {
@@ -112,7 +117,8 @@ handle_client(int cli_sock, const struct sockaddr_in *cli_addr)
     return -errno;
   }
   // trailing newline to finish off
-  puts("");
+  if (PDNNET_CLIOPT(verbose))
+    puts("");
   // send acknowledgment + shutdown completely to end transmission
   PDNNET_ERRNO_RETURN(write(cli_sock, ack_buf, sizeof ack_buf - 1));
   PDNNET_ERRNO_RETURN(shutdown(cli_sock, SHUT_RDWR));
