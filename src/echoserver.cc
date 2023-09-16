@@ -66,8 +66,8 @@ PDNNET_ARG_MAIN
 #endif  // !defined(_WIN32)
   // create server + print address and port for debugging
   pdnnet::echoserver server{PDNNET_CLIOPT(port)};
-  std::cout << PDNNET_PROGRAM_NAME << ": max_threads=" << server.max_threads() <<
-    ", address=" <<
+  std::cout << PDNNET_PROGRAM_NAME << ": max_threads=" <<
+    server.max_threads() << ", address=" <<
 #if defined(_WIN32) || defined(PDNNET_BSD_DEFAULT_SOURCE)
     inet_ntoa(server.address().sin_addr) <<
 #else
