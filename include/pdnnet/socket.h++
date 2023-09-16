@@ -97,8 +97,7 @@ using ssize_type = ssize_t;
  * @param minor Windows Socket minor version
  * @returns `WSADATA` const reference
  */
-inline const auto&
-winsock_init(BYTE major, BYTE minor)
+inline const auto& winsock_init(BYTE major, BYTE minor)
 {
   /**
    * Private class for initializing Windows Sockets.
@@ -128,8 +127,7 @@ winsock_init(BYTE major, BYTE minor)
     /**
      * Return const reference to the `WSADATA` struct.
      */
-    const auto&
-    wsa_data() const noexcept { return wsa_data_; }
+    const auto& wsa_data() const noexcept { return wsa_data_; }
 
   private:
     WSADATA wsa_data_;
@@ -144,8 +142,7 @@ winsock_init(BYTE major, BYTE minor)
  *
  * @returns `WSADATA` const reference
  */
-inline const auto&
-winsock_init() { return winsock_init(2, 2); }
+inline const auto& winsock_init() { return winsock_init(2, 2); }
 #endif  // _WIN32
 
 /**
@@ -156,8 +153,7 @@ winsock_init() { return winsock_init(2, 2); }
  * @param handle Socket handle to close
  * @returns 0 on success, -1 (*nix) or SOCKET_ERROR (Win32) on failure
  */
-inline int
-close_handle(socket_handle handle) noexcept
+inline int close_handle(socket_handle handle) noexcept
 {
 #if defined(_WIN32)
   return closesocket(handle);
@@ -178,8 +174,7 @@ enum class shutdown_type { read, write, read_write };
  *
  * @param how `shutdown_type` member
  */
-inline auto
-shutdown_value(shutdown_type how)
+inline auto shutdown_value(shutdown_type how)
 {
   return static_cast<std::underlying_type_t<decltype(how)>>(how);
 }
@@ -190,8 +185,7 @@ shutdown_value(shutdown_type how)
  * @param handle Socket handle
  * @param how Shutdown method
  */
-inline void
-shutdown(socket_handle handle, shutdown_type how)
+inline void shutdown(socket_handle handle, shutdown_type how)
 {
   if (::shutdown(handle, shutdown_value(how)) < 0)
     throw std::runtime_error{
@@ -209,8 +203,7 @@ shutdown(socket_handle handle, shutdown_type how)
  *
  * @param handle Socket handle
  */
-inline void
-shutdown(socket_handle handle)
+inline void shutdown(socket_handle handle)
 {
   return shutdown(handle, shutdown_type::read_write);
 }
@@ -241,8 +234,7 @@ using inet_port_type = in_port_t;
  * @param address Internet address, e.g. `INADDR_ANY`
  * @param port Port number, e.g. `8888`
  */
-inline auto
-socket_address(inet_addr_type address, inet_port_type port)
+inline auto socket_address(inet_addr_type address, inet_port_type port)
 {
   sockaddr_in addr{};
   addr.sin_family = AF_INET;
@@ -330,14 +322,12 @@ public:
    * Provided to mimic the STL `unique_ptr` interface. If `release` has been
    * called or if default-constructed, this returns `bad_socket_handle`.
    */
-  auto
-  get() const noexcept { return handle_; }
+  auto get() const noexcept { return handle_; }
 
   /**
    * Return underlying socket handle.
    */
-  auto
-  handle() const noexcept { return handle_; }
+  auto handle() const noexcept { return handle_; }
 
   /**
    * Release ownership of the underlying socket handle.
@@ -346,8 +336,7 @@ public:
    *
    * Once released, destroying the `unique_socket` will not close the handle.
    */
-  socket_handle
-  release() noexcept
+  socket_handle release() noexcept
   {
     auto old_handle = handle_;
     handle_ = bad_socket_handle;
@@ -359,8 +348,7 @@ public:
    *
    * `false` if `release` has been called or after default construction.
    */
-  auto
-  valid() const noexcept { return handle_ == bad_socket_handle; }
+  auto valid() const noexcept { return handle_ == bad_socket_handle; }
 
   /**
    * Syntactic sugar for compatibility with C socket functions.
@@ -427,8 +415,7 @@ public:
    * @returns `*this` to support method chaining
    */
   template <typename CharT, typename Traits>
-  auto&
-  write(std::basic_ostream<CharT, Traits>& out) const
+  auto& write(std::basic_ostream<CharT, Traits>& out) const
   {
     // number of bytes read
     ssize_type n_read;
@@ -487,8 +474,8 @@ private:
  * @param reader Socket reader
  */
 template <typename CharT, typename Traits>
-inline auto&
-operator<<(std::basic_ostream<CharT, Traits>& out, const socket_reader& reader)
+inline auto& operator<<(
+  std::basic_ostream<CharT, Traits>& out, const socket_reader& reader)
 {
   reader.write(out);
   return out;
@@ -504,8 +491,7 @@ operator<<(std::basic_ostream<CharT, Traits>& out, const socket_reader& reader)
  * @param buf_size Read buffer size, i.e. number of bytes per chunk read
  */
 template <typename CharT = char, typename Traits = std::char_traits<CharT>>
-inline auto
-read(socket_handle handle, std::size_t buf_size)
+inline auto read(socket_handle handle, std::size_t buf_size)
 {
   return socket_reader{handle, buf_size}
     .operator std::basic_string<CharT, Traits>();
@@ -522,8 +508,7 @@ read(socket_handle handle, std::size_t buf_size)
  * @param handle Socket handle
  */
 template <typename CharT = char, typename Traits = std::char_traits<CharT>>
-inline auto
-read(socket_handle handle)
+inline auto read(socket_handle handle)
 {
   return read<CharT, Traits>(handle, socket_read_size);
 }
@@ -562,8 +547,7 @@ public:
    * @returns `*this` to support method chaining
    */
   template <typename CharT, typename Traits>
-  auto&
-  read(const std::basic_string_view<CharT, Traits>& text) const
+  auto& read(const std::basic_string_view<CharT, Traits>& text) const
   {
 #if defined(_WIN32)
     if (
@@ -592,8 +576,7 @@ public:
    * @returns `*this` to support method chaining
    */
   template <typename CharT, typename Traits>
-  auto&
-  read(std::basic_stringstream<CharT, Traits>& in) const
+  auto& read(std::basic_stringstream<CharT, Traits>& in) const
   {
     return read(static_cast<std::basic_string_view<CharT, Traits>>(in.str()));
   }
@@ -613,8 +596,7 @@ private:
  * @returns `in` to support additional streaming
  */
 template <typename CharT, typename Traits>
-inline auto&
-operator>>(
+inline auto& operator>>(
   std::basic_stringstream<CharT, Traits>& in, const socket_writer& writer)
 {
   writer.read(in);
