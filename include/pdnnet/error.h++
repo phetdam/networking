@@ -33,8 +33,7 @@ namespace pdnnet {
  *
  * @param error `errno` error code
  */
-inline std::string
-error_string(int error) { return std::strerror(error); }
+inline std::string error_string(int error) { return std::strerror(error); }
 
 /**
  * Return string describing the given error code, prefixed with a message.
@@ -42,8 +41,7 @@ error_string(int error) { return std::strerror(error); }
  * @param error `errno` error code
  * @param message Message to prefix `errno` error description with
  */
-inline auto
-error_string(int error, const std::string& message)
+inline auto error_string(int error, const std::string& message)
 {
   return message + ": " + error_string(error);
 }
@@ -53,8 +51,7 @@ error_string(int error, const std::string& message)
  *
  * @param message Message to prefix `errno` error description with
  */
-inline auto
-errno_error(const std::string& message)
+inline auto errno_error(const std::string& message)
 {
   return error_string(errno, message);
 }
@@ -62,8 +59,7 @@ errno_error(const std::string& message)
 /**
  * Return string giving the `errno` error description.
  */
-inline auto
-errno_error() { return error_string(errno); }
+inline auto errno_error() { return error_string(errno); }
 
 #ifdef _WIN32
 /**
@@ -72,8 +68,7 @@ errno_error() { return error_string(errno); }
  * @param error `HRESULT` status value
  * @param message Message describing the current error
  */
-inline auto
-hresult_error(HRESULT error, const std::string& message)
+inline auto hresult_error(HRESULT error, const std::string& message)
 {
   std::stringstream ss;
   ss << message << ". HRESULT: " << std::hex << error;
@@ -85,8 +80,7 @@ hresult_error(HRESULT error, const std::string& message)
  *
  * @param message Message describing the current error
  */
-inline auto
-hresult_error(const std::string& message)
+inline auto hresult_error(const std::string& message)
 {
   return hresult_error(HRESULT_FROM_WIN32(GetLastError()), message);
 }
@@ -102,8 +96,7 @@ hresult_error(const std::string& message)
  * @param wsa_err Windows Sockets error code
  */
 /*
-inline auto
-winsock_error_string(int wsa_err)
+inline auto winsock_error_string(int wsa_err)
 {
   static std::unordered_map<decltype(wsa_err), std::string> err_map{
     {WSA_INVALID_HANDLE, "Specified event object handle is invalid"},
@@ -139,8 +132,7 @@ winsock_error_string(int wsa_err)
  * @param wsa_err Windows Sockets error code
  * @param message Message describing the current error
  */
-inline auto
-winsock_error(int wsa_err, const std::string& message)
+inline auto winsock_error(int wsa_err, const std::string& message)
 {
   return message + ". WinSock error: " + std::to_string(wsa_err);
 }
@@ -150,8 +142,7 @@ winsock_error(int wsa_err, const std::string& message)
  *
  * @param message Message describing the current error
  */
-inline auto
-winsock_error(const std::string& message)
+inline auto winsock_error(const std::string& message)
 {
   return winsock_error(WSAGetLastError(), message);
 }
