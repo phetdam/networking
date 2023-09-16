@@ -94,8 +94,7 @@ typedef int (*pdnnet_socket_onlread_func)(
  * @param read_action_param Parameter to pass to `read_action`
  * @returns 0 on success, -ENOMEM on buffer allocation failure, -errno on error
  */
-PDNNET_PUBLIC
-int
+PDNNET_PUBLIC int
 pdnnet_socket_onlread(
   int sockfd,
   PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func read_action,
@@ -113,8 +112,7 @@ pdnnet_socket_onlread(
  * @returns 0 on success, -EINVAL if `read_size` is zero, -ENOMEM on buffer
  *  allocation failure, -errno for other errors
  */
-PDNNET_PUBLIC
-int
+PDNNET_PUBLIC int
 pdnnet_socket_onlread_s(
   int sockfd,
   size_t read_size,
@@ -136,8 +134,7 @@ pdnnet_socket_onlread_s(
  * @returns 0 on success, -EINVAL if `read_size` is zero, -ENOMEM on buffer
  *  allocation failure, -errno for other errors
  */
-PDNNET_PUBLIC
-int
+PDNNET_PUBLIC int
 pdnnet_socket_onlread2(
   int sockfd,
   size_t read_size,
@@ -154,8 +151,7 @@ pdnnet_socket_onlread2(
  * @returns 0 on success, -ENOMEM on buffer allocation failure, -EINVAL if `f`
  *  is `NULL`, -EIO if writing to `f` fails, -errno on error
  */
-PDNNET_PUBLIC
-int
+PDNNET_PUBLIC int
 pdnnet_socket_fwrite(int sockfd, PDNNET_SA(Out) FILE *f);
 
 /**
@@ -167,8 +163,7 @@ pdnnet_socket_fwrite(int sockfd, PDNNET_SA(Out) FILE *f);
  * @returns 0 on success, -ENOMEM on buffer allocation failure, -EINVAL if `f`
  *  is `NULL`, -EIO if writing to `f` fails, -errno on error
  */
-PDNNET_PUBLIC
-int
+PDNNET_PUBLIC int
 pdnnet_socket_fwrite_s(int sockfd, size_t read_size, PDNNET_SA(Out) FILE *f);
 #endif  // PDNNET_UNIX
 
