@@ -5,8 +5,8 @@
  * @copyright MIT License
  */
 
-#ifndef PDNNET_ERROR_H_
-#define PDNNET_ERROR_H_
+#ifndef PDNNET_CERROR_H_
+#define PDNNET_CERROR_H_
 
 #include <errno.h>
 #include <stdio.h>
@@ -75,4 +75,4 @@
   } \
   while (0)
 
-#endif  // PDNNET_ERROR_H_
+#endif  // PDNNET_CERROR_H_
