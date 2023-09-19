@@ -14,9 +14,9 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "pdnnet/dllexport.h"
-#include "pdnnet/error.h"
+#include "pdnnet/cerror.h"
 #include "pdnnet/common.h"
+#include "pdnnet/dllexport.h"
 #include "pdnnet/platform.h"
 #include "pdnnet/sa.h"
 

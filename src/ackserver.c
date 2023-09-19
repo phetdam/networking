@@ -40,9 +40,10 @@
 #define PDNNET_CLIOPT_PORT_DEFAULT 8888
 #define PDNNET_ADD_CLIOPT_MESSAGE_BYTES
 #define PDNNET_ADD_CLIOPT_MAX_CONNECT
+
+#include "pdnnet/cerror.h"
 #include "pdnnet/cliopt.h"
 #include "pdnnet/common.h"
-#include "pdnnet/error.h"
 #include "pdnnet/features.h"
 #include "pdnnet/inet.h"
 #include "pdnnet/socket.h"

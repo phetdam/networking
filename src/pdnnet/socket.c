@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "pdnnet/error.h"
+#include "pdnnet/cerror.h"
 #include "pdnnet/platform.h"
 #include "pdnnet/sa.h"
 

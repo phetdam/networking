@@ -1,5 +1,5 @@
 /**
- * @file error.h
+ * @file cerror.h
  * @author Derek Huang
  * @brief C error handling helpers
  * @copyright MIT License
