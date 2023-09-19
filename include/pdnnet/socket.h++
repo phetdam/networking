@@ -36,7 +36,7 @@
 #include <string>
 #include <type_traits>
 
-#include "pdnnet/error.h++"
+#include "pdnnet/error.h"
 #include "pdnnet/platform.h"
 #include "pdnnet/warnings.h"
 

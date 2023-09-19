@@ -1,12 +1,12 @@
 /**
- * @file error.h++
+ * @file error.h
  * @author Derek Huang
  * @brief C++ header for error handling helpers
  * @copyright MIT License
  */
 
-#ifndef PDNNET_ERRNO_H_PP
-#define PDNNET_ERRNO_H_PP
+#ifndef PDNNET_ERRNO_H_
+#define PDNNET_ERRNO_H_
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -150,4 +150,4 @@ inline auto winsock_error(const std::string& message)
 
 }  // namespace pdnnet
 
-#endif  // PDNNET_ERRNO_H_PP
+#endif  // PDNNET_ERRNO_H_

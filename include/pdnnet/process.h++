@@ -12,7 +12,7 @@
 #include <cstring>
 #include <stdexcept>
 
-#include "pdnnet/error.h++"
+#include "pdnnet/error.h"
 #include "pdnnet/features.h"
 #include "pdnnet/platform.h"
 

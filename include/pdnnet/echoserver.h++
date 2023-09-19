@@ -35,7 +35,7 @@
 #include <unistd.h>
 #endif  // !defined(_WIN32)
 
-#include "pdnnet/error.h++"
+#include "pdnnet/error.h"
 #include "pdnnet/socket.h++"
 
 namespace pdnnet {
