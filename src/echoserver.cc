@@ -24,7 +24,7 @@
 #define PDNNET_ADD_CLIOPT_PORT
 #define PDNNET_ADD_CLIOPT_MAX_CONNECT
 #include "pdnnet/cliopt.h"
-#include "pdnnet/echoserver.h++"
+#include "pdnnet/echoserver.h"
 #include "pdnnet/features.h"
 #include "pdnnet/process.h"
 

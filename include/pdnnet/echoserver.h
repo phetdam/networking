@@ -1,12 +1,12 @@
 /**
- * @file echoserver.h++
+ * @file echoserver.h
  * @author Derek Huang
  * @brief C++ toy echo server
  * @copyright MIT License
  */
 
-#ifndef PDNNET_ECHOSERVER_H_PP
-#define PDNNET_ECHOSERVER_H_PP
+#ifndef PDNNET_ECHOSERVER_H_
+#define PDNNET_ECHOSERVER_H_
 
 #include <cerrno>
 #include <cstdint>
@@ -234,4 +234,4 @@ private:
 
 }  // namespace pdnnet
 
-#endif  // PDNNET_ECHOSERVER_H_PP
+#endif  // PDNNET_ECHOSERVER_H_
