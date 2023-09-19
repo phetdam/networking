@@ -26,7 +26,7 @@
 #include "pdnnet/cliopt.h"
 #include "pdnnet/echoserver.h++"
 #include "pdnnet/features.h"
-#include "pdnnet/process.h++"
+#include "pdnnet/process.h"
 
 /**
  * Platform-specific note on program execution.
