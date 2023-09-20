@@ -5,8 +5,8 @@
  * @copyright MIT License
  */
 
-#ifndef PDNNET_ERRNO_H_
-#define PDNNET_ERRNO_H_
+#ifndef PDNNET_ERROR_H_
+#define PDNNET_ERROR_H_
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -150,4 +150,4 @@ inline auto winsock_error(const std::string& message)
 
 }  // namespace pdnnet
 
-#endif  // PDNNET_ERRNO_H_
+#endif  // PDNNET_ERROR_H_

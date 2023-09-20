@@ -44,9 +44,9 @@
 #include "pdnnet/cerror.h"
 #include "pdnnet/cliopt.h"
 #include "pdnnet/common.h"
+#include "pdnnet/csocket.h"
 #include "pdnnet/features.h"
 #include "pdnnet/inet.h"
-#include "pdnnet/socket.h"
 
 PDNNET_PROGRAM_USAGE_DEF
 (

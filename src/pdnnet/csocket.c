@@ -1,11 +1,11 @@
 /**
- * @file socket.c
+ * @file csocket.c
  * @author Derek Huang
  * @brief C source for socket helpers
  * @copyright MIT License
  */
 
-#include "pdnnet/socket.h"
+#include "pdnnet/csocket.h"
 
 #include <errno.h>
 #include <stdint.h>

@@ -36,7 +36,7 @@
 #endif  // !defined(_WIN32)
 
 #include "pdnnet/error.h"
-#include "pdnnet/socket.h++"
+#include "pdnnet/socket.h"
 
 namespace pdnnet {
 

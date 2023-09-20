@@ -40,8 +40,8 @@
 
 #include "pdnnet/cerror.h"
 #include "pdnnet/cliopt.h"
+#include "pdnnet/csocket.h"
 #include "pdnnet/features.h"
-#include "pdnnet/socket.h"
 
 #define MESSAGE_BUFFER_SIZE 256
 
