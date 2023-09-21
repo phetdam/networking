@@ -63,7 +63,11 @@ PDNNET_ARG_MAIN
   // attempt to resolve host name to server address
   struct hostent *serv_ent = gethostbyname(PDNNET_CLIOPT(host));
   if (!serv_ent)
-    PDNNET_ERRNO_EXIT_EX(errno, "No such host %s", PDNNET_CLIOPT(host));
+#if defined(PDNNET_BSD_DEFAULT_SOURCE)
+    PDNNET_H_ERRNO_EXIT_EX(h_errno, "No such host %s", PDNNET_CLIOPT(host));
+#else
+    PDNNET_ERROR_EXIT_EX("No such host %s", PDNNET_CLIOPT(host));
+#endif  // !defined(PDNNET_BSD_DEFAULT_SOURCE)
   // populate socket address struct
   struct sockaddr_in serv_addr;
   memset(&serv_addr, 0, sizeof(serv_addr));

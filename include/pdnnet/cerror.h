@@ -13,6 +13,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "pdnnet/features.h"
+
+#ifdef PDNNET_BSD_DEFAULT_SOURCE
+#include <netdb.h>
+#endif  // !PDNNET_BSD_DEFAULT_SOURCE
+
 /**
  * Return `-errno` if `expr` is less than zero.
  *
@@ -31,7 +37,7 @@
  */
 #define PDNNET_ERROR_EXIT_EX(fmt, ...) \
   do { \
-    fprintf(stderr, "Error: " fmt, __VA_ARGS__) \
+    fprintf(stderr, "Error: " fmt, __VA_ARGS__); \
     exit(EXIT_FAILURE); \
   } \
   while (0)
@@ -74,5 +80,35 @@
     exit(EXIT_FAILURE); \
   } \
   while (0)
+
+#ifdef PDNNET_BSD_DEFAULT_SOURCE
+/**
+ * Print a `h_errno` error value to `stderr` and exit with `EXIT_FAILURE`.
+ *
+ * @param err `h_errno` value
+ * @param fmt `fprintf` format string literal
+ * @param ... Varargs for `fprintf`
+ */
+#define PDNNET_H_ERRNO_EXIT_EX(err, fmt, ...) \
+  do { \
+    fprintf(stderr, "Error: " fmt ": %s\n", __VA_ARGS__, hstrerror(err)); \
+    exit(EXIT_FAILURE); \
+  } \
+  while (0)
+
+/**
+ * Print a `h_errno` error value to `stderr` and exit with `EXIT_FAILURE`.
+ *
+ * @param err `h_errno` value
+ * @param msg Error message to print
+ */
+#define PDNNET_H_ERRNO_EXIT(err, msg) \
+  do { \
+    fprintf(stderr, "Error: %s: %s\n", msg, hstrerror(err)); \
+    exit(EXIT_FAILURE); \
+  } \
+  while (0)
+#endif  // PDNNET_BSD_DEFAULT_SOURCE
+
 
 #endif  // PDNNET_CERROR_H_
