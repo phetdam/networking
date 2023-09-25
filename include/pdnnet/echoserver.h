@@ -9,7 +9,6 @@
 #define PDNNET_ECHOSERVER_H_
 
 #include <cerrno>
-#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <deque>
@@ -62,7 +61,7 @@ public:
    *
    * @param port Port number in host byte order
    */
-  echoserver(std::uint16_t port)
+  echoserver(inet_port_type port)
     : echoserver{
         port,
         static_cast<unsigned short>(std::thread::hardware_concurrency())
@@ -75,7 +74,7 @@ public:
    * @param port Port number in host byte order
    * @param max_threads Maximum number of server threads
    */
-  echoserver(std::uint16_t port, unsigned short max_threads)
+  echoserver(inet_port_type port, unsigned short max_threads)
     : socket_{AF_INET, SOCK_STREAM}, address_{}, max_threads_{max_threads}
   {
     // set to local address with specified port
