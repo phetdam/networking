@@ -20,6 +20,7 @@
 // for *nix systems, use standard socket API
 #else
 #include <arpa/inet.h>
+#include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -210,6 +211,8 @@ inline void shutdown(socket_handle handle)
 
 /**
  * Internet address integral type.
+ *
+ * This also determines the size of `in_addr`.
  */
 #if defined(_WIN32)
 using inet_addr_type = ULONG;
@@ -234,13 +237,47 @@ using inet_port_type = in_port_t;
  * @param address Internet address, e.g. `INADDR_ANY`
  * @param port Port number, e.g. `8888`
  */
-inline auto socket_address(inet_addr_type address, inet_port_type port)
+inline auto socket_address(inet_addr_type address, inet_port_type port) noexcept
 {
   sockaddr_in addr{};
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = htonl(address);
   addr.sin_port = htons(port);
   return addr;
+}
+
+/**
+ * Return a new `sockaddr_in`.
+ *
+ * Inputs should be in host byte order.
+ *
+ * @param ent Host entry description
+ * @param port Port number, e.g. `8888`
+ */
+inline auto socket_address(const hostent* ent, inet_port_type port)
+{
+  if (!ent)
+    throw std::runtime_error{"hostent struct pointer is null"};
+  // in_addr integral type for address
+  inet_addr_type address;
+  // error if address length is not equal to in_addr size
+  if (ent->h_length != sizeof address)
+    throw std::runtime_error{
+      "hostent address length in bytes " + std::to_string(ent->h_length) +
+      " not equal to inet_addr_type size " + std::to_string(sizeof address)
+    };
+  // otherwise, copy first address from hostent + return sockaddr_in
+  std::memcpy(
+    &address,
+#if defined(h_addr)
+    ent->h_addr,
+#else
+    ent->h_addr_list[0],
+#endif  // !defined(h_addr)
+    // already checked that this is equal to ent.h_length
+    sizeof address
+  );
+  return socket_address(address, port);
 }
 
 /**
@@ -358,6 +395,32 @@ public:
 private:
   socket_handle handle_;
 };
+
+#ifdef PDNNET_UNIX
+/**
+ * Connect to a socket given an open socket handle and an address.
+ *
+ * On error, `errno` can be checked
+ *
+ * @note Currently only supports `sockaddr_in`, `sockaddr_in6` address types.
+ *
+ * @param handle Socket handle
+ * @param addr Socket address structure, e.g. `sockaddr_in`, `sockaddr_in6`
+ * @returns `true` on success, `false` on error
+ */
+template <
+  typename AddressType,
+  typename = std::enable_if_t<
+    std::is_same_v<AddressType, sockaddr_in> ||
+    std::is_same_v<AddressType, sockaddr_in6> > >
+bool connect(socket_handle handle, const AddressType& addr) noexcept
+{
+  // TODO: update for Windows Sockets
+  if (::connect(handle, reinterpret_cast<const sockaddr*>(&addr), sizeof addr) < 0)
+    return false;
+  return true;
+}
+#endif  // PDNNET_UNIX
 
 /**
  * Socket reader class for abstracting raw socket reads.
