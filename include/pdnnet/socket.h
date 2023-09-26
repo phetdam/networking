@@ -31,6 +31,8 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <istream>
+#include <limits>
 #include <ostream>
 #include <sstream>
 #include <stdexcept>
@@ -277,7 +279,7 @@ inline auto socket_address(const hostent* ent, inet_port_type port)
     // already checked that this is equal to ent.h_length
     sizeof address
   );
-  return socket_address(address, port);
+  return socket_address(ntohl(address), port);
 }
 
 /**
@@ -613,15 +615,18 @@ public:
   auto& read(const std::basic_string_view<CharT, Traits>& text) const
   {
 #if defined(_WIN32)
-    if (
-      ::send(
-        handle_,
-        text.data(),
-        static_cast<int>(sizeof(CharT) * text.size()),
-        0
-      ) == SOCKET_ERROR
-    )
-      throw std::runtime_error{winsock_error("recv() failure")};
+    // message size in bytes
+    auto msg_len = sizeof(CharT) * line.size();
+    // since buffer length is int, throw error if message too long
+    if (msg_len > std::numeric_limits<int>.max())
+      throw std::runtime_error{
+        "message length " + std::to_string(msg_len) +
+        " exceeds max allowed length " +
+        std::to_string(std::numeric_limits<int>.max())
+      };
+    // otherwise, just call send as usual
+    if (::send(handle_, text.data(), static_cast<int>(msg_len), 0) == SOCKET_ERROR)
+      throw std::runtime_error{winsock_error("send() failure")};
 #else
     if (::write(handle_, text.data(), sizeof(CharT) * text.size()) < 0)
       throw std::runtime_error{errno_error("write() failure")};
@@ -644,12 +649,51 @@ public:
     return read(static_cast<std::basic_string_view<CharT, Traits>>(in.str()));
   }
 
+  /**
+   * Write string view contents to socket.
+   *
+   * @tparam CharT Char type
+   * @tparam Trait Char traits
+   *
+   * @param in Input stream to read line by line from
+   * @returns `*this` to support method chaining
+   */
+  template <typename CharT, typename Traits>
+  auto& read(std::basic_istream<CharT, Traits>& in) const
+  {
+    std::basic_string<CharT, Traits> line;
+    std::basic_stringstream<CharT, Traits> ss;
+    // read until EOF, preserving newlines
+    while (std::getline(in, line) && !in.eof())
+      ss << line << in.widen('\n');
+    // write contents all at once to socket
+    return read(ss);
+  }
+
 private:
   socket_handle handle_;
 };
 
 /**
- * Write string stream contents to socket.
+ * Write input stream contents to socket.
+ *
+ * @param CharT Char type
+ * @tparam Traits Char traits
+ *
+ * @param in Input stream to write
+ * @param writer Socket writer
+ * @returns `in` to support additional streaming
+ */
+template <typename CharT, typename Traits>
+inline auto& operator>>(
+  std::basic_istream<CharT, Traits>& in, const socket_writer& writer)
+{
+  writer.read(in);
+  return in;
+}
+
+/**
+ * Write input stream contents to socket.
  *
  * @param CharT Char type
  * @tparam Traits Char traits
