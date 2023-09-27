@@ -132,6 +132,7 @@ static const char *PDNNET_CLIOPT(host) = PDNNET_CLIOPT_HOST_DEFAULT;
 #else
 #define PDNNET_CLIOPT_PORT_DEFAULT_NOTE
 #endif  // defined(PDNNET_CLIOPT_PORT_DEFAULT)
+// typedef'd to in_port_t on *nix, USHORT on Windows
 static uint16_t PDNNET_CLIOPT(port) = PDNNET_CLIOPT_PORT_DEFAULT;
 #define PDNNET_CLIOPT_PORT_USAGE \
   "  " \
