@@ -15,6 +15,7 @@
 #endif  // WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <WinSock2.h>
+#include <ws2ipdef.h>
 // don't pollute translation units
 #undef WIN32_LEAN_AND_MEAN
 // for *nix systems, use standard socket API
@@ -28,11 +29,11 @@
 #endif  // !defined(_WIN32)
 
 #include <cerrno>
+#include <climits>
 #include <cstdint>
 #include <cstring>
 #include <memory>
 #include <istream>
-#include <limits>
 #include <ostream>
 #include <sstream>
 #include <stdexcept>
@@ -392,13 +393,12 @@ public:
   /**
    * Syntactic sugar for compatibility with C socket functions.
    */
-  operator socket_handle() const { return handle_; }
+  operator socket_handle() const noexcept { return handle_; }
 
 private:
   socket_handle handle_;
 };
 
-#ifdef PDNNET_UNIX
 /**
  * Connect to a socket given an open socket handle and an address.
  *
@@ -415,14 +415,22 @@ template <
   typename = std::enable_if_t<
     std::is_same_v<AddressType, sockaddr_in> ||
     std::is_same_v<AddressType, sockaddr_in6> > >
-bool connect(socket_handle handle, const AddressType& addr) noexcept
+inline bool connect(socket_handle handle, const AddressType& addr) noexcept
 {
-  // TODO: update for Windows Sockets
+#if defined(_WIN32)
+  if (
+    ::connect(
+      handle,
+      reinterpret_cast<const sockaddr*>(&addr),
+      static_cast<int>(sizeof addr)
+    ) == SOCKET_ERROR
+  )
+#else
   if (::connect(handle, reinterpret_cast<const sockaddr*>(&addr), sizeof addr) < 0)
+#endif  // !defined(_WIN32)
     return false;
   return true;
 }
-#endif  // PDNNET_UNIX
 
 /**
  * Socket reader class for abstracting raw socket reads.
@@ -488,15 +496,16 @@ public:
     do {
       // read and handle errors
 #if defined(_WIN32)
-      n_read = ::recv(handle_,
+      n_read = ::recv(
+        handle_,
         reinterpret_cast<char*>(buf_.get()),
-        static_cast<int>(sizeof(CharT) * buf_size_),
+        static_cast<int>(buf_size_),
         0
       );
       if (n_read == SOCKET_ERROR)
         throw std::runtime_error{winsock_error("recv() failure")};
 #else
-      if ((n_read = ::read(handle_, buf_.get(), sizeof(CharT) * buf_size_)) < 0)
+      if ((n_read = ::read(handle_, buf_.get(), buf_size_)) < 0)
         throw std::runtime_error{errno_error("read() failure")};
 #endif  // !defined(_WIN32)
       // write to stream + clear buffer
@@ -616,13 +625,14 @@ public:
   {
 #if defined(_WIN32)
     // message size in bytes
-    auto msg_len = sizeof(CharT) * line.size();
+    auto msg_len = sizeof(CharT) * text.size();
     // since buffer length is int, throw error if message too long
-    if (msg_len > std::numeric_limits<int>.max())
+    // TODO: replace with std::numeric_limits<int>::max() once a satisfactory
+    // solution for undefining the Windows.h min + max macros is found
+    if (msg_len > INT_MAX)
       throw std::runtime_error{
         "message length " + std::to_string(msg_len) +
-        " exceeds max allowed length " +
-        std::to_string(std::numeric_limits<int>.max())
+        " exceeds max allowed length " + std::to_string(INT_MAX)
       };
     // otherwise, just call send as usual
     if (::send(handle_, text.data(), static_cast<int>(msg_len), 0) == SOCKET_ERROR)
