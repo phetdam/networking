@@ -19,9 +19,12 @@ if(UNIX)
             PDNNET_ADD_CLIOPT_MAX_CONNECT_DEFAULT=5
     )
 endif()
+# echoclient: toy echo client
+add_executable(echoclient echoclient.cc)
 # echoserver: toy echo server
 add_executable(echoserver echoserver.cc)
 # on Windows, ws2_32 DLL is needed to use Windows Sockets
 if(WIN32)
+    target_link_libraries(echoclient PRIVATE ws2_32)
     target_link_libraries(echoserver PRIVATE ws2_32)
 endif()
