@@ -20,6 +20,7 @@
 #include <cstdio>
 #include <iostream>
 
+#define PDNNET_HAS_PROGRAM_USAGE
 #define PDNNET_ADD_CLIOPT_HOST
 #define PDNNET_ADD_CLIOPT_PORT
 #define PDNNET_CLIOPT_PORT_DEFAULT 8888
@@ -29,6 +30,28 @@
 #include "pdnnet/cliopt.h"
 #include "pdnnet/features.h"
 #include "pdnnet/socket.h"
+
+/**
+ * Platform-specific note on program execution.
+ *
+ * @note Preprocessor directives in macro expansions is undefined behavior.
+ */
+#if defined(_WIN32)
+#define EXEC_NOTE \
+  "\n\n" \
+  "On Windows, extra blank lines are often written when printing the server's\n" \
+  "response to stdout. No explanation for this behavior has been found yet."
+#else
+#define EXEC_NOTE
+#endif  // !defined(_WIN32)
+
+PDNNET_PROGRAM_USAGE_DEF
+(
+  "Simple echoserver client that sends a message and expects a response.\n"
+  "\n"
+  "The message is read from stdin and the server response is printed to stdout."
+  EXEC_NOTE
+)
 
 PDNNET_ARG_MAIN
 {
