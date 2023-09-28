@@ -43,7 +43,7 @@
 
 PDNNET_PROGRAM_USAGE_DEF
 (
-  "Simple server that echos received data back to the sending client.\n"
+  "Simple server that echoes received data back to the sending client.\n"
   "\n"
   "Reads an arbitrary amount of bytes from a client connected via IPv4 and\n"
   "sends the same data back. Client is expected to signal end of tranmission\n"
