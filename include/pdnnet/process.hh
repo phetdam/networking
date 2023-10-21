@@ -1,12 +1,12 @@
 /**
- * @file process.h
+ * @file process.hh
  * @author Derek Huang
  * @brief C++ header for process control
  * @copyright MIT License
  */
 
-#ifndef PDNNET_PROCESS_H_
-#define PDNNET_PROCESS_H_
+#ifndef PDNNET_PROCESS_HH_
+#define PDNNET_PROCESS_HH_
 
 #include <cerrno>
 #include <cstring>
@@ -70,4 +70,4 @@ daemonize() { daemonize(true, true); }
 
 }  // namespace pdnnet
 
-#endif  // PDNNET_PROCESS_H_
+#endif  // PDNNET_PROCESS_HH_

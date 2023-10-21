@@ -1,12 +1,12 @@
 /**
- * @file echoserver.h
+ * @file echoserver.hh
  * @author Derek Huang
  * @brief C++ toy echo server
  * @copyright MIT License
  */
 
-#ifndef PDNNET_ECHOSERVER_H_
-#define PDNNET_ECHOSERVER_H_
+#ifndef PDNNET_ECHOSERVER_HH_
+#define PDNNET_ECHOSERVER_HH_
 
 #include <cerrno>
 #include <cstdlib>
@@ -34,8 +34,8 @@
 #include <unistd.h>
 #endif  // !defined(_WIN32)
 
-#include "pdnnet/error.h"
-#include "pdnnet/socket.h"
+#include "pdnnet/error.hh"
+#include "pdnnet/socket.hh"
 
 namespace pdnnet {
 
@@ -233,4 +233,4 @@ private:
 
 }  // namespace pdnnet
 
-#endif  // PDNNET_ECHOSERVER_H_
+#endif  // PDNNET_ECHOSERVER_HH_
