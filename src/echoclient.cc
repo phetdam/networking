@@ -81,13 +81,5 @@ PDNNET_ARG_MAIN
   pdnnet::shutdown(socket, pdnnet::shutdown_type::write);
   // read from socket and write to output stream, include trailing newline
   std::cout << pdnnet::socket_reader{socket} << std::endl;
-  // done, so close socket
-#if defined(_WIN32)
-  if (pdnnet::close_handle(socket) == SOCKET_ERROR)
-    PDNNET_ERROR_EXIT(pdnnet::winsock_error("Failed to close socket").c_str());
-#else
-  if (pdnnet::close_handle(socket) < 0)
-    PDNNET_ERRNO_EXIT(errno, "Failed to close socket");
-#endif  // !defined(_WIN32)
   return EXIT_SUCCESS;
 }
