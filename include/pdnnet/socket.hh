@@ -15,6 +15,7 @@
 #endif  // WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <WinSock2.h>
+#include <WS2tcpip.h>
 #include <ws2ipdef.h>
 // don't pollute translation units
 #undef WIN32_LEAN_AND_MEAN
@@ -400,11 +401,32 @@ private:
 };
 
 /**
- * Connect to a socket given an open socket handle and an address.
+ * Class template helper for checking supported socket address types.
  *
- * On error, `errno` can be checked
+ * Currently only supports `sockaddr_in`, `sockaddr_in6` address types.
  *
- * @note Currently only supports `sockaddr_in`, `sockaddr_in6` address types.
+ * @tparam AddressType Socket address type
+ */
+template <typename AddressType>
+struct is_addr_supported : std::bool_constant<
+  std::is_same_v<AddressType, sockaddr_in> ||
+  std::is_same_v<AddressType, sockaddr_in6>
+> {};
+
+/**
+ * Boolean helper for checking supported socket address types.
+ *
+ * @tparam AddressType Socket address type
+ */
+template <typename AddressType>
+inline constexpr bool is_addr_supported_v = is_addr_supported<AddressType>::value;
+
+/**
+ * Bind a created socket handle to an address.
+ *
+ * On error, `errno` (*nix) or `WSAGetLastError` (Windows) should be checked.
+ *
+ * @tparam AddressType Socket address type
  *
  * @param handle Socket handle
  * @param addr Socket address structure, e.g. `sockaddr_in`, `sockaddr_in6`
@@ -412,9 +434,40 @@ private:
  */
 template <
   typename AddressType,
-  typename = std::enable_if_t<
-    std::is_same_v<AddressType, sockaddr_in> ||
-    std::is_same_v<AddressType, sockaddr_in6> > >
+  typename = std::enable_if_t<is_addr_supported_v<AddressType>> >
+inline bool bind(socket_handle handle, const AddressType& addr)
+{
+#if defined(_WIN32)
+  if (
+    ::bind(
+      handle,
+      reinterpret_cast<const sockaddr*>(&addr),
+      static_cast<int>(sizeof addr)
+    ) == SOCKET_ERROR
+  )
+#else
+  if (::bind(handle, reinterpret_cast<const sockaddr*>(&addr), sizeof addr) < 0)
+#endif  // !defined(_WIN32)
+    return false;
+  return true;
+}
+
+/**
+ * Connect to a socket given an open socket handle and an address.
+ *
+ * On error, `errno` (*nix) or `WSAGetLastError` (Windows) should be checked.
+ *
+ * @note Currently only supports `sockaddr_in`, `sockaddr_in6` address types.
+ *
+ * @tparam AddressType Socket address type
+ *
+ * @param handle Socket handle
+ * @param addr Socket address structure, e.g. `sockaddr_in`, `sockaddr_in6`
+ * @returns `true` on success, `false` on error
+ */
+template <
+  typename AddressType,
+  typename = std::enable_if_t<is_addr_supported_v<AddressType>> >
 inline bool connect(socket_handle handle, const AddressType& addr) noexcept
 {
 #if defined(_WIN32)
@@ -422,11 +475,37 @@ inline bool connect(socket_handle handle, const AddressType& addr) noexcept
     ::connect(
       handle,
       reinterpret_cast<const sockaddr*>(&addr),
-      static_cast<int>(sizeof addr)
+      static_cast<socklen_t>(sizeof addr)
     ) == SOCKET_ERROR
   )
 #else
-  if (::connect(handle, reinterpret_cast<const sockaddr*>(&addr), sizeof addr) < 0)
+  if (
+    ::connect(
+      handle,
+      reinterpret_cast<const sockaddr*>(&addr),
+      static_cast<socklen_t>(sizeof addr)
+    ) < 0
+  )
+#endif  // !defined(_WIN32)
+    return false;
+  return true;
+}
+
+/**
+ * Place a bound, unconnected socket handle in listening mode.
+ *
+ * On error, `errno` (*nix) or `WSAGetLastError` (Windows) should be checked.
+ *
+ * @param handle Bound socket handle
+ * @param max_pending Maximum number of pending connections in backlog
+ * @returns `true` on success, `false` on error
+ */
+inline bool listen(socket_handle handle, unsigned int max_pending)
+{
+#if defined(_WIN32)
+  if (::listen(handle, static_cast<int>(max_pending)) == SOCKET_ERROR)
+#else
+  if (::listen(handle, static_cast<int>(max_pending)) < 0)
 #endif  // !defined(_WIN32)
     return false;
   return true;

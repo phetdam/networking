@@ -80,11 +80,10 @@ public:
     // set to local address with specified port
     address_ = socket_address(INADDR_ANY, port);
     // attempt to bind socket
+    if (!bind(socket_, address_))
 #if defined(_WIN32)
-    if (::bind(socket_, (const sockaddr*) &address_, sizeof address_) == SOCKET_ERROR)
       throw std::runtime_error{winsock_error("Could not bind socket")};
 #else
-    if (::bind(socket_, (const sockaddr*) &address_, sizeof address_) < 0)
       throw std::runtime_error{errno_error("Could not bind socket")};
 #endif  // !defined(_WIN32)
     // get the actual socket address, e.g. if port is 0 it is resolved
