@@ -161,11 +161,10 @@ public:
   start(unsigned int max_connect = std::thread::hardware_concurrency())
   {
     // start listening for connections
+    if (!listen(socket_, max_connect))
 #if defined(_WIN32)
-    if (::listen(socket_, static_cast<int>(max_connect)) == SOCKET_ERROR)
       throw std::runtime_error{winsock_error("listen() failed")};
 #else
-    if (::listen(socket_, static_cast<int>(max_connect)) < 0)
       throw std::runtime_error{errno_error("listen() failed")};
 #endif  // !defined(_WIN32)
     // client socket address, address size, and socket file descriptor
@@ -193,9 +192,9 @@ public:
         throw std::runtime_error{"Client address buffer truncated"};
 #endif  // !defined(_WIN32)
       // success, so create unique_socket to manage the descriptor
+      unique_socket cli_socket{cli_sockfd};
       // check if queue reached capacity. if so, join + remove first thread.
       // note we manage the socket file descriptor since join() can throw
-      unique_socket cli_socket{cli_sockfd};
       if (thread_queue_.size() == max_threads_) {
         thread_queue_.front().join();
         thread_queue_.pop_front();
