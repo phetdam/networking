@@ -48,7 +48,11 @@ daemonize(bool nochdir, bool noclose)
     };
   // fallback using fork() call otherwise
 #else
+// #warning is not standard until C++23, but is supported by at least GCC/Clang
+#if defined(PDNNET_HAS_CC_23) || defined(__GNUC__) || defined(__clang__)
 #warning "pdnnet::daemonize using fork() instead of daemon()"
+#endif  // !defined(PDNNET_HAS_CC_23) && !defined(__GNUC__) &&
+        // !defined(__clang__)
   switch (fork()) {
     case -1:
       throw std::runtime_error{errno_error("fork() failed")};

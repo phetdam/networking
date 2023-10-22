@@ -1,12 +1,14 @@
 /**
  * @file features.h
  * @author Derek Huang
- * @brief C/C++ header for platform feature detection
+ * @brief C/C++ header for platform and langauge feature detection
  * @copyright MIT License
  */
 
 #ifndef PDNNET_FEATURES_H_
 #define PDNNET_FEATURES_H_
+
+#include "pdnnet/common.h"
 
 // test for POSIX unistd.h
 #if defined(__has_include)
@@ -81,5 +83,33 @@
 #define PDNNET_HAS_C17
 #endif  // __STDC_VERSION__ < 201710L
 #endif  // __STDC_VERSION__
+
+// test for C++ standard features
+#ifdef PDNNET_CPLUSPLUS
+// C++98
+#if PDNNET_CPLUSPLUS >= 199711L
+#define PDNNET_HAS_CC_98
+#endif  // PDNNET_CPLUSPLUS < 199711L
+// C++11
+#if PDNNET_CPLUSPLUS >= 201103L
+#define PDNNET_HAS_CC_11
+#endif  // PDNNET_CPLUSPLUS < 201103L
+// C++14
+#if PDNNET_CPLUSPLUS >= 201402L
+#define PDNNET_HAS_CC_14
+#endif  // PDNNET_CPLUSPLUS < 201402L
+// C++17
+#if PDNNET_CPLUSPLUS >= 201703L
+#define PDNNET_HAS_CC_17
+#endif  // PDNNET_CPLUSPLUS < 201703L
+// C++20
+#if PDNNET_CPLUSPLUS >= 202002L
+#define PDNNET_HAS_CC_20
+#endif  // PDNNET_CPLUSPLUS < 202002L
+// C++23
+#if PDNNET_CPLUSPLUS >= 202302L
+#define PDNNET_HAS_CC_23
+#endif  // PDNNET_CPLUSPLUS < 202302L
+#endif  // PDNNET_CPLUSPLUS
 
 #endif  // PDNNET_FEATURES_H_
