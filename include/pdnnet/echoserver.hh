@@ -81,10 +81,10 @@ public:
     address_ = socket_address(INADDR_ANY, port);
     // attempt to bind socket
 #if defined(_WIN32)
-    if (bind(socket_, (const sockaddr*) &address_, sizeof address_) == SOCKET_ERROR)
+    if (::bind(socket_, (const sockaddr*) &address_, sizeof address_) == SOCKET_ERROR)
       throw std::runtime_error{winsock_error("Could not bind socket")};
 #else
-    if (bind(socket_, (const sockaddr*) &address_, sizeof address_) < 0)
+    if (::bind(socket_, (const sockaddr*) &address_, sizeof address_) < 0)
       throw std::runtime_error{errno_error("Could not bind socket")};
 #endif  // !defined(_WIN32)
     // get the actual socket address, e.g. if port is 0 it is resolved
@@ -163,10 +163,10 @@ public:
   {
     // start listening for connections
 #if defined(_WIN32)
-    if (listen(socket_, static_cast<int>(max_connect)) == SOCKET_ERROR)
+    if (::listen(socket_, static_cast<int>(max_connect)) == SOCKET_ERROR)
       throw std::runtime_error{winsock_error("listen() failed")};
 #else
-    if (listen(socket_, static_cast<int>(max_connect)) < 0)
+    if (::listen(socket_, static_cast<int>(max_connect)) < 0)
       throw std::runtime_error{errno_error("listen() failed")};
 #endif  // !defined(_WIN32)
     // client socket address, address size, and socket file descriptor
