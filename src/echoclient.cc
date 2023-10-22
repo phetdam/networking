@@ -28,6 +28,7 @@
 
 #include "pdnnet/cliopt.h"
 #include "pdnnet/error.h"
+#include "pdnnet/error.hh"
 #include "pdnnet/features.h"
 #include "pdnnet/socket.hh"
 
@@ -70,7 +71,13 @@ PDNNET_ARG_MAIN
   auto serv_addr = pdnnet::socket_address(serv_ent, PDNNET_CLIOPT(port));
   // attempt connection
   if (!pdnnet::connect(socket, serv_addr))
+#if defined(_WIN32)
+    PDNNET_ERROR_EXIT(
+      pdnnet::winsock_error("Could not connect to socket").c_str()
+    );
+#else
     PDNNET_ERRNO_EXIT(errno, "Could not connect to socket");
+#endif  // !defined(_WIN32)
   // read from stream and write to socket + signal end of transmission
   std::cin >> pdnnet::socket_writer{socket};
   pdnnet::shutdown(socket, pdnnet::shutdown_type::write);
