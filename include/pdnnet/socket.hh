@@ -500,7 +500,7 @@ public:
         handle_,
         reinterpret_cast<char*>(buf_.get()),
         static_cast<int>(buf_size_),
-        MSG_WAITALL
+        0
       );
       if (n_read == SOCKET_ERROR)
         throw std::runtime_error{winsock_error("recv() failure")};
@@ -509,7 +509,7 @@ public:
         throw std::runtime_error{errno_error("read() failure")};
 #endif  // !defined(_WIN32)
       // write to stream + clear buffer
-      out.write(reinterpret_cast<const CharT*>(buf_.get()), buf_size_);
+      out.write(reinterpret_cast<const CharT*>(buf_.get()), n_read);
       memset(buf_.get(), 0, buf_size_);
     }
     while (n_read);
