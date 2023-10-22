@@ -72,9 +72,7 @@ PDNNET_ARG_MAIN
   // attempt connection
   if (!pdnnet::connect(socket, serv_addr))
 #if defined(_WIN32)
-    PDNNET_ERROR_EXIT(
-      pdnnet::winsock_error("Could not connect to socket").c_str()
-    );
+    PDNNET_ERROR_EXIT(pdnnet::winsock_error("Could not connect to socket").c_str());
 #else
     PDNNET_ERRNO_EXIT(errno, "Could not connect to socket");
 #endif  // !defined(_WIN32)
