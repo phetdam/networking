@@ -1,23 +1,23 @@
 /**
- * @file echoclient.cc
+ * @file ackclient++.cc
  * @author Derek Huang
- * @brief Toy echo client
+ * @brief C++ toy client for messaging the C++ toy acknowledgement serer
  * @copyright MIT License
  */
 
-// on Windows, we use Windows Sockets 2
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <WinSock2.h>
 #else
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #endif  // !defined(_WIN32)
 
-#include <cerrno>
-#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 
 #define PDNNET_HAS_PROGRAM_USAGE
@@ -33,18 +33,19 @@
 
 PDNNET_PROGRAM_USAGE_DEF
 (
-  "Simple echoserver client that sends a message and expects a response.\n"
+  "Simple ackserver++ client that sends a message and expects a response.\n"
   "\n"
-  "The message is read from stdin and the server response is printed to stdout."
+  "An improved C++ version of the original ackclient program."
 )
 
 PDNNET_ARG_MAIN
 {
   PDNNET_CLIOPT_PARSE_OPTIONS();
-  // open IPv4 TCP/IP socket + resolve IPv4 host
+  // open IPv4 TCP/IP socket
   pdnnet::unique_socket socket{AF_INET, SOCK_STREAM};
-  // TODO: write C++ wrapper for this
+  // attempt to resolve host name to server address
   auto serv_ent = gethostbyname(PDNNET_CLIOPT(host));
+  // nullptr on error. _DEFAULT_SOURCE or _BSD_SOURCE required for h_errno
   if (!serv_ent)
 #if defined(PDNNET_BSD_DEFAULT_SOURCE)
     PDNNET_H_ERRNO_EXIT_EX(h_errno, "No such host %s", PDNNET_CLIOPT(host));
@@ -59,9 +60,18 @@ PDNNET_ARG_MAIN
 #else
     PDNNET_ERRNO_EXIT(errno, "Could not connect to socket");
 #endif  // !defined(_WIN32)
-  // read from stream and write to socket + signal end of transmission
+  // read from stdin and write to socket + signal end of transmission
   std::cin >> pdnnet::socket_writer{socket};
   pdnnet::shutdown(socket, pdnnet::shutdown_type::write);
+  // print identifying header like original ackclient
+  std::cout << PDNNET_PROGRAM_NAME << ": Received from " <<
+#if defined(_WIN32) || defined(PDNNET_BSD_DEFAULT_SOURCE)
+    inet_ntoa(serv_addr.sin_addr) <<
+#else
+    "[unknown]" <<
+#endif  // !defined(_WIN32) && !defined(PDNNET_BSD_DEFAULT_SOURCE)
+  // we flush instead of using std::endl since we don't want newline
+    ": " << std::flush;
   // read from socket and write to output stream, include trailing newline
   std::cout << pdnnet::socket_reader{socket} << std::endl;
   return EXIT_SUCCESS;
