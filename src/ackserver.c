@@ -50,10 +50,10 @@
 
 PDNNET_PROGRAM_USAGE_DEF
 (
-  "Simple server that sends an acknowledgement to every connected client.\n"
+  "Simple server that sends an acknowledgment to every connected client.\n"
   "\n"
   "Reads an arbitrary amount of bytes from a client connected via IPv4 and\n"
-  "sends an acknowledgement, forking to handle each client separately. The\n"
+  "sends an acknowledgment, forking to handle each client separately. The\n"
   "client is expected to signal end of transmission after writing, e.g. with\n"
   "shutdown(sockfd, SHUT_WR), to inform the server it is done writing."
 )
