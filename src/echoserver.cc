@@ -14,7 +14,7 @@
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <unistd.h>
-#endif  // _WIN32
+#endif  // !defined(_WIN32)
 
 #include <cerrno>
 #include <cstdlib>
