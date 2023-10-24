@@ -50,13 +50,13 @@ PDNNET_ARG_MAIN
 #if defined(_WIN32)
     PDNNET_ERROR_EXIT(
       pdnnet::winsock_error(
-        "No such host " + std::string{PDNNET_CLIOPT(host)}
+        "Error resolving " + std::string{PDNNET_CLIOPT(host)}
       ).c_str()
     );
 #elif defined(PDNNET_BSD_DEFAULT_SOURCE)
-    PDNNET_H_ERRNO_EXIT_EX(h_errno, "No such host %s", PDNNET_CLIOPT(host));
+    PDNNET_H_ERRNO_EXIT_EX(h_errno, "Error resolving %s", PDNNET_CLIOPT(host));
 #else
-    PDNNET_ERROR_EXIT_EX("No such host %s", PDNNET_CLIOPT(host));
+    PDNNET_ERROR_EXIT_EX("Error resolving %s", PDNNET_CLIOPT(host));
 #endif  // !defined(_WIN32) && !defined(PDNNET_BSD_DEFAULT_SOURCE)
   // create socket address struct + attempt connection
   auto serv_addr = pdnnet::socket_address(serv_ent, PDNNET_CLIOPT(port));
