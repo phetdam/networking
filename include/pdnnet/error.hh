@@ -97,6 +97,11 @@ inline auto winsock_error_string(int wsa_err)
 }
 
 /**
+ * Return string describing the Windows Sockets error.
+ */
+inline auto winsock_error() { return winsock_error_string(WSAGetLastError()); }
+
+/**
  * Return string describing the Windows Sockets error, prefixed with a message.
  *
  * @param wsa_err Windows Sockets error code

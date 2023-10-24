@@ -318,7 +318,7 @@ public:
    *
    * @param af_domain Socket address family/domain, e.g. `AF_INET`, `AF_UNIX`
    * @param type Socket type, e.g. `SOCK_STREAM`, `SOCK_RAW`
-   * @param protocol Socket protocol, e.g. `0`
+   * @param protocol Socket protocol, e.g. `0`, `IPPROTO_TCP`
    */
   unique_socket(int af_domain, int type, int protocol)
   {
