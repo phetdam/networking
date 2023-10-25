@@ -16,8 +16,7 @@
 #include <sys/types.h>
 #endif  // !defined(_WIN32)
 
-#include <cerrno>
-#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 
 #define PDNNET_HAS_PROGRAM_USAGE

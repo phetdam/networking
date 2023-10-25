@@ -17,7 +17,6 @@
 #endif  // !defined(_WIN32)
 
 #include <cstdlib>
-#include <cstring>
 #include <iostream>
 
 #define PDNNET_HAS_PROGRAM_USAGE
