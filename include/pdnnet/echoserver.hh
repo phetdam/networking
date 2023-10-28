@@ -160,28 +160,12 @@ public:
 #else
       throw std::runtime_error{errno_error("listen() failed")};
 #endif  // !defined(_WIN32)
-    // client socket address, address size
-    sockaddr_in cli_addr;
-    socklen_t cli_len;  // WS2tcpip.h has int typedef'd to socklen_t
     // event loop
     while (true) {
-      // accept client connection
-      cli_len = sizeof cli_addr;
-      unique_socket cli_socket{accept(socket_, (sockaddr*) &cli_addr, &cli_len)};
-      // socket handle is invalid on error
-      if (!cli_socket.valid())
-#if defined(_WIN32)
-        throw std::runtime_error{winsock_error("accept() failed")};
-#else
-        throw std::runtime_error{errno_error("accept() failed")};
-      // if buffer is too small, address is truncated, which is still an error.
-      // the Windows Sockets version of accept checks this and WSAGetLastError
-      // will return WSAEFAULT if sizeof cli_addr is too small.
-      if (cli_len > sizeof cli_addr)
-        throw std::runtime_error{"Client address buffer truncated"};
-#endif  // !defined(_WIN32)
-      // check if queue reached capacity. if so, join + remove first thread.
-      // note we manage the socket file descriptor since join() can throw
+      // accept client connection, possibly erroring
+      auto cli_socket = accept(socket_);
+      // check if thread queue reached capacity. if so, join + remove first
+      // thread. socket descriptor is managed partially since join() can throw
       if (thread_queue_.size() == max_threads_) {
         thread_queue_.front().join();
         thread_queue_.pop_front();

@@ -422,6 +422,67 @@ template <typename AddressType>
 inline constexpr bool is_addr_supported_v = is_addr_supported<AddressType>::value;
 
 /**
+ * Perform a blocking accept of the next connection in the client queue.
+ *
+ * @tparam AddressType Socket address type
+ *
+ * @param handle Socket handle
+ * @param addr Socket address structure, e.g. `sockaddr_in`, `sockaddr_in6`,
+ *  that will receive the address of the peer (client) socket
+ * @param addr_len `socklen_t` that will receive the size of the socket address
+ * @returns `unique_socket` managing the client socket
+ */
+template <
+  typename AddressType,
+  typename = std::enable_if_t<is_addr_supported_v<AddressType>> >
+inline auto accept(socket_handle handle, AddressType& addr, socklen_t& addr_len)
+{
+  // input address length, i.e. sizeof addr
+  socklen_t addr_len_in = sizeof addr;
+  // accept next client connection, returning managed socket
+  unique_socket socket{::accept(handle, static_cast<sockaddr*>(&addr), &addr_len_in)};
+  // socket handle is invalid on error
+  if (!socket.valid())
+#if defined(_WIN32)
+    throw std::runtime_error{winsock_error("accept() failed")};
+#else
+    throw std::runtime_error{errno_error("accept() failed")};
+  // if buffer is too small, address is truncated, which is still an error. the
+  // Windows Sockets version of accept checks this and WSAGetLastError will
+  // return WSAEFAULT if sizeof cli_addr is too small.
+  if (addr_len_in > sizeof addr)
+    throw std::runtime_error{"Client address buffer truncated"};
+#endif  // !defined(_WIN32)
+  // done, so set addr_len and return socket
+  addr_len = addr_len_in;
+  return socket;
+}
+
+/**
+ * Perform a blocking accept of the next connection in the client queue.
+ *
+ * @note Neither address nor address length are passed to the actual `::accept`
+ *  call, i.e. both parameter are `nullptr`, so no template param is needed.
+ *
+ * @param handle Socket handle
+ * @returns `unique_socket` managing the client socket
+ */
+inline auto accept(socket_handle handle)
+{
+  // accept next client connection, returning managed socket. there is no use
+  // of the address structure or its length here
+  unique_socket socket{::accept(handle, nullptr, nullptr)};
+  // socket handle is invalid on error
+  if (!socket.valid())
+#if defined(_WIN32)
+    throw std::runtime_error{winsock_error("accept() failed")};
+#else
+    throw std::runtime_error{errno_error("accept() failed")};
+#endif  // !defined(_WIN32)
+  return socket;
+}
+
+/**
  * Bind a created socket handle to an address.
  *
  * On error, `errno` (*nix) or `WSAGetLastError` (Windows) should be checked.
