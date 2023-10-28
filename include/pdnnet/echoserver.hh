@@ -113,38 +113,32 @@ public:
   /**
    * Return const reference to the `unique_socket` owned by the server.
    */
-  const auto&
-  socket() const noexcept { return socket_; }
+  const auto& socket() const noexcept { return socket_; }
 
   /**
    * Return max number of server threads that can exist at any time.
    */
-  auto
-  max_threads() const noexcept { return max_threads_; }
+  auto max_threads() const noexcept { return max_threads_; }
 
   /**
    * Return reference to `sockaddr_in` socket address struct.
    */
-  auto&
-  address() noexcept { return address_; }
+  auto& address() noexcept { return address_; }
 
   /**
    * Return const reference to `sockaddr_in` socket address struct.
    */
-  const auto&
-  address() const noexcept { return address_; }
+  const auto& address() const noexcept { return address_; }
 
   /**
    * Return const reference to the thread deque.
    */
-  const auto&
-  thread_queue() const noexcept { return thread_queue_; }
+  const auto& thread_queue() const noexcept { return thread_queue_; }
 
   /**
    * Return current number of threads in the thread deque.
    */
-  auto
-  n_threads() const { return thread_queue_.size(); }
+  auto n_threads() const { return thread_queue_.size(); }
 
   /**
    * Start listening for up to `max_connect` connections.
@@ -157,8 +151,7 @@ public:
    * @param max_connect Maximum number of connections to accept
    * @returns `EXIT_SUCCESS` on success
    */
-  int
-  start(unsigned int max_connect = std::thread::hardware_concurrency())
+  int start(unsigned int max_connect = std::thread::hardware_concurrency())
   {
     // start listening for connections
     if (!listen(socket_, max_connect))
