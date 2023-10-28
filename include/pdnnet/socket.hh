@@ -353,7 +353,7 @@ public:
    */
   ~unique_socket()
   {
-    if (handle_ != bad_socket_handle)
+    if (valid())
       close_handle(handle_);
   }
 
@@ -389,7 +389,7 @@ public:
    *
    * `false` if `release` has been called or after default construction.
    */
-  auto valid() const noexcept { return handle_ == bad_socket_handle; }
+  bool valid() const noexcept { return handle_ != bad_socket_handle; }
 
   /**
    * Syntactic sugar for compatibility with C socket functions.
