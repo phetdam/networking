@@ -187,8 +187,6 @@ public:
       if (cli_len > sizeof cli_addr)
         throw std::runtime_error{"Client address buffer truncated"};
 #endif  // !defined(_WIN32)
-      // success, so create unique_socket to manage the descriptor
-      // unique_socket cli_socket{cli_sockfd};
       // check if queue reached capacity. if so, join + remove first thread.
       // note we manage the socket file descriptor since join() can throw
       if (thread_queue_.size() == max_threads_) {
