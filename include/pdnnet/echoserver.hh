@@ -167,23 +167,19 @@ public:
 #else
       throw std::runtime_error{errno_error("listen() failed")};
 #endif  // !defined(_WIN32)
-    // client socket address, address size, and socket file descriptor
-    // TODO: we don't use the client socket address + size now, maybe remove
+    // client socket address, address size
     sockaddr_in cli_addr;
     socklen_t cli_len;  // WS2tcpip.h has int typedef'd to socklen_t
-    socket_handle cli_sockfd;
     // event loop
     while (true) {
       // accept client connection
       cli_len = sizeof cli_addr;
-      cli_sockfd = accept(socket_, (sockaddr*) &cli_addr, &cli_len);
+      unique_socket cli_socket{accept(socket_, (sockaddr*) &cli_addr, &cli_len)};
+      // socket handle is invalid on error
+      if (!cli_socket.valid())
 #if defined(_WIN32)
-      // note that INVALID_SOCKET is > 0; we cannot treat it like we could
-      // treat SOCKET_ERROR, which is defined as -1
-      if (cli_sockfd == INVALID_SOCKET)
         throw std::runtime_error{winsock_error("accept() failed")};
 #else
-      if (cli_sockfd < 0)
         throw std::runtime_error{errno_error("accept() failed")};
       // if buffer is too small, address is truncated, which is still an error.
       // the Windows Sockets version of accept checks this and WSAGetLastError
@@ -192,15 +188,17 @@ public:
         throw std::runtime_error{"Client address buffer truncated"};
 #endif  // !defined(_WIN32)
       // success, so create unique_socket to manage the descriptor
-      unique_socket cli_socket{cli_sockfd};
+      // unique_socket cli_socket{cli_sockfd};
       // check if queue reached capacity. if so, join + remove first thread.
       // note we manage the socket file descriptor since join() can throw
       if (thread_queue_.size() == max_threads_) {
         thread_queue_.front().join();
         thread_queue_.pop_front();
       }
-      // unneeded after previous block so release
-      cli_socket.release();
+      // unneeded after previous block so release before passing to thread. if
+      // we release in the thread, cli_socket may be destructed before the
+      // actual release is done in the thread, so the descriptor will be bad
+      auto cli_sockfd = cli_socket.release();
       // emplace new running thread to manage client socket and connection
       thread_queue_.emplace_back(
         std::thread{
