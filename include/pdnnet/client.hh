@@ -38,14 +38,25 @@ namespace pdnnet {
  */
 class ipv4_client {
 public:
+  /**
+   * Ctor.
+   *
+   * Uses `SOCK_STREAM` as the socket type with the default protocol of `0`.
+   */
   ipv4_client() : ipv4_client{SOCK_STREAM} {}
 
+  /**
+   * Ctor.
+   *
+   * Uses the default protocol of `0`, the same as `IPPROTO_TCP`.
+   *
+   * @param type Socket tpye, e.g. `SOCK_STREAM`, `SOCK_RAW`
+   */
   ipv4_client(int type) : ipv4_client{type, 0} {}
 
   /**
    * Ctor.
    *
-   * @param domain Socket address family/domain, e.g. `AF_INET`, `AF_UNIX`
    * @param type Socket type, e.g. `SOCK_STREAM`, `SOCK_RAW`
    * @param protocol Socket protocol, e.g. `0`, `IPPROTO_TCP`
    */
