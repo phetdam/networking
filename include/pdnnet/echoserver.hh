@@ -161,6 +161,7 @@ public:
       throw std::runtime_error{errno_error("listen() failed")};
 #endif  // !defined(_WIN32)
     // event loop
+    // TODO: consider adding a boolean member to allow starting/stopping
     while (true) {
       // accept client connection, possibly erroring
       auto cli_socket = accept(socket_);
