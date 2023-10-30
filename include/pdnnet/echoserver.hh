@@ -8,6 +8,20 @@
 #ifndef PDNNET_ECHOSERVER_HH_
 #define PDNNET_ECHOSERVER_HH_
 
+#if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif  // WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <WinSock2.h>
+#include <WS2tcpip.h>
+#else
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#endif  // !defined(_WIN32)
+
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
@@ -16,23 +30,6 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
-
-#include "pdnnet/platform.h"
-
-#if defined(_WIN32)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif  // WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-#include <WinSock2.h>
-#include <WS2tcpip.h>
-#undef WIN32_LEAN_AND_MEAN
-#else
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#endif  // !defined(_WIN32)
 
 #include "pdnnet/error.hh"
 #include "pdnnet/socket.hh"
