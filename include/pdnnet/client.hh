@@ -1,7 +1,7 @@
 /**
  * @file client.hh
  * @author Derek Huang
- * @brief C++ header for a simple IP client
+ * @brief C++ header for a simple TCP/IP client
  * @copyright MIT License
  */
 
