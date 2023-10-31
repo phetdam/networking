@@ -78,11 +78,7 @@ public:
     address_ = socket_address(INADDR_ANY, port);
     // attempt to bind socket
     if (!bind(socket_, address_))
-#if defined(_WIN32)
-      throw std::runtime_error{winsock_error("Could not bind socket")};
-#else
-      throw std::runtime_error{errno_error("Could not bind socket")};
-#endif  // !defined(_WIN32)
+      throw std::runtime_error{socket_error("Could not bind socket")};
     // get the actual socket address, e.g. if port is 0 it is resolved
     socklen_t addr_size = sizeof address_;
 #if defined(_WIN32)
@@ -152,11 +148,7 @@ public:
   {
     // start listening for connections
     if (!listen(socket_, max_connect))
-#if defined(_WIN32)
-      throw std::runtime_error{winsock_error("listen() failed")};
-#else
-      throw std::runtime_error{errno_error("listen() failed")};
-#endif  // !defined(_WIN32)
+      throw std::runtime_error{socket_error("listen() failed")};
     // event loop
     // TODO: consider adding a boolean member to allow starting/stopping
     while (true) {
