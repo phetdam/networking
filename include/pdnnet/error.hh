@@ -30,21 +30,21 @@
 namespace pdnnet {
 
 /**
- * Return string describing the given error code.
+ * Return string describing the given `errno` error.
  *
  * @param error `errno` error code
  */
-inline std::string error_string(int error) { return std::strerror(error); }
+inline std::string errno_string(int error) { return std::strerror(error); }
 
 /**
- * Return string describing the given error code, prefixed with a message.
+ * Return string describing the given `errno` error, prefixed with a message.
  *
  * @param error `errno` error code
  * @param message Message to prefix `errno` error description with
  */
-inline auto error_string(int error, const std::string& message)
+inline auto errno_string(int error, const std::string& message)
 {
-  return message + ": " + error_string(error);
+  return message + ": " + errno_string(error);
 }
 
 /**
@@ -54,13 +54,13 @@ inline auto error_string(int error, const std::string& message)
  */
 inline auto errno_error(const std::string& message)
 {
-  return error_string(errno, message);
+  return errno_string(errno, message);
 }
 
 /**
  * Return string giving the `errno` error description.
  */
-inline auto errno_error() { return error_string(errno); }
+inline auto errno_error() { return errno_string(errno); }
 
 #ifdef _WIN32
 /**
@@ -122,6 +122,54 @@ inline auto winsock_error(const std::string& message)
   return winsock_error(WSAGetLastError(), message);
 }
 #endif  // _WIN32
+
+/**
+ * Return string describing the socket error, prefixed with a message.
+ *
+ * On Windows, the socket error value should be a Windows Sockets error value,
+ * e.g. from `WSAGetLastError`, otherwise an `errno` value on *nix.
+ *
+ * @param err Socket error value
+ * @param mesage Message to prefix the socket error description with
+ */
+inline auto socket_error(int err, const std::string& message)
+{
+#if defined(_WIN32)
+  return winsock_error(err, message);
+#else
+  return errno_string(err, message);
+#endif  // !defined(_WIN32)
+}
+
+/**
+ * Return string describing the last socket error, prefixed with a message.
+ *
+ * On Windows `WSAGetLastError()` is used while for *nix `errno` is used.
+ *
+ * @param message Message to prefix the socket error description with
+ */
+inline auto socket_error(const std::string& message)
+{
+#if defined(_WIN32)
+  return winsock_error(message);
+#else
+  return errno_error(message);
+#endif  // !defined(_WIN32)
+}
+
+/**
+ * Return string describing the last socket error.
+ *
+ * On Windows `WSAGetLastError()` is used while for *nix `errno` is used.
+ */
+inline auto socket_error()
+{
+#if defined(_WIN32)
+  return winsock_error();
+#else
+  return errno_error();
+#endif  // !defined(_WIN32)
+}
 
 }  // namespace pdnnet
 
