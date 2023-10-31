@@ -114,11 +114,6 @@ public:
   auto max_threads() const noexcept { return max_threads_; }
 
   /**
-   * Return reference to `sockaddr_in` socket address struct.
-   */
-  auto& address() noexcept { return address_; }
-
-  /**
    * Return const reference to `sockaddr_in` socket address struct.
    */
   const auto& address() const noexcept { return address_; }
