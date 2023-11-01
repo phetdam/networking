@@ -496,7 +496,7 @@ inline auto accept(socket_handle handle)
 template <
   typename AddressType,
   typename = std::enable_if_t<is_addr_supported_v<AddressType>> >
-inline bool bind(socket_handle handle, const AddressType& addr)
+inline bool bind(socket_handle handle, const AddressType& addr) noexcept
 {
 #if defined(_WIN32)
   if (
@@ -561,7 +561,7 @@ inline bool connect(socket_handle handle, const AddressType& addr) noexcept
  * @param max_pending Maximum number of pending connections in backlog
  * @returns `true` on success, `false` on error
  */
-inline bool listen(socket_handle handle, unsigned int max_pending)
+inline bool listen(socket_handle handle, unsigned int max_pending) noexcept
 {
 #if defined(_WIN32)
   if (::listen(handle, static_cast<int>(max_pending)) == SOCKET_ERROR)
