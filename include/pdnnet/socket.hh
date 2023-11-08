@@ -573,6 +573,33 @@ inline bool listen(socket_handle handle, unsigned int max_pending) noexcept
 }
 
 /**
+ * Get the address struct of the specified socket handle.
+ *
+ * On error, `errno` (*nix) or `WSAGetLastError` (Windows) should be checked.
+ *
+ * @tparam AddressType Socket address type
+ *
+ * @param handle Socket handle
+ * @param addr Socket address structure, e.g. `sockaddr_in`, `sockaddr_in6`
+ * @returns `true` on success, `false` on error
+ */
+template <
+  typename AddressType,
+  typename = std::enable_if_t<is_addr_supported_v<AddressType>> >
+inline bool getsockname(socket_handle handle, AddressType& addr)
+{
+  // note: sizeof(T&) == sizeof(T)
+  socklen_t addr_size = sizeof addr;
+#if defined(_WIN32)
+  if (::getsockname(handle, (sockaddr*) &addr, &addr_size) == SOCKET_ERROR)
+#else
+  if (::getsockname(handle, (sockaddr*) &addr, &addr_size) < 0)
+#endif  // !defined(_WIN32)
+    return false;
+  return true;
+}
+
+/**
  * Socket reader class for abstracting raw socket reads.
  *
  * Can be streamed to an output stream or as a way to initialize a string, e.g.

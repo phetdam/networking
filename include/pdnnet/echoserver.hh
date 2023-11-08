@@ -80,14 +80,8 @@ public:
     if (!bind(socket_, address_))
       throw std::runtime_error{socket_error("Could not bind socket")};
     // get the actual socket address, e.g. if port is 0 it is resolved
-    socklen_t addr_size = sizeof address_;
-#if defined(_WIN32)
-    if (getsockname(socket_, (sockaddr*) &address_, &addr_size) == SOCKET_ERROR)
-      throw std::runtime_error{winsock_error("Could not retrieve socket address")};
-#else
-    if (getsockname(socket_, (sockaddr*) &address_, &addr_size) < 0)
-      throw std::runtime_error{errno_error("Could not retrieve socket address")};
-#endif  // !defined(_WIN32)
+    if (!getsockname(socket_, address_))
+      throw std::runtime_error{socket_error("Could not retrieve socket address")};
   }
 
   /**
