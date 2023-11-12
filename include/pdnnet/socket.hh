@@ -292,6 +292,13 @@ inline auto socket_address(const hostent* ent, inet_port_type port)
 class unique_socket {
 public:
   /**
+   * Default ctor.
+   *
+   * Uses `bad_socket_handle` as the socket handle.
+   */
+  unique_socket() : unique_socket{bad_socket_handle} {}
+
+  /**
    * Ctor.
    *
    * Construct from a raw socket handle. The handle's validity is not checked.
@@ -344,7 +351,11 @@ public:
   /**
    * Move ctor.
    */
-  unique_socket(unique_socket&& socket) { handle_ = socket.release(); }
+  unique_socket(unique_socket&& socket)
+  {
+    destroy_handle();
+    handle_ = socket.release();
+  }
 
   /**
    * Dtor.
@@ -353,8 +364,7 @@ public:
    */
   ~unique_socket()
   {
-    if (valid())
-      close_handle(handle_);
+    destroy_handle();
   }
 
   /**
@@ -398,6 +408,15 @@ public:
 
 private:
   socket_handle handle_;
+
+  /**
+   * Close the managed socket handle if valid.
+   */
+  void destroy_handle() noexcept
+  {
+    if (valid())
+      close_handle(handle_);
+  }
 };
 
 /**
