@@ -5,4 +5,100 @@ networking
 
 C/C++ networking examples for educational purposes.
 
-TBD.
+About
+-----
+
+A first exploration into computer networking, mostly focusing on use of TCP/IP
+connections via native socket implementations. I first started out with some C
+examples directly using operating system C APIs but have slowly built a
+header-only C++ abstraction layer to ease cross-platform development since
+`Windows Sockets`_ 2 does things a bit differently compared to the typical
+\*nix socket implementation.
+
+The C programs and C support library is written in ANSI C and should be
+C99-compatible while the C++ programs and the C++ support library are written
+in C++17. Moving to C++20 is of interest but is not a high priority currently.
+
+.. _Windows Sockets: https://learn.microsoft.com/en-us/windows/win32/winsock/
+   windows-sockets-start-page-2
+
+Contents
+--------
+
+TBD. Currently there are is a client-server pair for simple message
+acknowledgment as well as a client-server pair for echoing messages.
+
+Building from source
+--------------------
+
+CMake_ >=3.21 is required to build from source on all platforms.
+
+.. _CMake: https://cmake.org/cmake/help/latest/
+
+\*nix
+~~~~~
+
+\*nix
+~~~~~
+
+Building is easy with the provided ``build.sh`` build script. For usage, type
+
+.. code:: bash
+
+   ./build.sh --help
+
+To build release binaries for this project, simply use the command
+
+.. code:: bash
+
+   ./build.sh -c Release
+
+Simply typing ``./build.sh`` will build unoptimized binaries with debug symbols.
+
+By default, the ``pdnnnet`` support library is built as a shared library,
+requiring that ``PDNNET_DLL`` be defined during compilation. To explicitly
+request that ``pdnnet`` be built as a static library, one should specify
+``-DBUILD_SHARED_LIBS=0``. E.g. to build release binaries with ``pdnnet`` built
+as a static library, one can use the command
+
+.. code:: bash
+
+   ./build.sh -c Release -Ca -DBUILD_SHARED_LIBS=0
+
+Windows
+~~~~~~~
+
+Building is easy with the provided ``build.bat`` build script. For usage, type
+
+.. code:: shell
+
+   build --help
+
+To build release binaries for this project, simple use the command
+
+.. code:: shell
+
+   build -c Release
+
+Simply typing ``build`` will build unoptimized binaries and the program
+database with debugging info. You can specify the target architecture using
+the ``-a`` flag, e.g. to build 64-bit release binaries instead of the default
+32-bit ones, use
+
+.. code:: shell
+
+   build -a x64 -c Release
+
+Currently, the Visual Studio toolset used will be whichever is the default.
+
+By default, the ``pdnnet`` support library is built as a shared library,
+requiring that ``PDNNET_DLL`` be defined during compilation. To explicitly
+request that ``pdnnet`` be built as a static library, one should specify
+``-DBUILD_SHARED_LIBS=0``. E.g. to build 32-bit release binaries with ``pdnnet``
+built as a static library, one can use the command
+
+.. code:: shell
+
+   build -c Release -Ca "-DBUILD_SHARED_LIBS=0"
+
+The extra double quotes are needed to prevent the ``=`` from confusing CMD.
