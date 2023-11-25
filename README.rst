@@ -13,7 +13,7 @@ connections via native socket implementations. I first started out with some C
 examples directly using operating system C APIs but have slowly built a
 header-only C++ abstraction layer to ease cross-platform development since
 `Windows Sockets`_ 2 does things a bit differently compared to the typical
-\*nix socket implementation.
+POSIX sockets implementation.
 
 The C programs and C support library is written in ANSI C and should be
 C99-compatible while the C++ programs and the C++ support library are written
