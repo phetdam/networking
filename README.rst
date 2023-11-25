@@ -25,8 +25,10 @@ in C++17. Moving to C++20 is of interest but is not a high priority currently.
 Contents
 --------
 
-TBD. Currently there are is a client-server pair for simple message
-acknowledgment as well as a client-server pair for echoing messages.
+TBD.
+
+Currently includes a client-server pair for simple message acknowledgment and a
+client-server pair for echoing messages.
 
 Building from source
 --------------------
