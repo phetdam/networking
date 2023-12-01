@@ -152,7 +152,7 @@ public:
       // unneeded after previous block so release before passing to thread. if
       // we release in the thread, cli_socket may be destructed before the
       // actual release is done in the thread, so the descriptor will be bad
-      auto cli_sockfd = cli_socket.release();
+      auto cli_sockfd = cli_socket->release();
       // emplace new running thread to manage client socket and connection
       thread_queue_.emplace_back(
         std::thread{

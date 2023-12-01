@@ -35,6 +35,7 @@
 #include <cstring>
 #include <memory>
 #include <istream>
+#include <optional>
 #include <ostream>
 #include <sstream>
 #include <stdexcept>
@@ -478,22 +479,35 @@ inline auto accept(socket_handle handle, AddressType& addr, socklen_t& addr_len)
 }
 
 /**
- * Perform a blocking accept of the next connection in the client queue.
+ * Accept the next connection in the client queue of a listening socket.
+ *
+ * The returned `std::optional` is empty if the listening socket is nonblocking
+ * and has no pending connections in its queue.
  *
  * @note Neither address nor address length are passed to the actual `::accept`
- *  call, i.e. both parameter are `nullptr`, so no template param is needed.
+ *  call, i.e. both parameters are `nullptr`, so no template param is needed.
  *
  * @param handle Socket handle
- * @returns `unique_socket` managing the client socket
+ * @returns `std::optional<unique_socket>` managing the client socket
  */
-inline auto accept(socket_handle handle)
+inline std::optional<unique_socket> accept(socket_handle handle)
 {
   // accept next client connection, returning managed socket. there is no use
   // of the address structure or its length here
   unique_socket socket{::accept(handle, nullptr, nullptr)};
-  // socket handle is invalid on error
-  if (!socket.valid())
+  // check handle. not necessarily an error if socket is nonblocking
+  if (!socket.valid()) {
+    // if socket is nonblocking, then return empty optional
+#if defined(_WIN32)
+    if (WSAGetLastError() == WSAEWOULDBLOCK)
+#else
+    if (errno == EAGAIN || errno == EWOULDBLOCK)
+#endif  // !defined(_WIN32)
+      return {};
+    // otherwise we have a problem and need to throw
     throw std::runtime_error{socket_error("accept() failed")};
+  }
+  // return optional with unique_socket
   return socket;
 }
 
