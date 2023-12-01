@@ -493,11 +493,7 @@ inline auto accept(socket_handle handle)
   unique_socket socket{::accept(handle, nullptr, nullptr)};
   // socket handle is invalid on error
   if (!socket.valid())
-#if defined(_WIN32)
-    throw std::runtime_error{winsock_error("accept() failed")};
-#else
-    throw std::runtime_error{errno_error("accept() failed")};
-#endif  // !defined(_WIN32)
+    throw std::runtime_error{socket_error("accept() failed")};
   return socket;
 }
 
@@ -700,7 +696,7 @@ public:
         throw std::runtime_error{errno_error("read() failure")};
 #endif  // !defined(_WIN32)
       // write to stream + clear buffer
-      out.write(reinterpret_cast<const CharT*>(buf_.get()), n_read);
+      out.write(reinterpret_cast<const CharT*>(buf_.get()), n_read / sizeof(CharT));
       memset(buf_.get(), 0, buf_size_);
     }
     while (n_read);
@@ -861,7 +857,7 @@ public:
   }
 
   /**
-   * Write string view contents to socket.
+   * Write input stream contents to socket.
    *
    * @tparam CharT Char type
    * @tparam Trait Char traits
