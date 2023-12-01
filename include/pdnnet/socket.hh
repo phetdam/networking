@@ -859,6 +859,9 @@ public:
   /**
    * Write input stream contents to socket.
    *
+   * @note A trailing newline is written regardless of whether or not the
+   *  contents of the input stream are terminated with a newline.
+   *
    * @tparam CharT Char type
    * @tparam Trait Char traits
    *
