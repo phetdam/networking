@@ -142,6 +142,9 @@ public:
     // TODO: consider adding a boolean member to allow starting/stopping
     while (true) {
       // accept client connection, possibly erroring
+      // TODO: no need to check if optional contains a value since the socket
+      // used by echoserver is blocking. if nonblocking, which it may be in the
+      // future, then we need to check if the optional contains a unique_socket
       auto cli_socket = accept(socket_);
       // check if thread queue reached capacity. if so, join + remove first
       // thread. socket descriptor is managed partially since join() can throw
