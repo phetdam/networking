@@ -8,7 +8,7 @@
 #ifndef PDNNET_SOCKET_HH_
 #define PDNNET_SOCKET_HH_
 
-// on Windows, we use Windows Sockets 2
+// on Windows, we use Windows Sockets 2, so WIN32_LEAN_AND_MEAN must be defined
 #if defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -17,8 +17,6 @@
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #include <ws2ipdef.h>
-// don't pollute translation units
-#undef WIN32_LEAN_AND_MEAN
 // for *nix systems, use standard socket API
 #else
 #include <arpa/inet.h>
