@@ -142,9 +142,6 @@ public:
     // TODO: consider adding a boolean member to allow starting/stopping
     while (true) {
       // accept client connection, possibly erroring
-      // TODO: no need to check if optional contains a value since the socket
-      // used by echoserver is blocking. if nonblocking, which it may be in the
-      // future, then we need to check if the optional contains a unique_socket
       auto cli_socket = accept(socket_);
       // check if thread queue reached capacity. if so, join + remove first
       // thread. socket descriptor is managed partially since join() can throw
@@ -155,7 +152,7 @@ public:
       // unneeded after previous block so release before passing to thread. if
       // we release in the thread, cli_socket may be destructed before the
       // actual release is done in the thread, so the descriptor will be bad
-      auto cli_sockfd = cli_socket->release();
+      auto cli_sockfd = cli_socket.release();
       // emplace new running thread to manage client socket and connection
       thread_queue_.emplace_back(
         std::thread{
