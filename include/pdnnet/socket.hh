@@ -22,6 +22,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <poll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -610,7 +611,7 @@ inline bool listen(socket_handle handle, unsigned int max_pending) noexcept
 template <
   typename AddressType,
   typename = std::enable_if_t<is_addr_supported_v<AddressType>> >
-inline bool getsockname(socket_handle handle, AddressType& addr)
+inline bool getsockname(socket_handle handle, AddressType& addr) noexcept
 {
   // note: sizeof(T&) == sizeof(T)
   socklen_t addr_size = sizeof addr;
@@ -621,6 +622,36 @@ inline bool getsockname(socket_handle handle, AddressType& addr)
 #endif  // !defined(_WIN32)
     return false;
   return true;
+}
+
+/**
+ * Poll a single socket for events.
+ *
+ * @param handle Socket handle
+ * @param events Events to poll for, e.g. `POLLIN | POLLOUT`
+ * @param timeout Timeout in milliseconds to block for when waiting for events.
+ *  If zero, returns immediately, and if negative, timeout is infinite.
+ * @returns Bitmask indicating the events that have occurred
+ */
+inline short poll(socket_handle handle, short events, int timeout = 1)
+{
+  // poll events for socket handle
+  pollfd res{handle, events};
+#if defined(_WIN32)
+  auto status = WSAPoll(&res, 1, timeout);
+#else
+  auto status = ::poll(&res, 1, timeout);
+#endif  // !defined(_WIN32)
+  // if negative, throw, as this is usually fatal, e.g. EFAULT, EINTR, ENOMEM
+  // for *nix systems or WSAENETDOWN, WSAEFAULT, WSAEINVAL, WSAENOBUFS for
+  // Windows Sockets 2. better to just terminate in this case
+  if (status < 0)
+    throw std::runtime_error{socket_error("poll() failed")};
+  // otherwise if 0, no events
+  if (!status)
+    return 0;
+  // otherwise positive, i.e. 1, so return the received events
+  return res.revents;
 }
 
 /**
