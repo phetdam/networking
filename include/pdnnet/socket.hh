@@ -296,7 +296,7 @@ public:
    *
    * Uses `bad_socket_handle` as the socket handle.
    */
-  unique_socket() : unique_socket{bad_socket_handle} {}
+  unique_socket() noexcept : unique_socket{bad_socket_handle} {}
 
   /**
    * Ctor.
@@ -305,7 +305,7 @@ public:
    *
    * @param handle Socket handle
    */
-  explicit unique_socket(socket_handle handle) : handle_{handle} {}
+  explicit unique_socket(socket_handle handle) noexcept : handle_{handle} {}
 
   /**
    * Ctor.
@@ -351,7 +351,7 @@ public:
   /**
    * Move ctor.
    */
-  unique_socket(unique_socket&& socket)
+  unique_socket(unique_socket&& socket) noexcept
   {
     handle_ = socket.release();
   }
@@ -369,7 +369,7 @@ public:
   /**
    * Move assignment operator.
    */
-  unique_socket& operator=(unique_socket&& socket)
+  unique_socket& operator=(unique_socket&& socket) noexcept
   {
     destroy_handle();
     handle_ = socket.release();
