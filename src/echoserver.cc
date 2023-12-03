@@ -25,7 +25,6 @@
 #define PDNNET_ADD_CLIOPT_MAX_CONNECT
 #include "pdnnet/cliopt.h"
 #include "pdnnet/echoserver.hh"
-#include "pdnnet/features.h"
 #include "pdnnet/process.hh"
 
 /**
@@ -67,13 +66,8 @@ PDNNET_ARG_MAIN
   // create server + print address and port for debugging
   pdnnet::echoserver server{PDNNET_CLIOPT(port)};
   std::cout << PDNNET_PROGRAM_NAME << ": max_threads=" <<
-    server.max_threads() << ", address=" <<
-#if defined(_WIN32) || defined(PDNNET_BSD_DEFAULT_SOURCE)
-    inet_ntoa(server.address().sin_addr) <<
-#else
-    "[unknown]: " <<
-#endif  // !defined(_WIN32) && !defined(PDNNET_BSD_DEFAULT_SOURCE)
-    ":" << ntohs(server.address().sin_port) << std::endl;
+    server.max_threads() << ", address=" << server.dot_address() << ":" <<
+    server.port() << std::endl;
   // start server
   return server.start(PDNNET_CLIOPT(max_connect));
 }
