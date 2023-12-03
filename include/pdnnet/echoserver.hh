@@ -56,6 +56,8 @@ public:
   /**
    * Ctor.
    *
+   * Maximum number of server threads used is set to the hardware concurrency.
+   *
    * @param port Port number in host byte order
    */
   echoserver(inet_port_type port)
@@ -156,10 +158,12 @@ public:
       // we release in the thread, cli_socket may be destructed before the
       // actual release is done in the thread, so the descriptor will be bad
       auto cli_sockfd = cli_socket.release();
-      // emplace new running thread to manage client socket and connection
+      // emplace new running thread to manage client socket and connection. we
+      // need to copy the socket handle instead of referencing to prevent
+      // undefined behavior when the lambda is actually executed out of scope
       thread_queue_.emplace_back(
         std::thread{
-          [&cli_sockfd]
+          [cli_sockfd]
           {
             // own handle to automatically close later
             unique_socket socket{cli_sockfd};
