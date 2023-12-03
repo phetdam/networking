@@ -450,7 +450,7 @@ struct is_addr_supported : std::bool_constant<
 template <typename AddressType>
 inline constexpr bool is_addr_supported_v = is_addr_supported<AddressType>::value;
 
-#if defined(PDNNET_HAS_CC_20)
+#ifdef PDNNET_HAS_CC_20
 /**
  * Concept for supported socket address struct types.
  *
@@ -458,19 +458,16 @@ inline constexpr bool is_addr_supported_v = is_addr_supported<AddressType>::valu
  */
 template <typename T>
 concept inet_sockaddr = is_addr_supported_v<T>;
+#endif  // PDNNET_HAS_CC_20
 
 /**
  * Restricted template parameter macro for supported socket address types.
  *
  * @param T type placeholder
  */
+#if defined(PDNNET_HAS_CC_20)
 #define PDNNET_INET_SOCKADDR(T) pdnnet::inet_sockaddr T
 #else
-/**
- * Restricted template parameter macro for supported socket address types.
- *
- * @param T type placeholder
- */
 #define PDNNET_INET_SOCKADDR(T) \
   typename T, typename = std::enable_if_t<pdnnet::is_addr_supported_v<T>>
 #endif // !defined(PDNNET_HAS_CC_20)
