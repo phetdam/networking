@@ -489,6 +489,27 @@ inline auto accept(socket_handle handle, AddressType& addr, socklen_t& addr_len)
 /**
  * Perform a blocking accept of the next connection in the client queue.
  *
+ * A more convenient overload of `accept` that does not require struct size.
+ *
+ * @tparam AddressType Socket address type
+ *
+ * @param handle Socket handle
+ * @param addr Socket address structure, e.g. `sockaddr_in`, `sockaddr_in6`,
+ *  that will receive the address of the peer (client) socket
+ * @returns `unique_socket` managing the client socket
+ */
+template <
+  typename AddressType,
+  typename = std::enable_if_t<is_addr_supported_v<AddressType>> >
+inline auto accept(socket_handle handle, AddressType& addr)
+{
+  socklen_t addr_len = sizeof addr;
+  return accept(handle, addr, addr_len);
+}
+
+/**
+ * Perform a blocking accept of the next connection in the client queue.
+ *
  * @note Neither address nor address length are passed to the actual `::accept`
  *  call, i.e. both parameters are `nullptr`, so no template param is needed.
  *
