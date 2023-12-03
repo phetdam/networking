@@ -137,7 +137,7 @@ public:
   /**
    * Return the port number in host byte order.
    */
-  auto port() const noexcept
+  inet_port_type port() const noexcept
   {
     return ntohs(address_.sin_port);
   }

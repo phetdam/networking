@@ -139,13 +139,8 @@ public:
     // create socket address struct + attempt connection
     auto serv_addr = make_sockaddr_in(serv_ent, port);
     // namespace specification required for correct lookup
-    if (!pdnnet::connect(socket_, serv_addr)) {
-#if defined(_WIN32)
-      return "Socket connect error: " + winsock_error();
-#else
-      return "Socket connect error: " + errno_error();
-#endif  // !defined(_WIN32)
-    }
+    if (!pdnnet::connect(socket_, serv_addr))
+      return "Socket connect error: " + socket_error();
     // update host address, mark as connected, and return
     host_addr_ = serv_addr;
     connected_ = true;
