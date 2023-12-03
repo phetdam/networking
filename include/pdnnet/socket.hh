@@ -794,11 +794,13 @@ inline auto& operator<<(
  *
  * @param handle Socket handle
  * @param buf_size Read buffer size, i.e. number of bytes per chunk read
+ * @param close_read `true` to close socket read end after reading
  */
 template <typename CharT = char, typename Traits = std::char_traits<CharT>>
-inline auto read(socket_handle handle, std::size_t buf_size)
+inline auto read(
+  socket_handle handle, std::size_t buf_size, bool close_read = false)
 {
-  return socket_reader{handle, buf_size}
+  return socket_reader{handle, buf_size, close_read}
     .operator std::basic_string<CharT, Traits>();
 }
 
@@ -811,11 +813,12 @@ inline auto read(socket_handle handle, std::size_t buf_size)
  * @tparam Traits Char traits
  *
  * @param handle Socket handle
+ * @param close_read `true` to close socket read end after reading
  */
 template <typename CharT = char, typename Traits = std::char_traits<CharT>>
-inline auto read(socket_handle handle)
+inline auto read(socket_handle handle, bool close_read = false)
 {
-  return read<CharT, Traits>(handle, socket_read_size);
+  return read<CharT, Traits>(handle, socket_read_size, close_read);
 }
 
 /**
