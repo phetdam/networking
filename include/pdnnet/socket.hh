@@ -885,6 +885,20 @@ public:
   }
 
   /**
+   * Write null-terminated string contents to socket.
+   *
+   * @tparam CharT Char type
+   *
+   * @param text String literal or other null-terminated string to read from
+   * @returns `*this` to support method chaining
+   */
+  template <typename CharT>
+  auto& read(const CharT* text) const
+  {
+    return read(std::basic_string_view{text});
+  }
+
+  /**
    * Write string stream contents to socket.
    *
    * @tparam CharT Char type
