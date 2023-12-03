@@ -42,6 +42,7 @@
 #include <type_traits>
 
 #include "pdnnet/error.hh"
+#include "pdnnet/features.h"
 #include "pdnnet/platform.h"
 #include "pdnnet/warnings.h"
 
@@ -241,7 +242,7 @@ using inet_port_type = in_port_t;
  * @param address Internet address, e.g. `INADDR_ANY`
  * @param port Port number, e.g. `8888`
  */
-inline auto socket_address(inet_addr_type address, inet_port_type port) noexcept
+inline auto make_sockaddr_in(inet_addr_type address, inet_port_type port) noexcept
 {
   sockaddr_in addr{};
   addr.sin_family = AF_INET;
@@ -258,7 +259,7 @@ inline auto socket_address(inet_addr_type address, inet_port_type port) noexcept
  * @param ent Host entry description
  * @param port Port number, e.g. `8888`
  */
-inline auto socket_address(const hostent* ent, inet_port_type port)
+inline auto make_sockaddr_in(const hostent* ent, inet_port_type port)
 {
   if (!ent)
     throw std::runtime_error{"hostent struct pointer is null"};
@@ -281,7 +282,7 @@ inline auto socket_address(const hostent* ent, inet_port_type port)
     // already checked that this is equal to ent.h_length
     sizeof address
   );
-  return socket_address(ntohl(address), port);
+  return make_sockaddr_in(ntohl(address), port);
 }
 
 /**

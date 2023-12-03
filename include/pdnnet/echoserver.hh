@@ -78,7 +78,7 @@ public:
     : socket_{AF_INET, SOCK_STREAM}, address_{}, max_threads_{max_threads}
   {
     // set to local address with specified port
-    address_ = socket_address(INADDR_ANY, port);
+    address_ = make_sockaddr_in(INADDR_ANY, port);
     // attempt to bind socket
     if (!bind(socket_, address_))
       throw std::runtime_error{socket_error("Could not bind socket")};

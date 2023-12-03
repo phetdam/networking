@@ -134,7 +134,7 @@ PDNNET_ARG_MAIN
 #endif  // PDNNET_UNIX
   // create owned socket handle and address
   pdnnet::unique_socket socket{AF_INET, SOCK_STREAM};
-  auto addr = pdnnet::socket_address(INADDR_ANY, PDNNET_CLIOPT(port));
+  auto addr = pdnnet::make_sockaddr_in(INADDR_ANY, PDNNET_CLIOPT(port));
   // bind socket to address
   if (!pdnnet::bind(socket, addr))
     PDNNET_ERROR_EXIT(pdnnet::socket_error("Could not bind socket").c_str());

@@ -137,7 +137,7 @@ public:
 #endif  // !defined(_WIN32) && !defined(PDNNET_BSD_DEFAULT_SOURCE)
     }
     // create socket address struct + attempt connection
-    auto serv_addr = socket_address(serv_ent, port);
+    auto serv_addr = make_sockaddr_in(serv_ent, port);
     // namespace specification required for correct lookup
     if (!pdnnet::connect(socket_, serv_addr)) {
 #if defined(_WIN32)
