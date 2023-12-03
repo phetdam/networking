@@ -32,6 +32,7 @@
 #include <thread>
 
 #include "pdnnet/error.hh"
+#include "pdnnet/features.h"
 #include "pdnnet/socket.hh"
 
 namespace pdnnet {
@@ -118,6 +119,28 @@ public:
    * Return const reference to the thread deque.
    */
   const auto& thread_queue() const noexcept { return thread_queue_; }
+
+  /**
+   * Return the host address as an IPv4 decimal-dotted string.
+   *
+   * On platforms without `inet_ntoa`, this returns `"[unknown]"` instead.
+   */
+  std::string dot_address() const
+  {
+#if defined(_WIN32) || defined(PDNNET_BSD_DEFAULT_SOURCE)
+    return inet_ntoa(address_.sin_addr);
+#else
+    return "[unknown]";
+#endif  // !defined(_WIN32) && !defined(PDNNET_BSD_DEFAULT_SOURCE)
+  }
+
+  /**
+   * Return the port number in host byte order.
+   */
+  auto port() const noexcept
+  {
+    return ntohs(address_.sin_port);
+  }
 
   /**
    * Return current number of threads in the thread deque.
