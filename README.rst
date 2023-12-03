@@ -38,9 +38,6 @@ CMake_ >=3.21 is required to build from source on all platforms.
 \*nix
 ~~~~~
 
-\*nix
-~~~~~
-
 Building is easy with the provided ``build.sh`` build script. For usage, type
 
 .. code:: bash
