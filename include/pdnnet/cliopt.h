@@ -16,6 +16,7 @@
  * the appropriate value, usually an integral value or string literal.
  *
  * Below are the available command-line options.
+ *  VERBOSE
  *  HOST
  *  PORT
  *  MESSAGE_BYTES
