@@ -37,8 +37,7 @@ namespace pdnnet {
  * @param nochdir `false` to change process working directory to `/`
  * @param noclose `false` to redirect `stdin`, `stdout`, `stderr` to `/dev/null`
  */
-inline void
-daemonize(bool nochdir, bool noclose)
+inline void daemonize(bool nochdir, bool noclose)
 {
   // run in background as daemon
 #if defined(PDNNET_BSD_DEFAULT_SOURCE)
@@ -68,8 +67,7 @@ daemonize(bool nochdir, bool noclose)
  *
  * Does not change the process working directory or redirect streams.
  */
-inline void
-daemonize() { daemonize(true, true); }
+inline void daemonize() { daemonize(true, true); }
 #endif  // PDNNET_UNIX
 
 }  // namespace pdnnet
