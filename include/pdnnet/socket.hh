@@ -450,6 +450,31 @@ struct is_addr_supported : std::bool_constant<
 template <typename AddressType>
 inline constexpr bool is_addr_supported_v = is_addr_supported<AddressType>::value;
 
+#if defined(PDNNET_HAS_CC_20)
+/**
+ * Concept for supported socket address struct types.
+ *
+ * @param T type
+ */
+template <typename T>
+concept inet_sockaddr = is_addr_supported_v<T>;
+
+/**
+ * Restricted template parameter macro for supported socket address types.
+ *
+ * @param T type placeholder
+ */
+#define PDNNET_INET_SOCKADDR(T) pdnnet::inet_sockaddr T
+#else
+/**
+ * Restricted template parameter macro for supported socket address types.
+ *
+ * @param T type placeholder
+ */
+#define PDNNET_INET_SOCKADDR(T) \
+  typename T, typename = std::enable_if_t<pdnnet::is_addr_supported_v<T>>
+#endif // !defined(PDNNET_HAS_CC_20)
+
 /**
  * Perform a blocking accept of the next connection in the client queue.
  *
@@ -461,9 +486,7 @@ inline constexpr bool is_addr_supported_v = is_addr_supported<AddressType>::valu
  * @param addr_len `socklen_t` that will receive the size of the socket address
  * @returns `unique_socket` managing the client socket
  */
-template <
-  typename AddressType,
-  typename = std::enable_if_t<is_addr_supported_v<AddressType>> >
+template <PDNNET_INET_SOCKADDR(AddressType)>
 inline auto accept(socket_handle handle, AddressType& addr, socklen_t& addr_len)
 {
   // input address length, i.e. sizeof addr
@@ -499,9 +522,7 @@ inline auto accept(socket_handle handle, AddressType& addr, socklen_t& addr_len)
  *  that will receive the address of the peer (client) socket
  * @returns `unique_socket` managing the client socket
  */
-template <
-  typename AddressType,
-  typename = std::enable_if_t<is_addr_supported_v<AddressType>> >
+template <PDNNET_INET_SOCKADDR(AddressType)>
 inline auto accept(socket_handle handle, AddressType& addr)
 {
   socklen_t addr_len = sizeof addr;
@@ -540,9 +561,7 @@ inline auto accept(socket_handle handle)
  * @param addr Socket address structure, e.g. `sockaddr_in`, `sockaddr_in6`
  * @returns `true` on success, `false` on error
  */
-template <
-  typename AddressType,
-  typename = std::enable_if_t<is_addr_supported_v<AddressType>> >
+template <PDNNET_INET_SOCKADDR(AddressType)>
 inline bool bind(socket_handle handle, const AddressType& addr) noexcept
 {
 #if defined(_WIN32)
@@ -573,9 +592,7 @@ inline bool bind(socket_handle handle, const AddressType& addr) noexcept
  * @param addr Socket address structure, e.g. `sockaddr_in`, `sockaddr_in6`
  * @returns `true` on success, `false` on error
  */
-template <
-  typename AddressType,
-  typename = std::enable_if_t<is_addr_supported_v<AddressType>> >
+template <PDNNET_INET_SOCKADDR(AddressType)>
 inline bool connect(socket_handle handle, const AddressType& addr) noexcept
 {
 #if defined(_WIN32)
@@ -630,9 +647,7 @@ inline bool listen(socket_handle handle, unsigned int max_pending) noexcept
  * @param addr Socket address structure, e.g. `sockaddr_in`, `sockaddr_in6`
  * @returns `true` on success, `false` on error
  */
-template <
-  typename AddressType,
-  typename = std::enable_if_t<is_addr_supported_v<AddressType>> >
+template <PDNNET_INET_SOCKADDR(AddressType)>
 inline bool getsockname(socket_handle handle, AddressType& addr) noexcept
 {
   // note: sizeof(T&) == sizeof(T)
