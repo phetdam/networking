@@ -115,10 +115,9 @@ int event_loop(
       thread_queue.front().join();
       thread_queue.pop_front();
     }
-    // release socket handle so it is not closed on scope exit
-    auto cli_sockfd = cli_socket.release();
-    // emplace new running thread to manage client socket and connection
-    thread_queue.emplace_back(std::thread{handle_client, cli_sockfd});
+    // emplace new running thread to manage client socket and connection. we
+    // need to release the socket handle so it is not closed on scope exit
+    thread_queue.emplace_back(std::thread{handle_client, cli_socket.release()});
   }
   return EXIT_SUCCESS;
 }
