@@ -3,10 +3,10 @@ cmake_minimum_required(VERSION ${CMAKE_MINIMUM_REQUIRED_VERSION})
 # not written portably (yet)
 if(UNIX)
     add_subdirectory(pdnnet)
-    # toy acknowledgment client
+    # C toy acknowledgment client
     add_executable(ackclient ackclient.c)
     target_link_libraries(ackclient PRIVATE pdnnet)
-    # toy acknowledgment server
+    # C toy acknowledgment server
     add_executable(ackserver ackserver.c)
     target_link_libraries(ackserver PRIVATE pdnnet)
     # unnecessary, but demonstrate how we can redefine some command-line option
