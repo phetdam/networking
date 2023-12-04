@@ -162,7 +162,7 @@ public:
   {
     // start listening for connections
     if (!listen(socket_, max_connect))
-      throw std::runtime_error{socket_error("listen() failed")};
+      throw std::runtime_error{socket_error("Could not listen on socket")};
     // event loop
     // TODO: consider adding a boolean member to allow starting/stopping
     while (true) {
