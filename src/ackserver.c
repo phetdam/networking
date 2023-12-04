@@ -77,7 +77,7 @@ PDNNET_SOCKET_ONLREAD_FUNC(print_client_msg)
     );
 #else
     printf("%s: Received from [unknown]: ", PDNNET_PROGRAM_NAME);
-  #endif  // PDNNET_BSD_DEFAULT_SOURCE
+#endif  // PDNNET_BSD_DEFAULT_SOURCE
   // print actual message content
   printf("%s", (const char *) state->msg_buf);
   return 0;
