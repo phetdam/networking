@@ -120,10 +120,10 @@ public:
    *
    * @param host IPv4 host name or address
    * @param port Port number in local byte order
-   * @returns `std::optional<std::string>` empty on success
+   * @returns `std::optional<std::string>` with error message, empty on success
    */
   std::optional<std::string> connect(
-    const std::string& host, inet_port_type port) noexcept
+    const std::string& host, inet_port_type port)
   {
     // resolve IPv4 host by name, returning false and setting status on error
     auto serv_ent = gethostbyname(host.c_str());
