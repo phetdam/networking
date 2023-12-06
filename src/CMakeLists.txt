@@ -27,10 +27,16 @@ add_executable(ackserver++ ackserver++.cc)
 add_executable(echoclient echoclient.cc)
 # C++ toy echo server
 add_executable(echoserver echoserver.cc)
+# C++ toy HTTPS client
+add_executable(httpsclient httpsclient.cc)
+if(UNIX)
+    target_link_libraries(httpsclient PRIVATE crypto ssl)
+endif()
 # on Windows, ws2_32 DLL is needed to use Windows Sockets
 if(WIN32)
     target_link_libraries(ackclient++ PRIVATE ws2_32)
     target_link_libraries(ackserver++ PRIVATE ws2_32)
     target_link_libraries(echoclient PRIVATE ws2_32)
     target_link_libraries(echoserver PRIVATE ws2_32)
+    target_link_libraries(httpsclient PRIVATE ws2_32)
 endif()
