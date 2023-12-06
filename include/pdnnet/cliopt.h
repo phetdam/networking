@@ -37,12 +37,25 @@
 #include "pdnnet/common.h"
 #include "pdnnet/sa.h"
 
+// namespacing macros for a variable corresponding to a command-line option
 #define PDNNET_CLIOPT_I(name) pdnnet_cliopt_ ## name
 #define PDNNET_CLIOPT(name) PDNNET_CLIOPT_I(name)
 
+/**
+ * Name of the string variable holding the main program name.
+ */
 #define PDNNET_PROGRAM_NAME pdnnet_main_program_name
+
+/**
+ * Name of the string variable holding the main program usage.
+ */
 #define PDNNET_PROGRAM_USAGE pdnnet_main_program_usage
 
+/**
+ * Macro defining the variable holding the program usage text.
+ *
+ * @param text Program usage text
+ */
 #define PDNNET_PROGRAM_USAGE_DEF(text) \
   static const char *PDNNET_PROGRAM_USAGE = text;
 
