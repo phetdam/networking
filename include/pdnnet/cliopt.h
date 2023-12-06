@@ -490,9 +490,12 @@ pdnnet_cliopt_parse_args(int argc, PDNNET_SA(In) char **argv)
       // not enough arguments, so treat as 1
       if (++i >= argc)
         PDNNET_CLIOPT(verbose) = (unsigned short) 1;
-      // if argument starts with a dash, assume it is an option
-      else if (argv[i][0] == '-')
-        ;
+      // if argument starts with a dash, assume it is an option. set verbosity
+      // to 1 and then decrement the value of i for the next parse iteration
+      else if (argv[i][0] == '-') {
+        PDNNET_CLIOPT(verbose) = (unsigned short) 1;
+        i--;
+      }
       // otherwise, try to parse the value
       else if (!pdnnet_cliopt_parse_verbose(argv[i]))
         return false;
