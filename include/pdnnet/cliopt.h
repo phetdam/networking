@@ -72,7 +72,7 @@ static bool PDNNET_CLIOPT(print_usage) = false;
 #define PDNNET_ARGV argv
 
 /**
- * Variables and defaults for command-line arguments are defined below.
+ * Variables and defaults for command-line arguments should be done as follows.
  *
  * Control the definitions via macro definition before including the header.
  * For an argument `<ARG>`, we list the user-definable macros below.
@@ -96,6 +96,33 @@ static bool PDNNET_CLIOPT(print_usage) = false;
  *    String literal for the option's argument name for `<ARG>`, e.g. `"PORT"`.
  *    Not all command-line options will take arguments so this may not be
  *    defined for each particular `<ARG>` option.
+ * `PDNNET_CLIOPT_<ARG>_USAGE`
+ *    Use-defined help text for the specified command-line option. Must start
+ *    with two spaces, the short and long options separated by ", ", another
+ *    space, the respective `PDNNET_CLIOPT_<ARG>_ARG_NAME` if any, possibly
+ *    encased in square brackets if optional. If there is not enough room to
+ *    put the usage on the same length starting from the 24th column, a newline
+ *    should be added and then all usage justified from the 24th column. When
+ *    `PDNNET_ADD_CLIOPT_<ARG>` is not defined, this should be defined as "".
+ *
+ * To parse the value (if any) from a command-line argument, one may also need
+ * to define a static function with the following signature:
+ *
+ * @code{.cc}
+ * static bool
+ * pdnnet_cliopt_parse_<arg>(const char *arg);
+ * @endcode
+ *
+ * Here `<arg>` is the lowercase form of `<ARG>`. `true` should be returned on
+ * success, `false` on failure, with the respective `PDNNET_CLIOPT(<arg>)`
+ * top-level static global correctly updated as necessary. The following macro
+ * should also be defined to handle the short/long option and start parsing:
+ *
+ * `PDNNET_CLIOPT_<ARG>_PARSE_CASE(argc, argv, i)`
+ *
+ * This should start with a `PDNNET_CLIOPT_PARSE_MATCHES` invocation that opens
+ * into a braced context. When `PDNNET_ADD_CLIOPT_<ARG>` is not defined, this
+ * should simply be defined as an empty macro.
  */
 
 /**
