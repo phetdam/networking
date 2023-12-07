@@ -136,9 +136,9 @@ PDNNET_ARG_MAIN
     PDNNET_ERROR_EXIT(error->c_str());
   // HTTPS request logic on *nix only for now
 #ifdef PDNNET_UNIX
-  // create OpenSSL TLS connection using default context + attempt to connect
-  tls_connection connection{client.socket(), pdnnet::default_tls_context()};
-  error = connection();
+  // create OpenSSL TLS layer using default context + attempt to connect
+  pdnnet::unique_tls_layer layer{pdnnet::default_tls_context()};
+  error = layer.handshake(client.socket());
   // if TLS handshake fails, print error and exit nonzero
   if (error)
     PDNNET_ERROR_EXIT(error->c_str());
@@ -152,14 +152,14 @@ PDNNET_ARG_MAIN
   auto remaining = get_request.size();
   while (remaining) {
     auto n_written = SSL_write(
-      connection.ssl(),
+      layer,
       get_request.c_str() + (get_request.size() - remaining),
       // write parameter is int, need cast
       static_cast<int>(remaining)
     );
     // if unsuccesful, throw only if we can't retry
     if (n_written <= 0) {
-      auto err = SSL_get_error(connection.ssl(), n_written);
+      auto err = SSL_get_error(layer, n_written);
       if (err == SSL_ERROR_WANT_WRITE) {
         std::cout << "GET request write failed: retrying..." << std::endl;
         continue;
@@ -172,7 +172,7 @@ PDNNET_ARG_MAIN
     remaining -= n_written;
   }
   // done, shut down write end
-  if (SSL_shutdown(connection.ssl()) < 0)
+  if (SSL_shutdown(layer) < 0)
     PDNNET_ERROR_EXIT(
       pdnnet::openssl_error_string("Failed to close write end").c_str()
     );
@@ -181,13 +181,13 @@ PDNNET_ARG_MAIN
   int n_read;
   int read_err;
   do {
-    n_read = SSL_read(connection.ssl(), buf, sizeof buf);
+    n_read = SSL_read(layer, buf, sizeof buf);
     // if successful (read some bytes), print to stdout
     if (n_read > 0)
       std::cout.write(buf, n_read);
     // if unsuccessful, continue if we can retry
     else {
-      read_err = SSL_get_error(connection.ssl(), n_read);
+      read_err = SSL_get_error(layer, n_read);
       if (read_err == SSL_ERROR_WANT_READ)       {
         std::cout << "Content read failed: retrying..." << std::endl;
         continue;

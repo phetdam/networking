@@ -120,7 +120,7 @@ public:
    *
    * @param host IPv4 host name or address
    * @param port Port number in local byte order
-   * @returns `std::optional<std::string>` with error message, empty on success
+   * @returns Optional empty on success, with error message on failure
    */
   std::optional<std::string> connect(
     const std::string& host, inet_port_type port)
