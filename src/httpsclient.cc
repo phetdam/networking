@@ -29,6 +29,8 @@
 #include <openssl/err.h>
 #include <openssl/opensslv.h>
 #include <openssl/ssl.h>
+
+#include "pdnnet/tls.hh"
 #endif  // PDNNET_UNIX
 
 PDNNET_PROGRAM_USAGE_DEF
@@ -65,95 +67,21 @@ std::string http_get_request(
     "User-Agent: pdnnet-" + std::string{PDNNET_PROGRAM_NAME} + "/0.0.1\r\n\r\n";
 }
 
-void init_openssl()
-{
-  class openssl_init {
-  public:
-    openssl_init()
-    {
-      // no explicit init required for OpenSSL 1.1.0+
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-      SSL_load_error_strings();
-      SSL_library_init();
-#endif  // OPENSSL_VERSION_NUMBER >= 0x10100000L
-    }
-  };
-
-  // thread-safe under C++11
-  static openssl_init init;
-}
-
-inline std::string openssl_error_string(unsigned long err)
-{
-  return ERR_error_string(err, nullptr);
-}
-
-inline auto openssl_error_string()
-{
-  return openssl_error_string(ERR_get_error());
-}
-
-class tls_context {
-public:
-  tls_context() : tls_context{TLS_method} {}
-
-  tls_context(const std::function<const SSL_METHOD*()>& method_getter)
-  {
-    // ensure OpenSSL is initialized (thread-safe call)
-    init_openssl();
-    // initialize method and context
-    method_ = method_getter();
-    context_ = SSL_CTX_new(method_);
-    // check for error
-    if (!context_)
-      throw std::runtime_error{
-        "Failed to create SSL_CTX: " + openssl_error_string()
-      };
-  }
-
-  tls_context(const tls_context&) = delete;
-
-  ~tls_context()
-  {
-    // no-op if context_ is NULL
-    SSL_CTX_free(context_);
-  }
-
-  tls_context& operator=(tls_context&& other)
-  {
-    // copy pointers
-    context_ = other.context_;
-    method_ = other.method_;
-    // set other's pointers to NULL
-    other.context_ = nullptr;
-    other.method_ = nullptr;
-    return *this;
-  }
-
-  operator SSL_CTX*() const noexcept { return context_; }
-
-  auto context() const noexcept { return context_; }
-
-  auto method() const noexcept { return method_; }
-
-private:
-  SSL_CTX* context_;
-  const SSL_METHOD* method_;
-};
-
 class tls_connection {
 public:
-  tls_connection(pdnnet::socket_handle handle, const tls_context& context)
+  tls_connection(
+    pdnnet::socket_handle handle,
+    const pdnnet::tls::unique_context& context)
     : handle_{handle}, ssl_{SSL_new(context)}, context_{context}
   {
     if (!ssl_)
       throw std::runtime_error{
-        "Failed to create SSL: " + openssl_error_string()
+        pdnnet::openssl_error_string("Failed to create SSL")
       };
     // set socket handle as I/O facility for transport layer
     if (!SSL_set_fd(ssl_, handle_))
       throw std::runtime_error{
-        "Failed to set socket handle: " + openssl_error_string()
+        pdnnet::openssl_error_string("Failed to set socket handle")
       };
   }
 
@@ -178,9 +106,9 @@ public:
       return {};
     // 0 is controlled failure
     if (status == 0)
-      return "Controlled TLS handshake error: " + openssl_error_string();
+      return pdnnet::openssl_error_string("Controlled TLS handshake error");
     // otherwise, fatal error
-    return "Fatal TLS handshake error: " + openssl_error_string();
+    return pdnnet::openssl_error_string("Fatal TLS handshake error");
   }
 
   auto operator()() const
@@ -191,7 +119,7 @@ public:
 private:
   pdnnet::socket_handle handle_;
   SSL* ssl_;
-  const tls_context& context_;
+  const pdnnet::tls::unique_context& context_;
 };
 #endif  // PDNNET_UNIX
 
@@ -208,10 +136,8 @@ PDNNET_ARG_MAIN
     PDNNET_ERROR_EXIT(error->c_str());
   // HTTPS request logic on *nix only for now
 #ifdef PDNNET_UNIX
-  // create OpenSSL TLS context
-  tls_context context;
-  // create OpenSSL TLS connection + attempt to connect
-  tls_connection connection{client.socket(), context};
+  // create OpenSSL TLS connection using default context + attempt to connect
+  tls_connection connection{client.socket(), pdnnet::tls::default_context()};
   error = connection();
   // if TLS handshake fails, print error and exit nonzero
   if (error)
@@ -239,7 +165,7 @@ PDNNET_ARG_MAIN
         continue;
       }
       throw std::runtime_error{
-        "GET request write failed: " + openssl_error_string(err)
+        pdnnet::openssl_error_string(err, "GET request write failed")
       };
     }
     // decrement remaining
@@ -248,7 +174,7 @@ PDNNET_ARG_MAIN
   // done, shut down write end
   if (SSL_shutdown(connection.ssl()) < 0)
     PDNNET_ERROR_EXIT(
-      ("Failed to close write end: " + openssl_error_string()).c_str()
+      pdnnet::openssl_error_string("Failed to close write end").c_str()
     );
   // read contents from server and print to stdout
   char buf[512];
@@ -274,7 +200,7 @@ PDNNET_ARG_MAIN
   // ERR_get_error() called in openssl_error_string() for more info
   if (read_err != SSL_ERROR_ZERO_RETURN)
     PDNNET_ERROR_EXIT(
-      ("Content read failed: OpenSSL error " + openssl_error_string()).c_str()
+      pdnnet::openssl_error_string("Content read failed: OpenSSL error").c_str()
     );
   // TODO: do nothing otherwise
 #else
