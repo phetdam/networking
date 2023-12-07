@@ -87,6 +87,8 @@ static bool PDNNET_CLIOPT(print_usage) = false;
  * Below are additional macros that are defined when `PDNNET_CLIOPT_<ARG>` are
  * defined, but which should not be redefined by the user. Any macros not
  * documented below are to be considered internal and should not be redefined.
+ * These should all be defined in a `pdnnet/cliopt/opt_<arg>.h` header, where
+ * `<arg>` is just the lowercase form of `<ARG>`.
  *
  * `PDNNET_CLIOPT_<ARG>_SHORT_OPTION`
  *    String literal for the short option flag for `<ARG>`, e.g. `"-p"`
@@ -113,10 +115,10 @@ static bool PDNNET_CLIOPT(print_usage) = false;
  * pdnnet_cliopt_parse_<arg>(const char *arg);
  * @endcode
  *
- * Here `<arg>` is the lowercase form of `<ARG>`. `true` should be returned on
- * success, `false` on failure, with the respective `PDNNET_CLIOPT(<arg>)`
- * top-level static global correctly updated as necessary. The following macro
- * should also be defined to handle the short/long option and start parsing:
+ * `true` should be returned on success, `false` on failure, with the
+ * respective `PDNNET_CLIOPT(<arg>)` top-level static global correctly updated
+ * as necessary. The following macro should also be defined to handle the
+ * short/long option and start parsing:
  *
  * `PDNNET_CLIOPT_<ARG>_PARSE_CASE(argc, argv, i)`
  *
