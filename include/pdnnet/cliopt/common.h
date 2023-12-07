@@ -12,4 +12,15 @@
 #define PDNNET_CLIOPT_I(name) pdnnet_cliopt_ ## name
 #define PDNNET_CLIOPT(name) PDNNET_CLIOPT_I(name)
 
+/**
+ * Macro for an else-if statement that matches the short or long option name.
+ *
+ * @param short_name Short option name
+ * @param long_name Long option name
+ * @param argv Argument vector from `main`
+ * @param i Index to current argument
+ */
+#define PDNNET_CLIOPT_PARSE_MATCHES(short_name, long_name, argv, i) \
+  else if (!strcmp(argv[i], short_name) || !strcmp(argv[i], long_name))
+
 #endif  // PDNNET_CLIOPT_COMMON_H_
