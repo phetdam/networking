@@ -9,9 +9,7 @@
 #define PDNNET_CLIOPT_OPT_MAX_CONNECT_H_
 
 // maximum number of accepted connections
-#if !defined(PDNNET_ADD_CLIOPT_MAX_CONNECT)
-#define PDNNET_ADD_CLIOPT_MAX_CONNECT_USAGE ""
-#else
+#if defined(PDNNET_ADD_CLIOPT_MAX_CONNECT)
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -20,21 +18,21 @@
 #include "pdnnet/cliopt/common.h"
 #include "pdnnet/common.h"
 
-#define PDNNET_ADD_CLIOPT_MAX_CONNECT_SHORT_OPTION "-M"
-#define PDNNET_ADD_CLIOPT_MAX_CONNECT_OPTION "--max-connect"
-#define PDNNET_ADD_CLIOPT_MAX_CONNECT_ARG_NAME "MAX_CONNECT"
-#ifndef PDNNET_ADD_CLIOPT_MAX_CONNECT_DEFAULT
-#define PDNNET_ADD_CLIOPT_MAX_CONNECT_DEFAULT 10
-#endif  // PDNNET_ADD_CLIOPT_MAX_CONNECT_DEFAULT
-static unsigned int PDNNET_CLIOPT(max_connect) = PDNNET_ADD_CLIOPT_MAX_CONNECT_DEFAULT;
-#define PDNNET_ADD_CLIOPT_MAX_CONNECT_USAGE \
+#define PDNNET_CLIOPT_MAX_CONNECT_SHORT_OPTION "-M"
+#define PDNNET_CLIOPT_MAX_CONNECT_OPTION "--max-connect"
+#define PDNNET_CLIOPT_MAX_CONNECT_ARG_NAME "MAX_CONNECT"
+#ifndef PDNNET_CLIOPT_MAX_CONNECT_DEFAULT
+#define PDNNET_CLIOPT_MAX_CONNECT_DEFAULT 10
+#endif  // PDNNET_CLIOPT_MAX_CONNECT_DEFAULT
+static unsigned int PDNNET_CLIOPT(max_connect) = PDNNET_CLIOPT_MAX_CONNECT_DEFAULT;
+#define PDNNET_CLIOPT_MAX_CONNECT_USAGE \
   "  " \
-    PDNNET_ADD_CLIOPT_MAX_CONNECT_SHORT_OPTION ", " \
-    PDNNET_ADD_CLIOPT_MAX_CONNECT_OPTION " " \
-    PDNNET_ADD_CLIOPT_MAX_CONNECT_ARG_NAME \
+    PDNNET_CLIOPT_MAX_CONNECT_SHORT_OPTION ", " \
+    PDNNET_CLIOPT_MAX_CONNECT_OPTION " " \
+    PDNNET_CLIOPT_MAX_CONNECT_ARG_NAME \
     "\n" \
   "                        Max number of connections to accept, default " \
-    PDNNET_STRINGIFY(PDNNET_ADD_CLIOPT_MAX_CONNECT_DEFAULT) "\n"
+    PDNNET_STRINGIFY(PDNNET_CLIOPT_MAX_CONNECT_DEFAULT) "\n"
 
 /**
  * Parse max accepted connections value.
@@ -75,6 +73,38 @@ pdnnet_cliopt_parse_max_connect(const char *arg)
   PDNNET_CLIOPT(max_connect) = (unsigned int) value;
   return true;
 }
-#endif  // defined(PDNNET_ADD_CLIOPT_MAX_CONNECT)
+
+/**
+ * Parsing logic for matching and handling the max accepted connections option.
+ *
+ * @param argc Argument count from `main`
+ * @param argv Argument vector from `main`
+ * @param i Index to current argument
+ */
+#define PDNNET_CLIOPT_MAX_CONNECT_PARSE_CASE(argc, argv, i) \
+  PDNNET_CLIOPT_PARSE_MATCHES( \
+    argv, \
+    i, \
+    PDNNET_CLIOPT_MAX_CONNECT_SHORT_OPTION, \
+    PDNNET_CLIOPT_MAX_CONNECT_OPTION \
+  ) { \
+    /* not enough arguments */ \
+    if (++i >= argc) { \
+      fprintf( \
+        stderr, \
+        "Error: Missing argument for " \
+        PDNNET_CLIOPT_MAX_CONNECT_SHORT_OPTION ", " \
+        PDNNET_CLIOPT_MAX_CONNECT_OPTION "\n" \
+      ); \
+      return false; \
+    } \
+    /* parse max accepted connections */ \
+    if (!pdnnet_cliopt_parse_max_connect(argv[i])) \
+      return false; \
+  }
+#else
+#define PDNNET_CLIOPT_MAX_CONNECT_USAGE ""
+#define PDNNET_CLIOPT_MAX_CONNECT_PARSE_CASE(argc, argv, i)
+#endif  // !defined(PDNNET_ADD_CLIOPT_MAX_CONNECT)
 
 #endif  // PDNNET_CLIOPT_OPT_MAX_CONNECT_H_

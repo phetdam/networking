@@ -143,67 +143,11 @@ pdnnet_cliopt_parse_args(int argc, PDNNET_SA(In) char **argv)
     // port
     PDNNET_CLIOPT_PORT_PARSE_CASE(argc, argv, i)
     // path to host resource
-#ifdef PDNNET_ADD_CLIOPT_PATH
-    else if (
-      !strcmp(argv[i], PDNNET_CLIOPT_PATH_SHORT_OPTION) ||
-      !strcmp(argv[i], PDNNET_CLIOPT_PATH_OPTION)
-    ) {
-      // not enough arguments
-      if (++i >= argc) {
-        fprintf(
-          stderr,
-          "Error: Missing argument for " PDNNET_CLIOPT_PATH_SHORT_OPTION ". "
-            PDNNET_CLIOPT_PATH_OPTION "\n"
-        );
-        return false;
-      }
-      // parse path value
-      if (!pdnnet_cliopt_parse_path(argv[i]))
-        return false;
-    }
-#endif  // PDNNET_ADD_CLIOPT_PATH
+    PDNNET_CLIOPT_PATH_PARSE_CASE(argc, argv, i)
     // read/write or recv/send message bytes
-#ifdef PDNNET_ADD_CLIOPT_MESSAGE_BYTES
-    else if (
-      !strcmp(argv[i], PDNNET_CLIOPT_MESSAGE_BYTES_SHORT_OPTION) ||
-      !strcmp(argv[i], PDNNET_CLIOPT_MESSAGE_BYTES_OPTION)
-    ) {
-      // not enough arguments
-      if (++i >= argc) {
-        fprintf(
-          stderr,
-          "Error: Missing argument for "
-            PDNNET_CLIOPT_MESSAGE_BYTES_SHORT_OPTION ", "
-            PDNNET_CLIOPT_MESSAGE_BYTES_OPTION "\n"
-        );
-        return false;
-      }
-      // parse message byte count
-      if (!pdnnet_cliopt_parse_message_bytes(argv[i]))
-        return false;
-    }
-#endif  // PDNNET_ADD_CLIOPT_MESSAGE_BYTES
+    PDNNET_CLIOPT_MESSAGE_BYTES_PARSE_CASE(argc, argv, i)
     // max number of accepted connections
-#ifdef PDNNET_ADD_CLIOPT_MAX_CONNECT
-    else if (
-      !strcmp(argv[i], PDNNET_ADD_CLIOPT_MAX_CONNECT_SHORT_OPTION) ||
-      !strcmp(argv[i], PDNNET_ADD_CLIOPT_MAX_CONNECT_OPTION)
-    ) {
-      // not enough arguments
-      if (++i >= argc) {
-        fprintf(
-          stderr,
-          "Error: Missing argument for "
-            PDNNET_ADD_CLIOPT_MAX_CONNECT_SHORT_OPTION ", "
-            PDNNET_ADD_CLIOPT_MAX_CONNECT_OPTION "\n"
-        );
-        return false;
-      }
-      // parse max accepted connections
-      if (!pdnnet_cliopt_parse_max_connect(argv[i]))
-        return false;
-    }
-#endif  // PDNNET_ADD_CLIOPT_MAX_CONNECT
+    PDNNET_CLIOPT_MAX_CONNECT_PARSE_CASE(argc, argv, i)
     else {
       fprintf(stderr, "Error: Unknown option %s\n", argv[i]);
       return false;
@@ -238,7 +182,7 @@ pdnnet_cliopt_internal_print_usage(PDNNET_SA(In) char **argv, const char *desc)
       PDNNET_CLIOPT_PORT_USAGE
       PDNNET_CLIOPT_PATH_USAGE
       PDNNET_CLIOPT_MESSAGE_BYTES_USAGE
-      PDNNET_ADD_CLIOPT_MAX_CONNECT_USAGE,
+      PDNNET_CLIOPT_MAX_CONNECT_USAGE,
     PDNNET_PROGRAM_NAME,
     desc,
     desc_pad
@@ -252,7 +196,7 @@ pdnnet_cliopt_internal_print_usage(PDNNET_SA(In) char **argv, const char *desc)
 #undef PDNNET_CLIOPT_PORT_USAGE
 #undef PDNNET_CLOPT_PATH_USAGE
 #undef PDNNET_CLIOPT_MESSAGE_BYTES_USAGE
-#undef PDNNET_ADD_CLIOPT_MAX_CONNECT_USAGE
+#undef PDNNET_CLIOPT_MAX_CONNECT_USAGE
 
 /**
  * Print program usage.

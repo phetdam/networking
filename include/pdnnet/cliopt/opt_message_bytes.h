@@ -9,9 +9,7 @@
 #define PDNNET_CLIOPT_OPT_MESSAGE_BYTES_H_
 
 // bytes requested in a read, write, send, or recv call
-#if !defined(PDNNET_ADD_CLIOPT_MESSAGE_BYTES)
-#define PDNNET_CLIOPT_MESSAGE_BYTES_USAGE ""
-#else
+#if defined(PDNNET_ADD_CLIOPT_MESSAGE_BYTES)
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -81,6 +79,38 @@ pdnnet_cliopt_parse_message_bytes(const char *arg)
   PDNNET_CLIOPT(message_bytes) = (size_t) value;
   return true;
 }
-#endif  // defined(PDNNET_ADD_CLIOPT_MESSAGE_BYTES)
+
+/**
+ * Parsing logic for matching and handling the bytes per message option.
+ *
+ * @param argc Argument count from `main`
+ * @param argv Argument vector from `main`
+ * @param i Index to current argument
+ */
+#define PDNNET_CLIOPT_MESSAGE_BYTES_PARSE_CASE(argc, argv, i) \
+  PDNNET_CLIOPT_PARSE_MATCHES( \
+    argv, \
+    i, \
+    PDNNET_CLIOPT_MESSAGE_BYTES_SHORT_OPTION, \
+    PDNNET_CLIOPT_MESSAGE_BYTES_OPTION \
+  ) { \
+    /* not enough arguments */ \
+    if (++i >= argc) { \
+      fprintf( \
+        stderr, \
+        "Error: Missing argument for " \
+        PDNNET_CLIOPT_MESSAGE_BYTES_SHORT_OPTION ", " \
+        PDNNET_CLIOPT_MESSAGE_BYTES_OPTION "\n" \
+      ); \
+      return false; \
+    } \
+    /* parse message byte count */ \
+    if (!pdnnet_cliopt_parse_message_bytes(argv[i])) \
+      return false; \
+  }
+#else
+#define PDNNET_CLIOPT_MESSAGE_BYTES_USAGE ""
+#define PDNNET_CLIOPT_MESSAGE_BYTES_PARSE_CASE(argc, argv, i)
+#endif  // !defined(PDNNET_ADD_CLIOPT_MESSAGE_BYTES)
 
 #endif  // PDNNET_CLIOPT_OPT_MESSAGE_BYTES_H_

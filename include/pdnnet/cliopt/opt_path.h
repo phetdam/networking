@@ -9,9 +9,7 @@
 #define PDNNET_CLIOPT_OPT_PATH_H_
 
 // path to host resource
-#if !defined(PDNNET_ADD_CLIOPT_PATH)
-#define PDNNET_CLIOPT_PATH_USAGE ""
-#else
+#if defined(PDNNET_ADD_CLIOPT_PATH)
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -74,6 +72,34 @@ pdnnet_cliopt_parse_path(const char *arg)
   PDNNET_CLIOPT(path) = arg;
   return true;
 }
-#endif  // defined(PDNNET_ADD_CLIOPT_PATH)
+
+/**
+ * Parsing logic for matching and handling the host resource path option.
+ *
+ * @param argc Argument count from `main`
+ * @param argv Argument vector from `main`
+ * @param i Index to current argument
+ */
+#define PDNNET_CLIOPT_PATH_PARSE_CASE(argc, argv, i) \
+  PDNNET_CLIOPT_PARSE_MATCHES( \
+    argv, i, PDNNET_CLIOPT_PATH_SHORT_OPTION, PDNNET_CLIOPT_PATH_OPTION \
+  ) { \
+    /* not enough arguments */ \
+    if (++i >= argc) { \
+      fprintf( \
+        stderr, \
+        "Error: Missing argument for " PDNNET_CLIOPT_PATH_SHORT_OPTION ", " \
+          PDNNET_CLIOPT_PATH_OPTION "\n" \
+      ); \
+      return false; \
+    } \
+    /* parse path value */ \
+    if (!pdnnet_cliopt_parse_path(argv[i])) \
+      return false; \
+  }
+#else
+#define PDNNET_CLIOPT_PATH_USAGE ""
+#define PDNNET_CLIOPT_PATH_PARSE_CASE(argc, argv, i)
+#endif  // !defined(PDNNET_ADD_CLIOPT_PATH)
 
 #endif  // PDNNET_CLIOPT_OPT_PATH_H_
