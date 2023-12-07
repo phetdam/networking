@@ -27,20 +27,20 @@
 #ifndef PDNNET_CLIOPT_H_
 #define PDNNET_CLIOPT_H_
 
-#include <limits.h>
 #include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "pdnnet/cliopt/common.h"
+#include "pdnnet/cliopt/opt_host.h"
+#include "pdnnet/cliopt/opt_max_connect.h"
+#include "pdnnet/cliopt/opt_message_bytes.h"
+#include "pdnnet/cliopt/opt_path.h"
+#include "pdnnet/cliopt/opt_port.h"
+#include "pdnnet/cliopt/opt_verbose.h"
 #include "pdnnet/common.h"
 #include "pdnnet/sa.h"
-
-// namespacing macros for a variable corresponding to a command-line option
-#define PDNNET_CLIOPT_I(name) pdnnet_cliopt_ ## name
-#define PDNNET_CLIOPT(name) PDNNET_CLIOPT_I(name)
 
 /**
  * Name of the string variable holding the main program name.
@@ -98,134 +98,6 @@ static bool PDNNET_CLIOPT(print_usage) = false;
  *    defined for each particular `<ARG>` option.
  */
 
-// verbosity level
-#if defined(PDNNET_ADD_CLIOPT_VERBOSE)
-#define PDNNET_CLIOPT_VERBOSE_SHORT_OPTION "-v"
-#define PDNNET_CLIOPT_VERBOSE_OPTION "--verbose"
-#define PDNNET_CLIOPT_VERBOSE_ARG_NAME "VERBOSE"
-static unsigned short PDNNET_CLIOPT(verbose) = 0;
-#define PDNNET_CLIOPT_VERBOSE_USAGE \
-  "  " \
-    PDNNET_CLIOPT_VERBOSE_SHORT_OPTION ", " \
-    PDNNET_CLIOPT_VERBOSE_OPTION " [" \
-    PDNNET_CLIOPT_VERBOSE_ARG_NAME "]\n" \
-    "                        Run verbosely, with larger values for greater\n" \
-    "                        verbosity. If specified without an argument,\n" \
-    "                        the verbosity level is set to 1.\n"
-#else
-#define PDNNET_CLIOPT_VERBOSE_USAGE ""
-#endif  // !defined(PDNNET_ADD_CLIOPT_VERBOSE)
-// host name
-#if defined(PDNNET_ADD_CLIOPT_HOST)
-#define PDNNET_CLIOPT_HOST_SHORT_OPTION "-H"
-#define PDNNET_CLIOPT_HOST_OPTION "--host"
-#define PDNNET_CLIOPT_HOST_ARG_NAME "HOST"
-#ifndef PDNNET_CLIOPT_HOST_DEFAULT
-#define PDNNET_CLIOPT_HOST_DEFAULT "localhost"
-#endif  // PDNNET_CLIOPT_HOST_DEFAULT
-static const char *PDNNET_CLIOPT(host) = PDNNET_CLIOPT_HOST_DEFAULT;
-#define PDNNET_CLIOPT_HOST_USAGE \
-  "  " \
-    PDNNET_CLIOPT_HOST_SHORT_OPTION ", " \
-    PDNNET_CLIOPT_HOST_OPTION " " \
-    PDNNET_CLIOPT_HOST_ARG_NAME \
-    "       Host name, default " \
-    PDNNET_STRINGIFY(PDNNET_CLIOPT_HOST_DEFAULT) "\n"
-#else
-#define PDNNET_CLIOPT_HOST_USAGE ""
-#endif  // !defined(PDNNET_ADD_CLIOPT_HOST)
-// port number
-#if defined(PDNNET_ADD_CLIOPT_PORT)
-#define PDNNET_CLIOPT_PORT_SHORT_OPTION "-p"
-#define PDNNET_CLIOPT_PORT_OPTION "--port"
-#define PDNNET_CLIOPT_PORT_ARG_NAME "PORT"
-// use value of zero to allow OS to select the next available port
-#if !defined(PDNNET_CLIOPT_PORT_DEFAULT)
-#define PDNNET_CLIOPT_PORT_DEFAULT 0
-// extra clarification on the port default value
-#define PDNNET_CLIOPT_PORT_DEFAULT_NOTE " (next free port)"
-#else
-#define PDNNET_CLIOPT_PORT_DEFAULT_NOTE
-#endif  // defined(PDNNET_CLIOPT_PORT_DEFAULT)
-// typedef'd to in_port_t on *nix, USHORT on Windows
-static uint16_t PDNNET_CLIOPT(port) = PDNNET_CLIOPT_PORT_DEFAULT;
-#define PDNNET_CLIOPT_PORT_USAGE \
-  "  " \
-    PDNNET_CLIOPT_PORT_SHORT_OPTION ", " \
-    PDNNET_CLIOPT_PORT_OPTION " " \
-    PDNNET_CLIOPT_PORT_ARG_NAME \
-    "       Port number to bind to, default " \
-    PDNNET_STRINGIFY(PDNNET_CLIOPT_PORT_DEFAULT) \
-    PDNNET_CLIOPT_PORT_DEFAULT_NOTE "\n"
-#else
-#define PDNNET_CLIOPT_PORT_USAGE ""
-#endif  // !defined(PDNNET_ADD_CLIOPT_PORT)
-// path to host resource
-#if defined(PDNNET_ADD_CLIOPT_PATH)
-#define PDNNET_CLIOPT_PATH_SHORT_OPTION "-P"
-#define PDNNET_CLIOPT_PATH_OPTION "--path"
-#define PDNNET_CLIOPT_PATH_ARG_NAME "PATH"
-// default resource path on host is just /, the root
-#ifndef PDNNET_CLIOPT_PATH_DEFAULT
-#define PDNNET_CLIOPT_PATH_DEFAULT "/"
-#endif  // PDNNET_CLIOPT_PATH_DEFAULT
-static const char *PDNNET_CLIOPT(path) = PDNNET_CLIOPT_PATH_DEFAULT;
-#define PDNNET_CLIOPT_PATH_USAGE \
-  "  " \
-    PDNNET_CLIOPT_PATH_SHORT_OPTION ", " \
-    PDNNET_CLIOPT_PATH_OPTION " " \
-    PDNNET_CLIOPT_PATH_ARG_NAME \
-    "       Path to host resource, default " \
-    PDNNET_STRINGIFY(PDNNET_CLIOPT_PATH_DEFAULT) "\n"
-#else
-#define PDNNET_CLIOPT_PATH_USAGE ""
-#endif  // !defined(PDNNET_ADD_CLIOPT_PATH)
-// bytes requested in a read, write, send, or recv call
-#if defined(PDNNET_ADD_CLIOPT_MESSAGE_BYTES)
-#define PDNNET_CLIOPT_MESSAGE_BYTES_SHORT_OPTION "-m"
-#define PDNNET_CLIOPT_MESSAGE_BYTES_OPTION "--message-bytes"
-#define PDNNET_CLIOPT_MESSAGE_BYTES_ARG_NAME "MESSAGE_BYTES"
-#ifndef PDNNET_CLIOPT_MESSAGE_BYTES_DEFAULT
-#define PDNNET_CLIOPT_MESSAGE_BYTES_DEFAULT 512
-#endif  // PDNNET_CLIOPT_MESSAGE_BYTES_DEFAULT
-#ifndef PDNNET_CLIOPT_MAX_MESSAGE_BYTES
-#define PDNNET_CLIOPT_MAX_MESSAGE_BYTES BUFSIZ
-#endif  // PDNNET_CLIOPT_MAX_MESSAGE_BYTES
-static size_t PDNNET_CLIOPT(message_bytes) = PDNNET_CLIOPT_MESSAGE_BYTES_DEFAULT;
-#define PDNNET_CLIOPT_MESSAGE_BYTES_USAGE \
-  "  " \
-    PDNNET_CLIOPT_MESSAGE_BYTES_SHORT_OPTION ", " \
-    PDNNET_CLIOPT_MESSAGE_BYTES_OPTION " " \
-    PDNNET_CLIOPT_MESSAGE_BYTES_ARG_NAME \
-    "\n" \
-  "                        Number of bytes requested per read/write to/from a\n" \
-  "                        client, default " \
-    PDNNET_STRINGIFY(PDNNET_CLIOPT_MESSAGE_BYTES_DEFAULT) " bytes, max " \
-    PDNNET_STRINGIFY(PDNNET_CLIOPT_MAX_MESSAGE_BYTES) " bytes\n"
-#else
-#define PDNNET_CLIOPT_MESSAGE_BYTES_USAGE ""
-#endif  // !defined(PDNNET_ADD_CLIOPT_MESSAGE_BYTES)
-// maximum number of accepted connections
-#if defined(PDNNET_ADD_CLIOPT_MAX_CONNECT)
-#define PDNNET_ADD_CLIOPT_MAX_CONNECT_SHORT_OPTION "-M"
-#define PDNNET_ADD_CLIOPT_MAX_CONNECT_OPTION "--max-connect"
-#define PDNNET_ADD_CLIOPT_MAX_CONNECT_ARG_NAME "MAX_CONNECT"
-#ifndef PDNNET_ADD_CLIOPT_MAX_CONNECT_DEFAULT
-#define PDNNET_ADD_CLIOPT_MAX_CONNECT_DEFAULT 10
-#endif  // PDNNET_ADD_CLIOPT_MAX_CONNECT_DEFAULT
-static unsigned int PDNNET_CLIOPT(max_connect) = PDNNET_ADD_CLIOPT_MAX_CONNECT_DEFAULT;
-#define PDNNET_ADD_CLIOPT_MAX_CONNECT_USAGE \
-  "  " \
-    PDNNET_ADD_CLIOPT_MAX_CONNECT_SHORT_OPTION ", " \
-    PDNNET_ADD_CLIOPT_MAX_CONNECT_OPTION " " \
-    PDNNET_ADD_CLIOPT_MAX_CONNECT_ARG_NAME \
-    "\n" \
-  "                        Max number of connections to accept, default " \
-    PDNNET_STRINGIFY(PDNNET_ADD_CLIOPT_MAX_CONNECT_DEFAULT) "\n"
-#else
-#define PDNNET_ADD_CLIOPT_MAX_CONNECT_USAGE ""
-#endif  // !defined(PDNNET_ADD_CLIOPT_MAX_CONNECT)
-
 /**
  * Internal function to set `PDNNET_PROGRAM_NAME` from `PDNNET_ARGV`.
  *
@@ -242,223 +114,6 @@ pdnnet_internal_set_program_name(PDNNET_SA(In) char **argv)
   else
     PDNNET_PROGRAM_NAME++;
 }
-
-#ifdef PDNNET_ADD_CLIOPT_VERBOSE
-/**
- * Parse verbosity level.
- *
- * Zero verbosity level is the same as not specifying the verbosity level.
- *
- * @param arg String verbosity level
- * @returns `true` on successful parse, `false` otherwise
- */
-static bool
-pdnnet_cliopt_parse_verbose(const char *arg)
-{
-  // zero is allowed. reassign to override previous values (if any)
-  if (!strcmp(arg, "0")) {
-    PDNNET_CLIOPT(verbose) = 0;
-    return true;
-  }
-  // get value + handle error
-  int value = atoi(arg);
-  if (!value) {
-    fprintf(stderr, "Error: Unable to convert %s to a verbosity level\n", arg);
-    return false;
-  }
-  // USHORT_MAX is max verbosity level
-  if (value > USHRT_MAX) {
-    fprintf(
-      stderr, "Error: Verbosity level %s exceeds maximum %u\n", arg, USHRT_MAX
-    );
-    return false;
-  }
-  // otherwise, assign verbosity level + return
-  PDNNET_CLIOPT(verbose) = (unsigned short) value;
-  return true;
-}
-#endif  // PDNNET_ADD_CLIOPT_VERBOSE
-
-#ifdef PDNNET_ADD_CLIOPT_HOST
-/**
- * Parse host name.
- *
- * Does not actually check whether or not the arg is an actual IPv4 host name.
- * This would be done by the relevant `gethostbyname` or `getaddrinfo` call.
- *
- * @param arg String host name
- * @returns `true` on successful parse, `false` otherwise
- */
-static bool
-pdnnet_cliopt_parse_host(const char *arg)
-{
-  // no checking for now
-  PDNNET_CLIOPT(host) = arg;
-  return true;
-}
-#endif  // PDNNET_ADD_CLIOPT_HOST
-
-#ifdef PDNNET_ADD_CLIOPT_PORT
-/**
- * Parse port value.
- *
- * @param arg String port
- * @returns `true` on successful parse, `false` otherwise
- */
-static bool
-pdnnet_cliopt_parse_port(const char *arg)
-{
-  // don't allow zero port value
-  if (!strcmp(arg, "0")) {
-    fprintf(stderr, "Error: Cannot specify 0 as a port value\n");
-    return false;
-  }
-  // get value + handle error
-  int value = atoi(arg);
-  if (!value) {
-    fprintf(stderr, "Error: Unable to convert %s to a port number\n", arg);
-    return false;
-  }
-  // can't be greater than UINT16_MAX
-  if (value > UINT16_MAX) {
-    fprintf(
-      stderr,
-      "Error: Port number %d exceeds max port number %d\n",
-      value,
-      UINT16_MAX
-    );
-    return false;
-  }
-  // update port value + return
-  PDNNET_CLIOPT(port) = (uint16_t) value;
-  return true;
-}
-#endif  // PDNNET_ADD_CLIOPT_PORT
-
-#ifdef PDNNET_ADD_CLIOPT_PATH
-/**
- * Parse path to host resource value.
- *
- * Relatively permissive as the path must simply be nonempty, start with `/`,
- * and not contain adjacent forward slashes, e.g. `//`.
- *
- * @param arg String path to host resource
- * @returns `true` on successful parse, `false` otherwise
- */
-static bool
-pdnnet_cliopt_parse_path(const char *arg)
-{
-  // must have nonzero length
-  size_t path_len = strlen(arg);
-  if (!path_len) {
-    fprintf(stderr, "Error: Path is empty. Use / for the root path\n");
-    return false;
-  }
-  // must start with /
-  if (arg[0] != '/') {
-    fprintf(stderr, "Error: Path %s invalid; must start with /\n", arg);
-    return false;
-  }
-  // can't have two front slashes together
-  for (size_t i = 0; i < path_len - 1; i++) {
-    if (arg[i] == '/' && arg[i] == arg[i + 1]) {
-      fprintf(
-        stderr,
-        "Error: Path %ss invalid; cannot contain adjacent forward slashes\n",
-        arg
-      );
-      return false;
-    }
-  }
-  // update path to host resource + return
-  PDNNET_CLIOPT(path) = arg;
-  return true;
-}
-#endif  // PDNNET_ADD_CLIOPT_PATH
-
-#ifdef PDNNET_ADD_CLIOPT_MESSAGE_BYTES
-/**
- * Parse number of bytes to request for each socket read/write call.
- *
- * @param arg String request size in bytes
- * @returns `true` on successful parse, `false` otherwise
- */
-static bool
-pdnnet_cliopt_parse_message_bytes(const char *arg)
-{
-  // don't allow zero message size
-  if (!strcmp(arg, "0")) {
-    fprintf(stderr, "Error: Cannot specify 0 as message size\n");
-    return false;
-  }
-  // get value + handle error
-  long long value = atoll(arg);
-  if (!value) {
-    fprintf(stderr, "Error: Unable to convert %s to message size\n", arg);
-    return false;
-  }
-  // must be positive
-  if (value < 1) {
-    fprintf(stderr, "Error: Message size value must be positive\n");
-    return false;
-  }
-  // must not exceed MAX_READ_SIZE
-  if (value > PDNNET_CLIOPT_MAX_MESSAGE_BYTES) {
-    fprintf(
-      stderr,
-      "Error: Message size value %lld exceeds allowed max %zu\n",
-      value,
-      (size_t) PDNNET_CLIOPT_MAX_MESSAGE_BYTES
-    );
-    return false;
-  }
-  // update message size value + return
-  PDNNET_CLIOPT(message_bytes) = (size_t) value;
-  return true;
-}
-#endif  // PDNNET_ADD_CLIOPT_MESSAGE_BYTES
-
-#ifdef PDNNET_ADD_CLIOPT_MAX_CONNECT
-/**
- * Parse max accepted connections value.
- *
- * @param arg String max accepted connections
- * @returns `true` on successful parse, `false` otherwise
- */
-static bool
-pdnnet_cliopt_parse_max_connect(const char *arg)
-{
-  // don't allow zero max connections
-  if (!strcmp(arg, "0")) {
-    fprintf(stderr, "Error: Cannot specify 0 as number of max connects\n");
-    return false;
-  }
-  // get value + handle error
-  int value = atoi(arg);
-  if (!value) {
-    fprintf(stderr, "Error: Can't convert %s to number of max connects\n", arg);
-    return false;
-  }
-  // must be positive
-  if (value < 1) {
-    fprintf(stderr, "Error: Max connection value must be positive\n");
-    return false;
-  }
-  // must be within integer range
-  if (value > INT_MAX) {
-    fprintf(
-      stderr,
-      "Error: Max connect value %u exceeds allowed max %d\n",
-      value,
-      INT_MAX
-    );
-    return false;
-  }
-  // update max connections value + return
-  PDNNET_CLIOPT(max_connect) = (unsigned int) value;
-  return true;
-}
-#endif  // PDNNET_ADD_CLIOPT_MAX_CONNECT
 
 /**
  * Parse incoming command-line arguments.
@@ -649,6 +304,7 @@ pdnnet_cliopt_internal_print_usage(PDNNET_SA(In) char **argv, const char *desc)
 #undef PDNNET_CLIOPT_VERBOSE_USAGE
 #undef PDNNET_CLIOPT_HOST_USAGE
 #undef PDNNET_CLIOPT_PORT_USAGE
+#undef PDNNET_CLOPT_PATH_USAGE
 #undef PDNNET_CLIOPT_MESSAGE_BYTES_USAGE
 #undef PDNNET_ADD_CLIOPT_MAX_CONNECT_USAGE
 
