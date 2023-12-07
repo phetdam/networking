@@ -9,10 +9,9 @@
 #define PDNNET_CLIOPT_OPT_HOST_H_
 
 // host name
-#if !defined(PDNNET_ADD_CLIOPT_HOST)
-#define PDNNET_CLIOPT_HOST_USAGE ""
-#else
+#if defined(PDNNET_ADD_CLIOPT_HOST)
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "pdnnet/cliopt/common.h"
 #include "pdnnet/common.h"
@@ -48,6 +47,34 @@ pdnnet_cliopt_parse_host(const char *arg)
   PDNNET_CLIOPT(host) = arg;
   return true;
 }
-#endif  // defined(PDNNET_ADD_CLIOPT_HOST)
+
+/**
+ * Parsing logic for matching and handling the host name option.
+ *
+ * @param argc Argument count from `main`
+ * @param argv Argument vector from `main`
+ * @param i Index to current argument
+ */
+#define PDNNET_CLIOPT_HOST_PARSE_CASE(argc, argv, i) \
+  PDNNET_CLIOPT_PARSE_MATCHES( \
+    argv, i, PDNNET_CLIOPT_HOST_SHORT_OPTION, PDNNET_CLIOPT_HOST_OPTION \
+  ) { \
+    /* not enough arguments */ \
+    if (++i >= argc) { \
+      fprintf( \
+        stderr, \
+        "Error: Missing argument for " PDNNET_CLIOPT_HOST_SHORT_OPTION ", " \
+          PDNNET_CLIOPT_HOST_OPTION "\n" \
+      ); \
+      return false; \
+    } \
+    /* parse port value */ \
+    if (!pdnnet_cliopt_parse_host(argv[i])) \
+      return false; \
+  }
+#else
+#define PDNNET_CLIOPT_HOST_USAGE ""
+#define PDNNET_CLIOPT_HOST_PARSE_CASE(argc, argv, i)
+#endif  // !defined(PDNNET_ADD_CLIOPT_HOST)
 
 #endif  // PDNNET_CLIOPT_OPT_HOST_H_

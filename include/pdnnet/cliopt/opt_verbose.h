@@ -74,7 +74,7 @@ pdnnet_cliopt_parse_verbose(const char *arg)
  */
 #define PDNNET_CLIOPT_VERBOSE_PARSE_CASE(argc, argv, i) \
   PDNNET_CLIOPT_PARSE_MATCHES( \
-    PDNNET_CLIOPT_VERBOSE_SHORT_OPTION, PDNNET_CLIOPT_VERBOSE_OPTION, argv, i \
+    argv, i, PDNNET_CLIOPT_VERBOSE_SHORT_OPTION, PDNNET_CLIOPT_VERBOSE_OPTION \
   ) { \
     /* not enough arguments, so treat as 1 */ \
     if (++i >= argc) \

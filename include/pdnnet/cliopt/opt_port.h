@@ -9,9 +9,7 @@
 #define PDNNET_CLIOPT_OPT_PORT_H_
 
 // port number
-#if !defined(PDNNET_ADD_CLIOPT_PORT)
-#define PDNNET_CLIOPT_PORT_USAGE ""
-#else
+#if defined(PDNNET_ADD_CLIOPT_PORT)
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -77,6 +75,33 @@ pdnnet_cliopt_parse_port(const char *arg)
   return true;
 }
 
-#endif  // defined(PDNNET_ADD_CLIOPT_PORT)
+/**
+ * Parsing logic for matching and handling the port number option.
+ *
+ * @param argc Argument count from `main`
+ * @param argv Argument vector from `main`
+ * @param i Index to current argument
+ */
+#define PDNNET_CLIOPT_PORT_PARSE_CASE(argc, argv, i) \
+  PDNNET_CLIOPT_PARSE_MATCHES( \
+    argv, i, PDNNET_CLIOPT_PORT_SHORT_OPTION, PDNNET_CLIOPT_PORT_OPTION \
+  ) { \
+    /* not enough arguments */ \
+    if (++i >= argc) { \
+      fprintf( \
+        stderr, \
+        "Error: Missing argument for " PDNNET_CLIOPT_PORT_SHORT_OPTION ", " \
+        PDNNET_CLIOPT_PORT_OPTION "\n" \
+      ); \
+      return false; \
+    } \
+    /* parse port value */ \
+    if (!pdnnet_cliopt_parse_port(argv[i])) \
+      return false; \
+  }
+#else
+#define PDNNET_CLIOPT_PORT_USAGE ""
+#define PDNNET_CLIOPT_PORT_PARSE_CASE(argc, argv, i)
+#endif  // !defined(PDNNET_ADD_CLIOPT_PORT)
 
 #endif  // PDNNET_CLIOPT_OPT_PORT_H_

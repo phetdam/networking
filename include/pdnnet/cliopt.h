@@ -139,45 +139,9 @@ pdnnet_cliopt_parse_args(int argc, PDNNET_SA(In) char **argv)
     // verbosity level
     PDNNET_CLIOPT_VERBOSE_PARSE_CASE(argc, argv, i)
     // host
-#ifdef PDNNET_ADD_CLIOPT_HOST
-    else if (
-      !strcmp(argv[i], PDNNET_CLIOPT_HOST_SHORT_OPTION) ||
-      !strcmp(argv[i], PDNNET_CLIOPT_HOST_OPTION)
-    ) {
-      // not enough arguments
-      if (++i >= argc) {
-        fprintf(
-          stderr,
-          "Error: Missing argument for " PDNNET_CLIOPT_HOST_SHORT_OPTION ", "
-            PDNNET_CLIOPT_HOST_OPTION "\n"
-        );
-        return false;
-      }
-      // parse port value
-      if (!pdnnet_cliopt_parse_host(argv[i]))
-        return false;
-    }
-#endif  // PDNNET_ADD_CLIOPT_HOST
+    PDNNET_CLIOPT_HOST_PARSE_CASE(argc, argv, i)
     // port
-#ifdef PDNNET_ADD_CLIOPT_PORT
-    else if (
-      !strcmp(argv[i], PDNNET_CLIOPT_PORT_SHORT_OPTION) ||
-      !strcmp(argv[i], PDNNET_CLIOPT_PORT_OPTION)
-    ) {
-      // not enough arguments
-      if (++i >= argc) {
-        fprintf(
-          stderr,
-          "Error: Missing argument for " PDNNET_CLIOPT_PORT_SHORT_OPTION ", "
-            PDNNET_CLIOPT_PORT_OPTION "\n"
-        );
-        return false;
-      }
-      // parse port value
-      if (!pdnnet_cliopt_parse_port(argv[i]))
-        return false;
-    }
-#endif  // PDNNET_ADD_CLIOPT_PORT
+    PDNNET_CLIOPT_PORT_PARSE_CASE(argc, argv, i)
     // path to host resource
 #ifdef PDNNET_ADD_CLIOPT_PATH
     else if (
