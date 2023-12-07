@@ -66,61 +66,6 @@ std::string http_get_request(
     // custom user agent string
     "User-Agent: pdnnet-" + std::string{PDNNET_PROGRAM_NAME} + "/0.0.1\r\n\r\n";
 }
-
-class tls_connection {
-public:
-  tls_connection(
-    pdnnet::socket_handle handle,
-    const pdnnet::unique_tls_context& context)
-    : handle_{handle}, ssl_{SSL_new(context)}, context_{context}
-  {
-    if (!ssl_)
-      throw std::runtime_error{
-        pdnnet::openssl_error_string("Failed to create SSL")
-      };
-    // set socket handle as I/O facility for transport layer
-    if (!SSL_set_fd(ssl_, handle_))
-      throw std::runtime_error{
-        pdnnet::openssl_error_string("Failed to set socket handle")
-      };
-  }
-
-  tls_connection(const tls_connection&) = delete;
-
-  ~tls_connection()
-  {
-    SSL_free(ssl_);
-  }
-
-  auto handle() const noexcept { return handle_; }
-
-  auto ssl() const noexcept { return ssl_; }
-
-  const auto& context() const noexcept { return context_; }
-
-  std::optional<std::string> connect() const
-  {
-    auto status = SSL_connect(ssl_);
-    // 1 on success
-    if (status == 1)
-      return {};
-    // 0 is controlled failure
-    if (status == 0)
-      return pdnnet::openssl_error_string("Controlled TLS handshake error");
-    // otherwise, fatal error
-    return pdnnet::openssl_error_string("Fatal TLS handshake error");
-  }
-
-  auto operator()() const
-  {
-    return connect();
-  }
-
-private:
-  pdnnet::socket_handle handle_;
-  SSL* ssl_;
-  const pdnnet::unique_tls_context& context_;
-};
 #endif  // PDNNET_UNIX
 
 }  // namespace
