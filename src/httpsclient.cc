@@ -71,7 +71,7 @@ class tls_connection {
 public:
   tls_connection(
     pdnnet::socket_handle handle,
-    const pdnnet::tls::unique_context& context)
+    const pdnnet::unique_tls_context& context)
     : handle_{handle}, ssl_{SSL_new(context)}, context_{context}
   {
     if (!ssl_)
@@ -119,7 +119,7 @@ public:
 private:
   pdnnet::socket_handle handle_;
   SSL* ssl_;
-  const pdnnet::tls::unique_context& context_;
+  const pdnnet::unique_tls_context& context_;
 };
 #endif  // PDNNET_UNIX
 
@@ -137,7 +137,7 @@ PDNNET_ARG_MAIN
   // HTTPS request logic on *nix only for now
 #ifdef PDNNET_UNIX
   // create OpenSSL TLS connection using default context + attempt to connect
-  tls_connection connection{client.socket(), pdnnet::tls::default_context()};
+  tls_connection connection{client.socket(), pdnnet::default_tls_context()};
   error = connection();
   // if TLS handshake fails, print error and exit nonzero
   if (error)

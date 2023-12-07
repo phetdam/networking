@@ -93,16 +93,11 @@ inline auto openssl_error_string()
   return openssl_error_string(ERR_get_error());
 }
 
-#endif  // PDNNET_UNIX
-
-namespace tls {
-
-#ifdef PDNNET_UNIX
-class unique_context {
+class unique_tls_context {
 public:
-  unique_context() : unique_context{TLS_method} {}
+  unique_tls_context() : unique_tls_context{TLS_method} {}
 
-  unique_context(const std::function<const SSL_METHOD*()>& method_getter)
+  unique_tls_context(const std::function<const SSL_METHOD*()>& method_getter)
   {
     // ensure OpenSSL is initialized (thread-safe call)
     init_openssl();
@@ -113,15 +108,15 @@ public:
       throw std::runtime_error{openssl_error_string("Failed to create SSL_CTX")};
   }
 
-  unique_context(const unique_context&) = delete;
+  unique_tls_context(const unique_tls_context&) = delete;
 
-  ~unique_context()
+  ~unique_tls_context()
   {
     // no-op if context_ is nullptr
     SSL_CTX_free(context_);
   }
 
-  unique_context& operator=(unique_context&& other)
+  unique_tls_context& operator=(unique_tls_context&& other)
   {
     // free current context (no-op if nullptr) and take ownership
     SSL_CTX_free(context_);
@@ -146,14 +141,13 @@ private:
   SSL_CTX* context_;
 };
 
-inline const auto& default_context()
+inline const auto& default_tls_context()
 {
-  static unique_context context;
+  static unique_tls_context context;
   return context;
 }
 #endif  // PDNNET_UNIX
 
-}  // namespace tls
 }  // namespace pdnnet
 
 #endif  // PDNNET_TLS_HH_
