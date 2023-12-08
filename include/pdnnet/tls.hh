@@ -121,10 +121,28 @@ inline std::string openssl_ssl_error_string(int ssl_error)
   }
 }
 
+/**
+ * TLS context class with unique ownership.
+ *
+ * This is typically used for initializing a TLS connection layer. On UNIX-like
+ * systems the TLS provider used is OpenSSL.
+ */
 class unique_tls_context {
 public:
+  /**
+   * Default ctor.
+   *
+   * Uses the default OpenSSL flexible TLS method for initialization.
+   */
   unique_tls_context() : unique_tls_context{TLS_method} {}
 
+  /**
+   * Ctor.
+   *
+   * The callable returns the TLS protocol to use for connection.
+   *
+   * @param method_getter Callable returning a `const SSL_METHOD*`
+   */
   unique_tls_context(const std::function<const SSL_METHOD*()>& method_getter)
   {
     // ensure OpenSSL is initialized (thread-safe call)
@@ -136,18 +154,34 @@ public:
       throw std::runtime_error{openssl_error_string("Failed to create SSL_CTX")};
   }
 
+  /**
+   * Deleted copy ctor.
+   */
   unique_tls_context(const unique_tls_context&) = delete;
 
+  /**
+   * Move ctor.
+   *
+   * @param other TLS context to move from
+   */
   unique_tls_context(unique_tls_context&& other) noexcept
     : context_{other.release()}
   {}
 
+  /**
+   * Dtor.
+   */
   ~unique_tls_context()
   {
     // no-op if context_ is nullptr
     SSL_CTX_free(context_);
   }
 
+  /**
+   * Move assignment operator.
+   *
+   * @param other TLS context to move from
+   */
   unique_tls_context& operator=(unique_tls_context&& other) noexcept
   {
     // free current context (no-op if nullptr) and take ownership
@@ -156,10 +190,19 @@ public:
     return *this;
   }
 
+  /**
+   * Return handle to TLS context.
+   */
   auto context() const noexcept { return context_; }
 
+  /**
+   * Return the TLS method used to create the TLS context.
+   */
   auto method() const noexcept { return SSL_CTX_get_ssl_method(context_); }
 
+  /**
+   * Release ownership of the TLS context handle.
+   */
   SSL_CTX* release() noexcept
   {
     auto old_context = context_;
@@ -167,6 +210,9 @@ public:
     return old_context;
   }
 
+  /**
+   * Implicitly convert to a `SSL_CTX*` TLS context handle.
+   */
   operator SSL_CTX*() const noexcept { return context_; }
 
 private:
