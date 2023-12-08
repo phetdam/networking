@@ -84,10 +84,10 @@ PDNNET_ARG_MAIN
   layer.handshake(client.socket()).exit_on_error();
   // HTTP/1.1 GET request we will make
   auto get_request = http_get_request(PDNNET_CLIOPT(host), PDNNET_CLIOPT(path));
-  // print request if verbose
+  // print TLS version and request if verbose
   if (PDNNET_CLIOPT(verbose))
-    std::cout << PDNNET_PROGRAM_NAME << ": Making request...\n" <<
-      get_request << std::endl;
+    std::cout << PDNNET_PROGRAM_NAME << ": Using " << SSL_get_version(layer) <<
+      ". Making request...\n" << get_request << std::endl;
   // write request to server
   auto remaining = get_request.size();
   while (remaining) {
