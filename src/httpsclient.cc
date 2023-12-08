@@ -76,12 +76,12 @@ PDNNET_ARG_MAIN
   PDNNET_CLIOPT_PARSE_OPTIONS();
   // create IPv4 TCP/IP client + attempt connection. HTTPS is port 443
   pdnnet::ipv4_client client{};
-  pdnnet::error_exit_if(client.connect(PDNNET_CLIOPT(host), 443));
+  client.connect(PDNNET_CLIOPT(host), 443).exit_on_error();
   // HTTPS request logic on *nix only for now
 #ifdef PDNNET_UNIX
   // create OpenSSL TLS layer using default context + attempt to connect
   pdnnet::unique_tls_layer layer{pdnnet::default_tls_context()};
-  pdnnet::error_exit_if(layer.handshake(client.socket()));
+  layer.handshake(client.socket()).exit_on_error();
   // HTTP/1.1 GET request we will make
   auto get_request = http_get_request(PDNNET_CLIOPT(host), PDNNET_CLIOPT(path));
   // print request if verbose

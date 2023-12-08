@@ -21,6 +21,7 @@
 #include <cstring>
 #include <iostream>
 #include <optional>
+#include <stdexcept>
 #include <string>
 
 // currently only needed on Windows
@@ -173,18 +174,50 @@ inline auto socket_error()
 #endif  // !defined(_WIN32)
 }
 
+namespace detail {
+
 /**
- * Print the error message and exit with `EXIT_FAILURE` if optional has error.
+ * Base class for the `error_wrapper`.
  *
- * @param err Optional with string error
+ * Provides the main functionality used by the `error_wrapper`.
  */
-inline void error_exit_if(const std::optional<std::string>& err)
-{
-  if (err) {
-    std::cerr << "Error: " << *err << std::endl;
-    std::exit(EXIT_FAILURE);
+using error_wrapper_base = std::optional<std::string>;
+
+}  // namespace detail
+
+/**
+ * Error message wrapper.
+ *
+ * Can be used as a return value by methods to deliver a string error message
+ * on error while automatically throwing or exiting on error.
+ */
+class error_wrapper : public detail::error_wrapper_base {
+public:
+  using detail::error_wrapper_base::error_wrapper_base;
+
+  /**
+   * If an error message is contained, exit with `EXIT_FAILURE`.
+   */
+  void exit_on_error() const noexcept
+  {
+    if (has_value()) {
+      std::cerr << "Error: " << value() << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
   }
-}
+
+  /**
+   * If an error message is contained, throw the specified exception type.
+   *
+   * @tparam ExceptionType Exception type, default `std::runtime_error`
+   */
+  template <typename ExceptionType = std::runtime_error>
+  void throw_on_error() const noexcept
+  {
+    if (has_value())
+      throw ExceptionType{value()};
+  }
+};
 
 }  // namespace pdnnet
 

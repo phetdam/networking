@@ -248,6 +248,11 @@ inline const auto& default_tls1_3_context()
   return context;
 }
 
+/**
+ * TLS connection layer class with unique ownership.
+ *
+ * On UNIX-like systems OpenSSL provides the TLS implementation.
+ */
 class unique_tls_layer {
 public:
   unique_tls_layer() noexcept : layer_{} {}
@@ -289,7 +294,7 @@ public:
 
   operator SSL*() const noexcept { return layer_; }
 
-  std::optional<std::string> handshake(socket_handle handle)
+  error_wrapper handshake(socket_handle handle)
   {
     // set I/O facility using the connected socket handle
     if (!SSL_set_fd(layer_, handle))

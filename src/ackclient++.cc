@@ -26,7 +26,6 @@
 
 #include "pdnnet/client.hh"
 #include "pdnnet/cliopt.h"
-#include "pdnnet/error.h"
 #include "pdnnet/error.hh"
 #include "pdnnet/features.h"
 #include "pdnnet/socket.hh"
@@ -43,10 +42,7 @@ PDNNET_ARG_MAIN
   PDNNET_CLIOPT_PARSE_OPTIONS();
   // create IPv4 TCP/IP client + attempt connection
   pdnnet::ipv4_client client{};
-  auto error = client.connect(PDNNET_CLIOPT(host), PDNNET_CLIOPT(port));
-  // if connection fails, print error and exit nonzero
-  if (error)
-    PDNNET_ERROR_EXIT(error->c_str());
+  client.connect(PDNNET_CLIOPT(host), PDNNET_CLIOPT(port)).exit_on_error();
   // read from stdin and write to socket + signal end of transmission
   std::cin >> pdnnet::client_writer{client, true};
   // print identifying header like original ackclient. we flush instead of
