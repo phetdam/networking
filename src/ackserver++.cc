@@ -135,11 +135,15 @@ PDNNET_ARG_MAIN
   pdnnet::unique_socket socket{AF_INET, SOCK_STREAM};
   auto addr = pdnnet::make_sockaddr_in(INADDR_ANY, PDNNET_CLIOPT(port));
   // bind socket to address
-  if (!pdnnet::bind(socket, addr))
-    PDNNET_ERROR_EXIT(pdnnet::socket_error("Could not bind socket").c_str());
+  PDNNET_ERROR_EXIT_IF(
+    !pdnnet::bind(socket, addr),
+    pdnnet::socket_error("Could not bind socket").c_str()
+  );
   // listen for connections
-  if (!pdnnet::listen(socket, PDNNET_CLIOPT(max_connect)))
-    PDNNET_ERROR_EXIT(pdnnet::socket_error("Listening failed").c_str());
+  PDNNET_ERROR_EXIT_IF(
+    !pdnnet::listen(socket, PDNNET_CLIOPT(max_connect)),
+    pdnnet::socket_error("Listening failed").c_str()
+  );
   // create thread queue for managing client connections. we use a very simple
   // FIFO thread scheduling scheme to manage connections instead of a pool
   std::deque<std::thread> thread_queue;
