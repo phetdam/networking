@@ -294,7 +294,7 @@ public:
 
   operator SSL*() const noexcept { return layer_; }
 
-  error_wrapper handshake(socket_handle handle)
+  optional_error handshake(socket_handle handle)
   {
     // set I/O facility using the connected socket handle
     if (!SSL_set_fd(layer_, handle))

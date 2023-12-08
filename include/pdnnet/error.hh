@@ -177,23 +177,23 @@ inline auto socket_error()
 namespace detail {
 
 /**
- * Base class for the `error_wrapper`.
+ * Base class for the `optional_error`.
  *
- * Provides the main functionality used by the `error_wrapper`.
+ * Provides the main functionality used by the `optional_error`.
  */
-using error_wrapper_base = std::optional<std::string>;
+using optional_error_base = std::optional<std::string>;
 
 }  // namespace detail
 
 /**
- * Error message wrapper.
+ * Error message wrapper that may or may not contain an error message.
  *
  * Can be used as a return value by methods to deliver a string error message
  * on error while automatically throwing or exiting on error.
  */
-class error_wrapper : public detail::error_wrapper_base {
+class optional_error : public detail::optional_error_base {
 public:
-  using detail::error_wrapper_base::error_wrapper_base;
+  using detail::optional_error_base::optional_error_base;
 
   /**
    * If an error message is contained, exit with `EXIT_FAILURE`.

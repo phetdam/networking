@@ -122,7 +122,7 @@ public:
    * @param port Port number in local byte order
    * @returns Error wrapper empty on success, with error message on failure
    */
-  error_wrapper connect(const std::string& host, inet_port_type port)
+  optional_error connect(const std::string& host, inet_port_type port)
   {
     // resolve IPv4 host by name, returning false and setting status on error
     auto serv_ent = gethostbyname(host.c_str());
