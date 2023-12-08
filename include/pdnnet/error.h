@@ -55,6 +55,14 @@
   while (0)
 
 /**
+ * Print error to `stderr` and exit with `EXIT_FAILURE` if expression is true.
+ *
+ * @param expr Expression to evaluate
+ * @param msg Error message to print
+ */
+#define PDNNET_ERROR_EXIT_IF(expr, msg) if (expr) PDNNET_ERROR_EXIT(msg)
+
+/**
  * Print an `errno` error value to `stderr` and exit with `EXIT_FAILURE`.
  *
  * @param err `errno` value

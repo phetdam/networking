@@ -17,7 +17,10 @@
 #endif  // _WIN32
 
 #include <cerrno>
+#include <cstdlib>
 #include <cstring>
+#include <iostream>
+#include <optional>
 #include <string>
 
 // currently only needed on Windows
@@ -168,6 +171,19 @@ inline auto socket_error()
 #else
   return errno_error();
 #endif  // !defined(_WIN32)
+}
+
+/**
+ * Print the error message and exit with `EXIT_FAILURE` if optional has error.
+ *
+ * @param err Optional with string error
+ */
+inline void error_exit_if(const std::optional<std::string>& err)
+{
+  if (err) {
+    std::cerr << "Error: " << *err << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
 }
 
 }  // namespace pdnnet

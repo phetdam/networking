@@ -23,6 +23,7 @@
 #include "pdnnet/client.hh"
 #include "pdnnet/cliopt.h"
 #include "pdnnet/error.h"
+#include "pdnnet/error.hh"
 #include "pdnnet/platform.h"
 
 #ifdef PDNNET_UNIX
@@ -73,20 +74,14 @@ std::string http_get_request(
 PDNNET_ARG_MAIN
 {
   PDNNET_CLIOPT_PARSE_OPTIONS();
-  // create IPv4 TCP/IP client + attempt connection
+  // create IPv4 TCP/IP client + attempt connection. HTTPS is port 443
   pdnnet::ipv4_client client{};
-  auto error = client.connect(PDNNET_CLIOPT(host), 443);  // HTTPS is port 443
-  // if connection fails, print error and exit nonzero
-  if (error)
-    PDNNET_ERROR_EXIT(error->c_str());
+  pdnnet::error_exit_if(client.connect(PDNNET_CLIOPT(host), 443));
   // HTTPS request logic on *nix only for now
 #ifdef PDNNET_UNIX
   // create OpenSSL TLS layer using default context + attempt to connect
   pdnnet::unique_tls_layer layer{pdnnet::default_tls_context()};
-  error = layer.handshake(client.socket());
-  // if TLS handshake fails, print error and exit nonzero
-  if (error)
-    PDNNET_ERROR_EXIT(error->c_str());
+  pdnnet::error_exit_if(layer.handshake(client.socket()));
   // HTTP/1.1 GET request we will make
   auto get_request = http_get_request(PDNNET_CLIOPT(host), PDNNET_CLIOPT(path));
   // print request if verbose
@@ -117,10 +112,10 @@ PDNNET_ARG_MAIN
     remaining -= n_written;
   }
   // done, shut down write end
-  if (SSL_shutdown(layer) < 0)
-    PDNNET_ERROR_EXIT(
-      pdnnet::openssl_error_string("Failed to close write end").c_str()
-    );
+  PDNNET_ERROR_EXIT_IF(
+    SSL_shutdown(layer) < 0,
+    pdnnet::openssl_error_string("Failed to close write end").c_str()
+  );
   // read contents from server and print to stdout
   char buf[512];
   int n_read;
@@ -143,10 +138,10 @@ PDNNET_ARG_MAIN
   while (n_read > 0);
   // check for error. typically read_err is SSL_ERROR_SSL and we can use
   // ERR_get_error() called in openssl_error_string() for more info
-  if (read_err != SSL_ERROR_ZERO_RETURN)
-    PDNNET_ERROR_EXIT(
-      pdnnet::openssl_error_string("Content read failed: OpenSSL error").c_str()
-    );
+  PDNNET_ERROR_EXIT_IF(
+    read_err != SSL_ERROR_ZERO_RETURN,
+    pdnnet::openssl_error_string("Content read failed: OpenSSL error").c_str()
+  );
   // TODO: do nothing otherwise
 #else
   std::cout << "Nothing done" << std::endl;
