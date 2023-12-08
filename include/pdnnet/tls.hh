@@ -32,7 +32,7 @@ namespace pdnnet {
  *
  * This function is thread-safe.
  */
-void init_openssl()
+void init_openssl() noexcept
 {
   /**
    * Private class responsible for doing OpenSSL initialization in its ctor.
@@ -138,13 +138,17 @@ public:
 
   unique_tls_context(const unique_tls_context&) = delete;
 
+  unique_tls_context(unique_tls_context&& other) noexcept
+    : context_{other.release()}
+  {}
+
   ~unique_tls_context()
   {
     // no-op if context_ is nullptr
     SSL_CTX_free(context_);
   }
 
-  unique_tls_context& operator=(unique_tls_context&& other)
+  unique_tls_context& operator=(unique_tls_context&& other) noexcept
   {
     // free current context (no-op if nullptr) and take ownership
     SSL_CTX_free(context_);
@@ -180,9 +184,27 @@ inline const auto& default_tls_context()
   return context;
 }
 
+/**
+ * Return const reference to the default TLS 1.3 context.
+ *
+ * For some servers that don't correctly support secure renegotiation for TLS
+ * 1.2 or lower, it may be better to use TLS 1.3 instead.
+ */
+inline const auto& default_tls1_3_context()
+{
+  static auto context = []
+  {
+    unique_tls_context ctx;
+    if (!SSL_CTX_set_min_proto_version(ctx, TLS1_3_VERSION))
+      throw std::runtime_error{"Failed to create default TLS 1.3 context"};
+    return ctx;
+  }();
+  return context;
+}
+
 class unique_tls_layer {
 public:
-  unique_tls_layer() : layer_{} {}
+  unique_tls_layer() noexcept : layer_{} {}
 
   unique_tls_layer(const unique_tls_context& context)
     : layer_{SSL_new(context)}
@@ -193,13 +215,17 @@ public:
 
   unique_tls_layer(const unique_tls_layer&) = delete;
 
+  unique_tls_layer(unique_tls_layer&& other) noexcept
+    : layer_{other.release()}
+  {}
+
   ~unique_tls_layer()
   {
     // no-op if layer_ is nullptr
     SSL_free(layer_);
   }
 
-  unique_tls_layer& operator=(unique_tls_layer&& other)
+  unique_tls_layer& operator=(unique_tls_layer&& other) noexcept
   {
     SSL_free(layer_);
     layer_ = other.release();
