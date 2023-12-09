@@ -86,7 +86,7 @@ PDNNET_ARG_MAIN
   auto get_request = http_get_request(PDNNET_CLIOPT(host), PDNNET_CLIOPT(path));
   // print TLS version and request if verbose
   if (PDNNET_CLIOPT(verbose))
-    std::cout << PDNNET_PROGRAM_NAME << ": Using " << SSL_get_version(layer) <<
+    std::cout << PDNNET_PROGRAM_NAME << ": Using " << layer.protocol_string() <<
       ". Making request...\n" << get_request << std::endl;
   // write request to server
   auto remaining = get_request.size();

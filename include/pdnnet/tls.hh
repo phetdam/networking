@@ -294,6 +294,16 @@ public:
 
   operator SSL*() const noexcept { return layer_; }
 
+  /**
+   * Return the numeric TLS protocol version used for the connection.
+   */
+  auto protocol() const noexcept { return SSL_version(layer_); }
+
+  /**
+   * Return the TLS protocol version string used for the connection.
+   */
+  std::string protocol_string() const { return SSL_get_version(layer_); }
+
   optional_error handshake(socket_handle handle)
   {
     // set I/O facility using the connected socket handle
