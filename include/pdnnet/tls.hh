@@ -201,7 +201,7 @@ public:
   auto method() const noexcept { return SSL_CTX_get_ssl_method(context_); }
 
   /**
-   * Release ownership of the TLS context handle.
+   * Release ownership of the TLS context handle and return it.
    */
   SSL_CTX* release() noexcept
   {
@@ -255,8 +255,20 @@ inline const auto& default_tls1_3_context()
  */
 class unique_tls_layer {
 public:
+  /**
+   * Default ctor.
+   *
+   * Creates an uninitialized layer.
+   */
   unique_tls_layer() noexcept : layer_{} {}
 
+  /**
+   * Ctor.
+   *
+   * Creates the TLS connection layer from the given context.
+   *
+   * @param context TLS context to create connection layer from
+   */
   unique_tls_layer(const unique_tls_context& context)
     : layer_{SSL_new(context)}
   {
@@ -264,18 +276,34 @@ public:
       throw std::runtime_error{openssl_error_string("Failed to create SSL")};
   }
 
+  /**
+   * Deleted copy ctor.
+   */
   unique_tls_layer(const unique_tls_layer&) = delete;
 
+  /**
+   * Move ctor.
+   *
+   * @param other TLS context to move from
+   */
   unique_tls_layer(unique_tls_layer&& other) noexcept
     : layer_{other.release()}
   {}
 
+  /**
+   * Dtor.
+   */
   ~unique_tls_layer()
   {
     // no-op if layer_ is nullptr
     SSL_free(layer_);
   }
 
+  /**
+   * Move assignment operator.
+   *
+   * @param other TLS context to move from
+   */
   unique_tls_layer& operator=(unique_tls_layer&& other) noexcept
   {
     SSL_free(layer_);
@@ -283,8 +311,14 @@ public:
     return *this;
   }
 
+  /**
+   * Return handle to the TLS connection layer.
+   */
   auto layer() const noexcept { return layer_; }
 
+  /**
+   * Release ownership of the TLS connection layer handle and return it.
+   */
   SSL* release() noexcept
   {
     auto old_layer = layer_;
@@ -292,6 +326,9 @@ public:
     return old_layer;
   }
 
+  /**
+   * Implicitly convert to a `SSL*` TLS context handle.
+   */
   operator SSL*() const noexcept { return layer_; }
 
   /**
@@ -304,6 +341,12 @@ public:
    */
   std::string protocol_string() const { return SSL_get_version(layer_); }
 
+  /**
+   * Perform the TLS handshake with the server through a connected socket.
+   *
+   * @param handle Connected socket handle
+   * @returns Optional error empty on success, with error on failure
+   */
   optional_error handshake(socket_handle handle)
   {
     // set I/O facility using the connected socket handle
