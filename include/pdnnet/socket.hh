@@ -933,6 +933,21 @@ public:
   }
 
   /**
+   * Write a buffer of characters to socket.
+   *
+   * @tparam CharT Char type
+   *
+   * @param buf Pointer to buffer of characters
+   * @param size Number of characters in the buffer
+   * @returns `*this` to support method chaining
+   */
+  template <typename CharT>
+  auto& read(const CharT* buf, std::size_t size) const
+  {
+    return read(std::basic_string_view{buf, size});
+  }
+
+  /**
    * Write string stream contents to socket.
    *
    * @tparam CharT Char type
