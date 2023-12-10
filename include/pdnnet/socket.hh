@@ -774,9 +774,6 @@ public:
       memset(buf_.get(), 0, buf_size_);
     }
     while (until_close_ && n_read);
-    // if requested, shut down read end of socket to signal end of transmission
-    // if (until_close_)
-    //   pdnnet::shutdown(handle_, shutdown_type::read);
     return *this;
   }
 

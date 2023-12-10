@@ -73,7 +73,7 @@ void handle_client(pdnnet::socket_handle sockfd)
     throw std::runtime_error{
       pdnnet::socket_error("Could not get client socket address")
     };
-  // read from socket, shutting down read end automatically
+  // read from socket until end of transmission is received
   auto read_text = pdnnet::read(socket, true);
   // if verbose, print the stream contents to stdout with header
   if (PDNNET_CLIOPT(verbose)) {
