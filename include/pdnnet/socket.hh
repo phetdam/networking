@@ -716,25 +716,25 @@ public:
    * Buffer read size is given by `socket_read_size`.
    *
    * @param handle Socket handle
-   * @param close_read `true` to close socket read end after reading
+   * @param until_close `true` to loop until end of transmission is received
    */
-  socket_reader(socket_handle handle, bool close_read = false)
-    : socket_reader{handle, socket_read_size, close_read}
+  socket_reader(socket_handle handle, bool until_close = false)
+    : socket_reader{handle, socket_read_size, until_close}
   {}
 
   /**
    * Ctor.
    *
    * @param handle Socket handle
-   * @param buf_size Read buffer size, i.e. number of bytes per chunk read
-   * @param close_read `true` to close socket read end after reading
+   * @param buf_size Read buffer size, i.e. number of bytes per read
+   * @param until_close `true` to loop until end of transmission is received
    */
   socket_reader(
-    socket_handle handle, std::size_t buf_size, bool close_read = false)
+    socket_handle handle, std::size_t buf_size, bool until_close = false)
     : handle_{handle},
       buf_size_{buf_size},
       buf_{std::make_unique<unsigned char[]>(buf_size_)},
-      close_read_{close_read}
+      until_close_{until_close}
   {}
 
   /**
@@ -773,10 +773,10 @@ public:
       out.write(reinterpret_cast<const CharT*>(buf_.get()), n_read / sizeof(CharT));
       memset(buf_.get(), 0, buf_size_);
     }
-    while (n_read);
+    while (until_close_ && n_read);
     // if requested, shut down read end of socket to signal end of transmission
-    if (close_read_)
-      pdnnet::shutdown(handle_, shutdown_type::read);
+    // if (until_close_)
+    //   pdnnet::shutdown(handle_, shutdown_type::read);
     return *this;
   }
 
@@ -800,11 +800,11 @@ private:
   socket_handle handle_;
   std::size_t buf_size_;
   std::unique_ptr<unsigned char[]> buf_;
-  bool close_read_;
+  bool until_close_;
 };
 
 /**
- * Read from socket until end of transmission and write to stream.
+ * Read from socket and write to stream.
  *
  * @tparam CharT Char type
  * @tparam Traits Char traits
@@ -821,25 +821,25 @@ inline auto& operator<<(
 }
 
 /**
- * Read from socket until end of transmission and return contents as string.
+ * Read from socket and return contents as string.
  *
  * @tparam CharT Char type
  * @tparam Traits Char traits
  *
  * @param handle Socket handle
- * @param buf_size Read buffer size, i.e. number of bytes per chunk read
- * @param close_read `true` to close socket read end after reading
+ * @param buf_size Read buffer size, i.e. number of bytes per read
+ * @param until_close `true` to loop until end of transmission is received
  */
 template <typename CharT = char, typename Traits = std::char_traits<CharT>>
 inline auto read(
-  socket_handle handle, std::size_t buf_size, bool close_read = false)
+  socket_handle handle, std::size_t buf_size, bool until_close = false)
 {
-  return socket_reader{handle, buf_size, close_read}
+  return socket_reader{handle, buf_size, until_close}
     .operator std::basic_string<CharT, Traits>();
 }
 
 /**
- * Read from socket until end of transmission and return contents as string.
+ * Read from socket and return contents as string.
  *
  * Buffer read size is given by `socket_read_size`.
  *
@@ -847,12 +847,12 @@ inline auto read(
  * @tparam Traits Char traits
  *
  * @param handle Socket handle
- * @param close_read `true` to close socket read end after reading
+ * @param until_close `true` to loop until end of transmission is received
  */
 template <typename CharT = char, typename Traits = std::char_traits<CharT>>
-inline auto read(socket_handle handle, bool close_read = false)
+inline auto read(socket_handle handle, bool until_close = false)
 {
-  return read<CharT, Traits>(handle, socket_read_size, close_read);
+  return read<CharT, Traits>(handle, socket_read_size, until_close);
 }
 
 /**

@@ -45,8 +45,8 @@ PDNNET_ARG_MAIN
   client.connect(PDNNET_CLIOPT(host), PDNNET_CLIOPT(port)).exit_on_error();
   // read from stdin and write to socket + signal end of transmission
   std::cin >> pdnnet::client_writer{client, true};
-  // read from socket and write to output stream, include trailing newline. no
-  // need to signal end of transmission since socket closed on exit
-  std::cout << pdnnet::client_reader{client} << std::endl;
+  // read from socket until end of transmission and write to output stream,
+  // include trailing newline. socket is fully closed on exit
+  std::cout << pdnnet::client_reader{client, true} << std::endl;
   return EXIT_SUCCESS;
 }

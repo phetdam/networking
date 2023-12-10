@@ -49,8 +49,8 @@ PDNNET_ARG_MAIN
   // using std::endl since we don't want newline
   std::cout << PDNNET_PROGRAM_NAME << ": Received from " <<
     client.host_name() << ": " << std::flush;
-  // read from socket and write to output stream, include trailing newline. no
-  // need to signal end of transmission since we close socket on exit
-  std::cout << pdnnet::client_reader{client} << std::endl;
+  // read from socket until end of transmission and write to output stream,
+  // include trailing newline. socket is fully closed on exit1
+  std::cout << pdnnet::client_reader{client, true} << std::endl;
   return EXIT_SUCCESS;
 }
