@@ -944,7 +944,9 @@ public:
   template <typename CharT>
   auto& read(const CharT* buf, std::size_t size) const
   {
-    return read(std::basic_string_view{buf, size});
+    // handle void buffers by treating them as const char buffers
+    using char_type = std::conditional_t<std::is_same_v<CharT, void>, char, CharT>;
+    return read(std::basic_string_view{static_cast<const char_type*>(buf), size});
   }
 
   /**
