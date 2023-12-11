@@ -90,30 +90,30 @@ inline auto hresult_error(const std::string& message)
 }
 
 /**
- * Return string error message corresponding to a Windows Sockets error code.
+ * Return string error message corresponding to a Windows error code.
  *
- * @param wsa_err Windows Sockets error code
+ * @param err Windows error code, e.g. from Windows Sockets, HRESULT, etc.
  */
-inline auto winsock_error_string(int wsa_err)
+inline auto windows_error(int err)
 {
-  return std::system_category().message(wsa_err);
+  return std::system_category().message(err);
 }
 
 /**
- * Return string describing the Windows Sockets error.
+ * Return string describing the Windows error, prefixed with a message.
+ *
+ * @param err Windows error code, e.g. from Windows Sockets, HRESULT, etc.
+ * @param message Message to prefix the Windows error description with
  */
-inline auto winsock_error() { return winsock_error_string(WSAGetLastError()); }
+inline auto windows_error(int err, const std::string& message)
+{
+  return message + ": " + windows_error(err);
+}
 
 /**
- * Return string describing the Windows Sockets error, prefixed with a message.
- *
- * @param wsa_err Windows Sockets error code
- * @param message Message to prefix the Windows Sockets error description with
+ * Return string describing the last Windows Sockets error.
  */
-inline auto winsock_error(int wsa_err, const std::string& message)
-{
-  return message + ": " + winsock_error_string(wsa_err);
-}
+inline auto winsock_error() { return windows_error(WSAGetLastError()); }
 
 /**
  * Return string describing last Windows Sockets error, prefixed with a message.
@@ -122,7 +122,7 @@ inline auto winsock_error(int wsa_err, const std::string& message)
  */
 inline auto winsock_error(const std::string& message)
 {
-  return winsock_error(WSAGetLastError(), message);
+  return windows_error(WSAGetLastError(), message);
 }
 #endif  // _WIN32
 
@@ -138,7 +138,8 @@ inline auto winsock_error(const std::string& message)
 inline auto socket_error(int err, const std::string& message)
 {
 #if defined(_WIN32)
-  return winsock_error(err, message);
+  // TODO: consider just using this as a generic error message functio
+  return windows_error(err, message);
 #else
   return errno_string(err, message);
 #endif  // !defined(_WIN32)
