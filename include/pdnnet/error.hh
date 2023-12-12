@@ -199,7 +199,7 @@ public:
   /**
    * If an error message is contained, exit with `EXIT_FAILURE`.
    */
-  void exit_on_error() const noexcept
+  void exit_on_error() const
   {
     if (has_value()) {
       std::cerr << "Error: " << value() << std::endl;
@@ -213,7 +213,7 @@ public:
    * @tparam ExceptionType Exception type, default `std::runtime_error`
    */
   template <typename ExceptionType = std::runtime_error>
-  void throw_on_error() const noexcept
+  void throw_on_error() const noexcept(noexcept(ExceptionType{value()}))
   {
     if (has_value())
       throw ExceptionType{value()};
