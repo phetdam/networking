@@ -49,7 +49,7 @@
 #if defined(_WIN32)
 #define EXTRA_NOTE \
   "\n\n" \
-  "WIP on Windows since TLS handshake logic using Schannel is incomplete."
+  "WIP on Windows, only performing the Schannel TLS handshake with the server."
 #else
 #define EXTRA_NOTE \
   ""
@@ -90,6 +90,9 @@ std::string http_get_request(
 #endif  // PDNNET_UNIX
 
 #ifdef _WIN32
+/**
+ * Acquire Schannel credential handle for use in TLS handshake.
+ */
 pdnnet::optional_error schannel_acquire_creds(
   CredHandle& cred, const SCHANNEL_CRED& sc_cred)
 {
@@ -113,24 +116,36 @@ pdnnet::optional_error schannel_acquire_creds(
 
 // max TLS message size + overhead for header/mac/padding (overestimated).
 // from https://gist.github.com/mmozeiko/c0dfcc8fec527a90a02145d2cc0bfb6d
-// constexpr std::size_t max_tls_message_size = 16384 + 512;
+constexpr std::size_t max_tls_message_size = 16384 + 512;
 
+/**
+ * Perform Schannel TLS handshake.
+ */
 pdnnet::optional_error schannel_perform_handshake(
-  CtxtHandle& context, pdnnet::socket_handle handle, const CredHandle& cred)
+  CtxtHandle& context,
+  pdnnet::socket_handle handle,
+  CredHandle& cred,
+  ULONG ctx_init_flags =
+    ISC_REQ_ALLOCATE_MEMORY |
+    ISC_REQ_CONFIDENTIALITY |
+    ISC_REQ_REPLAY_DETECT)
 {
   // true if first InitializeSecurityContext call succeeded
   bool building_context = false;
   // socket writer
   pdnnet::socket_writer writer{handle};
+  // raw buffer to receive security context data + current written size
+  char ctx_buffer[max_tls_message_size];  // maybe put on heap?
+  unsigned long ctx_bufsize = 0;          // largest type needed is ULONG
   // handshake loop
   while (true) {
     // flags sent and received that indicate requests for the context
-    ULONG context_flags =
-      ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_CONFIDENTIALITY | ISC_REQ_REPLAY_DETECT;
+    auto context_flags = ctx_init_flags;
     // input security buffers
     SecBuffer input_bufs[2]{};
     input_bufs[0].BufferType = SECBUFFER_TOKEN;
-    // TODO: have to set the buffer pointer
+    input_bufs[0].pvBuffer = ctx_buffer;
+    input_bufs[0].cbBuffer = ctx_bufsize;
     input_bufs[1].BufferType = SECBUFFER_EMPTY;
     // output security buffer
     SecBuffer output_buf{};
@@ -140,9 +155,9 @@ pdnnet::optional_error schannel_perform_handshake(
     SecBufferDesc output_desc{SECBUFFER_VERSION, 1, &output_buf};
     // perform context initialization/build call
     auto status = InitializeSecurityContext(
-      (!building_context) ? const_cast<PCredHandle>(&cred) : NULL,
+      // MS documentation is incorrect, PCredHandle must always be passed
+      &cred,
       NULL,
-      // cast away const to please C++ compiler
       const_cast<SEC_CHAR*>(PDNNET_CLIOPT(host)),
       context_flags,
       0,     // Reserved1
@@ -158,17 +173,43 @@ pdnnet::optional_error schannel_perform_handshake(
     switch (status) {
       // done, return with no error
       case SEC_E_OK:
-        break;
+        return {};
       // send token to server and read (part of) a return token
-      case SEC_I_CONTINUE_NEEDED:
+      case SEC_I_CONTINUE_NEEDED: {
         // send token to server + free the token buffer when done
         writer.read(output_buf.pvBuffer, output_buf.cbBuffer);
         status = FreeContextBuffer(output_buf.pvBuffer);
         if (status != SEC_E_OK)
           return pdnnet::windows_error(status, "Failed to free token buffer");
-        // TODO: add read call here to write to buffer
+        // buffer full, so server could be misbehaving
+        if (ctx_bufsize == max_tls_message_size)
+          return "Error: Token buffer full, server not following TLS protocol";
+        // read data back from server to ctx_buffer
+        auto n_read = ::recv(
+          handle,
+          ctx_buffer + ctx_bufsize,
+          static_cast<int>(max_tls_message_size - ctx_bufsize),
+          0
+        );
+        // server closed connection, ok
+        if (!n_read)
+          return {};
+        // error
+        if (n_read < 0)
+          return pdnnet::winsock_error("Could not read token back from server");
+        // partial read, keep updating
+        ctx_bufsize += n_read;
         break;
+      }
+      // clean up and return
+      // TODO: maybe no need to clean up if done within resource owning class
       default:
+        status = DeleteSecurityContext(&context);
+        if (status != SEC_E_OK)
+          return pdnnet::windows_error(status, "Could not delete security context");
+        status = FreeCredentialsHandle(&cred);
+        if (status != SEC_E_OK)
+          return pdnnet::windows_error(status, "Could not free credentials handle");
         return pdnnet::windows_error(status, "Security context creation failed");
     }
     // if we made it here, building_context should be set to true
@@ -203,6 +244,9 @@ PDNNET_ARG_MAIN
   CtxtHandle context;
   // build security context by performing TLS handshake
   schannel_perform_handshake(context, client.socket(), cred).exit_on_error();
+  std::cout << "TLS handshake with " << PDNNET_CLIOPT(host) << " completed" <<
+    std::endl;
+  // TODO: make EncryptMessage and DecryptMessage calls for communication
   // HTTPS request logic on *nix only for now
 #else
   // create OpenSSL TLS layer using default context + attempt to connect
