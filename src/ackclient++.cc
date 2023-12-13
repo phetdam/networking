@@ -50,7 +50,7 @@ PDNNET_ARG_MAIN
   std::cout << PDNNET_PROGRAM_NAME << ": Received from " <<
     client.host_name() << ": " << std::flush;
   // read from socket until end of transmission and write to output stream,
-  // include trailing newline. socket is fully closed on exit1
+  // include trailing newline. socket is fully closed on exit
   std::cout << pdnnet::client_reader{client, true} << std::endl;
   return EXIT_SUCCESS;
 }

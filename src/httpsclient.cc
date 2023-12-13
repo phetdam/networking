@@ -91,6 +91,10 @@ std::string http_get_request(
 #ifdef _WIN32
 /**
  * Acquire Schannel credential handle for use in TLS handshake.
+ *
+ * @param cred Credential handle written to for use in TLS handshake
+ * @param sc_cred Schannel credential struct
+ * @returns Optional empty on success, with error message on failure
  */
 pdnnet::optional_error schannel_acquire_creds(
   CredHandle& cred, const SCHANNEL_CRED& sc_cred)
@@ -175,10 +179,12 @@ pdnnet::optional_error schannel_perform_handshake(
         return {};
       // send token to server and read (part of) a return token
       case SEC_I_CONTINUE_NEEDED: {
-        // send token to server + free the token buffer when done
-        writer.read(output_buf.pvBuffer, output_buf.cbBuffer);
-        status = FreeContextBuffer(output_buf.pvBuffer);
-        if (status != SEC_E_OK)
+        // send token to server, returning the error if any
+        auto err = writer.read(output_buf.pvBuffer, output_buf.cbBuffer);
+        if (err)
+          return err;
+        // free the token buffer when done + handle error
+        if ((status = FreeContextBuffer(output_buf.pvBuffer)) != SEC_E_OK)
           return pdnnet::windows_error(status, "Failed to free token buffer");
         // buffer full, so server could be misbehaving
         if (ctx_bufsize == max_tls_message_size)
