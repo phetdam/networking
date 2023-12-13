@@ -891,24 +891,34 @@ public:
   template <typename CharT, typename Traits>
   auto& read(const std::basic_string_view<CharT, Traits>& text) const
   {
-#if defined(_WIN32)
-    // message size in bytes
-    auto msg_len = sizeof(CharT) * text.size();
+    // remaining bytes to send, bytes last written, total bytes sent
+    auto n_remain = sizeof(CharT) * text.size();
+    ssize_type n_last;
+    std::size_t n_sent = 0;
+#ifdef _WIN32
     // since buffer length is int, throw error if message too long
     // TODO: replace with std::numeric_limits<int>::max() once a satisfactory
     // solution for undefining the Windows.h min + max macros is found
-    if (msg_len > INT_MAX)
+    if (n_remain > INT_MAX)
       throw std::runtime_error{
-        "message length " + std::to_string(msg_len) +
+        "message length " + std::to_string(n_remain) +
         " exceeds max allowed length " + std::to_string(INT_MAX)
       };
-    // otherwise, just call send as usual
-    if (::send(handle_, text.data(), static_cast<int>(msg_len), 0) == SOCKET_ERROR)
-      throw std::runtime_error{winsock_error("send() failure")};
+#endif  // _WIN32
+    // perform standard write loop
+    while (n_remain) {
+#if defined(_WIN32)
+      n_last = ::send(handle_, text.data() + n_sent, static_cast<int>(n_remain), 0);
+      if (n_last == SOCKET_ERROR)
+        throw std::runtime_error{winsock_error("send() failure")};
 #else
-    if (::write(handle_, text.data(), sizeof(CharT) * text.size()) < 0)
-      throw std::runtime_error{errno_error("write() failure")};
+      if ((n_last = ::write(handle_, text.data() + n_sent, n_remain)) < 0)
+        throw std::runtime_error{errno_error("write() failure")};
 #endif  // !defined(_WIN32)
+      // increment bytes written and decrement remaining
+      n_sent += n_last;
+      n_remain -= n_last;
+    }
     // if requested, shut down write end of socket to signal end of transmission
     if (close_write_)
       pdnnet::shutdown(handle_, shutdown_type::write);
