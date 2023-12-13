@@ -123,7 +123,7 @@ constexpr std::size_t max_tls_message_size = 16384 + 512;
 pdnnet::optional_error schannel_perform_handshake(
   CtxtHandle& context,
   pdnnet::socket_handle handle,
-  CredHandle& cred,
+  const CredHandle& cred,
   ULONG ctx_init_flags =
     ISC_REQ_ALLOCATE_MEMORY |
     ISC_REQ_CONFIDENTIALITY |
@@ -155,7 +155,7 @@ pdnnet::optional_error schannel_perform_handshake(
     // perform context initialization/build call
     auto status = InitializeSecurityContext(
       // MS documentation is incorrect, PCredHandle must always be passed
-      &cred,
+      const_cast<PCredHandle>(&cred),
       NULL,
       const_cast<SEC_CHAR*>(PDNNET_CLIOPT(host)),
       context_flags,
@@ -200,15 +200,8 @@ pdnnet::optional_error schannel_perform_handshake(
         ctx_bufsize += n_read;
         break;
       }
-      // clean up and return
-      // TODO: maybe no need to clean up if done within resource owning class
+      // handle error
       default:
-        status = DeleteSecurityContext(&context);
-        if (status != SEC_E_OK)
-          return pdnnet::windows_error(status, "Could not delete security context");
-        status = FreeCredentialsHandle(&cred);
-        if (status != SEC_E_OK)
-          return pdnnet::windows_error(status, "Could not free credentials handle");
         return pdnnet::windows_error(status, "Security context creation failed");
     }
     // if we made it here, building_context should be set to true
@@ -246,6 +239,16 @@ PDNNET_ARG_MAIN
   std::cout << "TLS handshake with " << PDNNET_CLIOPT(host) << " completed" <<
     std::endl;
   // TODO: make EncryptMessage and DecryptMessage calls for communication
+  // done, clean up security context and credential handle
+  SECURITY_STATUS sec_status;
+  PDNNET_ERROR_EXIT_IF(
+    (sec_status = DeleteSecurityContext(&context)) != SEC_E_OK,
+    pdnnet::windows_error(sec_status, "Could not delete security context").c_str()
+  );
+  PDNNET_ERROR_EXIT_IF(
+    (sec_status = FreeCredentialsHandle(&cred)) != SEC_E_OK,
+    pdnnet::windows_error(sec_status, "Could not free credentials handle").c_str()
+  );
   // HTTPS request logic on *nix only for now
 #else
   // create OpenSSL TLS layer using default context + attempt to connect
@@ -312,6 +315,5 @@ PDNNET_ARG_MAIN
     pdnnet::openssl_error_string("Content read failed: OpenSSL error").c_str()
   );
 #endif  // !defined(_WIN32)
-  // send simple GET request
   return EXIT_SUCCESS;
 }
