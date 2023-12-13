@@ -51,8 +51,7 @@
   "\n\n" \
   "WIP on Windows, only performing the Schannel TLS handshake with the server."
 #else
-#define EXTRA_NOTE \
-  ""
+#define EXTRA_NOTE ""
 #endif  // !defined(_WIN32)
 
 PDNNET_PROGRAM_USAGE_DEF
