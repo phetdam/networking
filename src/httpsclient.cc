@@ -19,7 +19,7 @@
 #define PDNNET_ADD_CLIOPT_PATH
 #define PDNNET_ADD_CLIOPT_VERBOSE
 #define PDNNET_CLIOPT_HOST_DEFAULT "cs.nyu.edu"
-#define PDNNET_CLIOPT_PATH_DEFAULT "/~gottlieb/shortBio.html"
+#define PDNNET_CLIOPT_PATH_DEFAULT "/~gottlieb/almasiGottlieb.html"
 
 #include "pdnnet/client.hh"
 #include "pdnnet/cliopt.h"
@@ -90,6 +90,35 @@ std::string http_get_request(
 
 #ifdef _WIN32
 /**
+ * Return a new `SCHANNEL_CRED` from the given inputs.
+ *
+ * @note TLS 1.3 doesn't seem to work correctly in Schannel, e.g. for clients
+ *  `SP_PROT_TLS1_3_CLIENT` cannot be used as a protocol. One therefore needs
+ *  to allow protocol negotation to TLS 1.2 or lower.
+ *
+ * @param protocols Allowed SSL/TLS protocols, zero to let Schannel decide
+ * @param op_flags Schannel operation flags, e.g. `SCH_CRED_NO_DEFAULT_CREDS`
+ */
+auto create_schannel_cred(DWORD protocols, DWORD op_flags)
+{
+  SCHANNEL_CRED cred{};
+  cred.dwVersion = SCHANNEL_CRED_VERSION;  // always SCHANNEL_CRED_VERSION
+  cred.grbitEnabledProtocols = protocols;
+  cred.dwFlags = op_flags;
+  return cred;
+}
+
+/**
+ * Return a new `SCHANNEL_CRED` from the given inputs.
+ *
+ * @param protocols Allowed SSL/TLS protocols, zero to let Schannel decide
+ */
+inline auto create_schannel_cred(DWORD protocols = 0u)
+{
+  return create_schannel_cred(protocols, 0u);
+}
+
+/**
  * Acquire Schannel credential handle for use in TLS handshake.
  *
  * @param cred Credential handle written to for use in TLS handshake
@@ -138,6 +167,7 @@ pdnnet::optional_error schannel_perform_handshake(
   // socket writer
   pdnnet::socket_writer writer{handle};
   // raw buffer to receive security context data + current written size
+  // TODO: this buffer has to persist past the function's scope
   char ctx_buffer[max_tls_message_size];  // maybe put on heap?
   unsigned long ctx_bufsize = 0;          // largest type needed is ULONG
   // handshake loop
@@ -228,14 +258,12 @@ PDNNET_ARG_MAIN
   client.connect(PDNNET_CLIOPT(host), 443).exit_on_error();
   // on Windows, attempt to perform handshake via Schannel
 #if defined(_WIN32)
-  // credential handle to get credential
+  // credential handle to get credential + security functions return status
   CredHandle cred;
+  SECURITY_STATUS sec_status;
   // Schannel credentials struct. not using SCH_CREDENTIALS since it refuses
   // to be defined correctly despite the documentation
-  SCHANNEL_CRED sc_cred{};
-  sc_cred.dwVersion = SCHANNEL_CRED_VERSION;
-  // TLS 1.3 doesn't work correctly in Schannel, need TLS 1.2 or lower
-  // sc_cred.grbitEnabledProtocols = SP_PROT_TLS1_3_CLIENT;
+  auto sc_cred = create_schannel_cred();
   // acquire credential handle for Schannel, exit on error
   schannel_acquire_creds(cred, sc_cred).exit_on_error();
   // security context to use later
@@ -244,9 +272,16 @@ PDNNET_ARG_MAIN
   schannel_perform_handshake(context, client.socket(), cred).exit_on_error();
   std::cout << "TLS handshake with " << PDNNET_CLIOPT(host) << " completed" <<
     std::endl;
+  // get stream size limits from context
+  // TODO: handle is invalid if context buffer is lost after handshake call
+  // SecPkgContext_StreamSizes sc_sizes;
+  // sec_status = QueryContextAttributes(&context, SECPKG_ATTR_SIZES, &sc_sizes);
+  // PDNNET_ERROR_EXIT_IF(
+  //   (sec_status != SEC_E_OK),
+  //   pdnnet::windows_error(sec_status, "Failed to get stream size limits").c_str()
+  // );
   // TODO: make EncryptMessage and DecryptMessage calls for communication
   // done, clean up security context and credential handle
-  SECURITY_STATUS sec_status;
   PDNNET_ERROR_EXIT_IF(
     (sec_status = DeleteSecurityContext(&context)) != SEC_E_OK,
     pdnnet::windows_error(sec_status, "Could not delete security context").c_str()
