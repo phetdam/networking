@@ -144,6 +144,11 @@ public:
 
   /**
    * `true` if the object is managing a valid `CredHandle`, `false` otherwise.
+   *
+   * @note The `unique_cred_handle` takes a zeroed `CredHandle` to be invalid,
+   *  but the `SecInvalidateHandle` and `SecIsValidHandle` macros defined in
+   *  the Windows `sspi.h` header imply that an invalid `CredHandle` is one
+   *  that has all its bits set (due to casting -1 to `ULONG_PTR`).
    */
   bool valid() const noexcept
   {
