@@ -37,9 +37,9 @@
 #include <openssl/err.h>
 #include <openssl/opensslv.h>
 #include <openssl/ssl.h>
+#endif  // !defined(_WIN32)
 
 #include "pdnnet/tls.hh"
-#endif  // !defined(_WIN32)
 
 /**
  * Platform-specific program note.
@@ -90,44 +90,16 @@ std::string http_get_request(
 
 #ifdef _WIN32
 /**
- * Return a new `SCHANNEL_CRED` from the given inputs.
+ * Acquire unique Schannel credential handle for use in TLS handshake.
  *
- * @note TLS 1.3 doesn't seem to work correctly in Schannel, e.g. for clients
- *  `SP_PROT_TLS1_3_CLIENT` cannot be used as a protocol. One therefore needs
- *  to allow protocol negotation to TLS 1.2 or lower.
- *
- * @param protocols Allowed SSL/TLS protocols, zero to let Schannel decide
- * @param op_flags Schannel operation flags, e.g. `SCH_CRED_NO_DEFAULT_CREDS`
- */
-auto create_schannel_cred(DWORD protocols, DWORD op_flags)
-{
-  SCHANNEL_CRED cred{};
-  cred.dwVersion = SCHANNEL_CRED_VERSION;  // always SCHANNEL_CRED_VERSION
-  cred.grbitEnabledProtocols = protocols;
-  cred.dwFlags = op_flags;
-  return cred;
-}
-
-/**
- * Return a new `SCHANNEL_CRED` from the given inputs.
- *
- * @param protocols Allowed SSL/TLS protocols, zero to let Schannel decide
- */
-inline auto create_schannel_cred(DWORD protocols = 0u)
-{
-  return create_schannel_cred(protocols, 0u);
-}
-
-/**
- * Acquire Schannel credential handle for use in TLS handshake.
- *
- * @param cred Credential handle written to for use in TLS handshake
+ * @param cred Empty credential handle written to for use in TLS handshake
  * @param sc_cred Schannel credential struct
  * @returns Optional empty on success, with error message on failure
  */
 pdnnet::optional_error schannel_acquire_creds(
-  CredHandle& cred, const SCHANNEL_CRED& sc_cred)
+  pdnnet::unique_cred_handle& cred, const SCHANNEL_CRED& sc_cred)
 {
+  CredHandle raw_cred;
   // acquire credentials handle for Schannel
   auto status = AcquireCredentialsHandle(
     NULL,
@@ -137,13 +109,15 @@ pdnnet::optional_error schannel_acquire_creds(
     (PVOID) &sc_cred,
     NULL,  // pGetKeyFn
     NULL,  // pvGetKeyArgument
-    &cred,
+    &raw_cred,
     NULL
   );
-  // if success, no error, otherwise get error string
-  if (status == SEC_E_OK)
-    return {};
-  return pdnnet::windows_error(status);
+  // if failure, return error string
+  if (status != SEC_E_OK)
+    return pdnnet::windows_error(status);
+  // otherwise move + return nothing
+  cred = pdnnet::unique_cred_handle{raw_cred};
+  return {};
 }
 
 // max TLS message size + overhead for header/mac/padding (overestimated).
@@ -259,11 +233,11 @@ PDNNET_ARG_MAIN
   // on Windows, attempt to perform handshake via Schannel
 #if defined(_WIN32)
   // credential handle to get credential + security functions return status
-  CredHandle cred;
+  pdnnet::unique_cred_handle cred;
   SECURITY_STATUS sec_status;
   // Schannel credentials struct. not using SCH_CREDENTIALS since it refuses
   // to be defined correctly despite the documentation
-  auto sc_cred = create_schannel_cred();
+  auto sc_cred = pdnnet::create_schannel_cred();
   // acquire credential handle for Schannel, exit on error
   schannel_acquire_creds(cred, sc_cred).exit_on_error();
   // security context to use later
@@ -281,14 +255,10 @@ PDNNET_ARG_MAIN
   //   pdnnet::windows_error(sec_status, "Failed to get stream size limits").c_str()
   // );
   // TODO: make EncryptMessage and DecryptMessage calls for communication
-  // done, clean up security context and credential handle
+  // done, clean up security context
   PDNNET_ERROR_EXIT_IF(
     (sec_status = DeleteSecurityContext(&context)) != SEC_E_OK,
     pdnnet::windows_error(sec_status, "Could not delete security context").c_str()
-  );
-  PDNNET_ERROR_EXIT_IF(
-    (sec_status = FreeCredentialsHandle(&cred)) != SEC_E_OK,
-    pdnnet::windows_error(sec_status, "Could not free credentials handle").c_str()
   );
   // HTTPS request logic on *nix only for now
 #else

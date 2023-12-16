@@ -15,13 +15,164 @@
 #include "pdnnet/platform.h"
 #include "pdnnet/socket.hh"
 
-#ifdef PDNNET_UNIX
+#if defined(_WIN32)
+// consistently use WIN32_LEAN_AND_MEAN like the other headers do
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif  // WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <schannel.h>
+// by default, use Win32 security APIs in user application mode
+#ifndef SECURITY_WIN32
+#define SECURITY_WIN32
+#endif  // SECURITY_WIN32
+#include <security.h>
+#else
+// OpenSSL used for *nix systems
 #include <openssl/err.h>
 #include <openssl/opensslv.h>
 #include <openssl/ssl.h>
-#endif  // PDNNET_UNIX
+#endif  // !defined(_WIN32)
 
 namespace pdnnet {
+
+#ifdef _WIN32
+/**
+ * Return a new `SCHANNEL_CRED` from the given inputs.
+ *
+ * @note TLS 1.3 doesn't seem to work correctly in Schannel, e.g. for clients
+ *  `SP_PROT_TLS1_3_CLIENT` cannot be used as a protocol. One therefore needs
+ *  to allow protocol negotation to TLS 1.2 or lower.
+ *
+ * @param protocols Allowed SSL/TLS protocols, zero to let Schannel decide
+ * @param op_flags Schannel operation flags, e.g. `SCH_CRED_NO_DEFAULT_CREDS`
+ */
+auto create_schannel_cred(DWORD protocols, DWORD op_flags)
+{
+  SCHANNEL_CRED cred{};
+  cred.dwVersion = SCHANNEL_CRED_VERSION;  // always SCHANNEL_CRED_VERSION
+  cred.grbitEnabledProtocols = protocols;
+  cred.dwFlags = op_flags;
+  return cred;
+}
+
+/**
+ * Return a new `SCHANNEL_CRED` from the given inputs.
+ *
+ * @param protocols Allowed SSL/TLS protocols, zero to let Schannel decide
+ */
+inline auto create_schannel_cred(DWORD protocols = 0u)
+{
+  return create_schannel_cred(protocols, 0u);
+}
+
+/**
+ * Windows SSPI credential handle class with unique ownership.
+ */
+class unique_cred_handle {
+public:
+  /**
+   * Default ctor.
+   *
+   * Calling `valid()` on a default-constructed instance will return `false`.
+   */
+  unique_cred_handle() noexcept : handle_{} {}
+
+  /**
+   * Ctor.
+   *
+   * @handle Credential handle struct to take ownership of
+   */
+  explicit unique_cred_handle(const CredHandle& handle) noexcept
+    : handle_{handle}
+  {}
+
+  /**
+   * Deleted copy ctor.
+   */
+  unique_cred_handle(const unique_cred_handle&) = delete;
+
+  /**
+   * Move ctor.
+   */
+  unique_cred_handle(unique_cred_handle&& other) noexcept
+    : handle_{other.release()}
+  {}
+
+  /**
+   * Move assignment operator.
+   */
+  auto& operator=(unique_cred_handle&& other) noexcept
+  {
+    destroy_handle();
+    handle_ = other.release();
+    return *this;
+  }
+
+  /**
+   * Dtor.
+   */
+  ~unique_cred_handle()
+  {
+    destroy_handle();
+  }
+
+  /**
+   * Return a const reference to the managed `CredHandle` struct.
+   */
+  const auto& handle() const noexcept { return handle_; }
+
+  /**
+   * Release ownership of the managed `CredHandle`.
+   *
+   * After calling `release()`, calling `valid()` will return `false`.
+   */
+  CredHandle release() noexcept
+  {
+    auto old_handle = handle_;
+    handle_ = {};
+    return old_handle;
+  }
+
+  /**
+   * Implicitly convert to a `const CredHandle&` credential handle.
+   */
+  operator const CredHandle&() const noexcept
+  {
+    return handle_;
+  }
+
+  /**
+   * `true` if the object is managing a valid `CredHandle`, `false` otherwise.
+   */
+  bool valid() const noexcept
+  {
+    return handle_.dwLower && handle_.dwUpper;
+  }
+
+  /**
+   * `true` if the object is managing a valid `CredHandle`, `false` otherwise.
+   */
+  operator bool() const noexcept
+  {
+    return valid();
+  }
+
+private:
+  CredHandle handle_;
+
+  /**
+   * Free the `CredHandle` if it is valid.
+   *
+   * Return value ignored since a managed `CredHandle` should not be invalid.
+   */
+  void destroy_handle() noexcept
+  {
+    if (valid())
+      FreeCredentialsHandle(&handle_);
+  }
+};
+#endif  // _WIN32
 
 #ifdef PDNNET_UNIX
 /**
