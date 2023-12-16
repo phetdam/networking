@@ -201,6 +201,7 @@ pdnnet::optional_error schannel_perform_handshake(
           0
         );
         // server closed connection, ok
+        // TODO: is it really ok? QueryContextAttributes says context invalid
         if (!n_read)
           return {};
         // error
@@ -247,9 +248,8 @@ PDNNET_ARG_MAIN
   std::cout << "TLS handshake with " << PDNNET_CLIOPT(host) << " completed" <<
     std::endl;
   // get stream size limits from context
-  // TODO: QueryContextAttributes complains that the context handle is invalid
-  // when called after the handshake call function completes. only seems to
-  // work when called from the same function that did the handshake
+  // TODO: QueryContextAttributes complains that the context handle is invalid.
+  // schannel_perform_handshake is exiting since server closed connection
   // SecPkgContext_StreamSizes sc_sizes;
   // sec_status = QueryContextAttributes(&context, SECPKG_ATTR_SIZES, &sc_sizes);
   // PDNNET_ERROR_EXIT_IF(
