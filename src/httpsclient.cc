@@ -247,7 +247,9 @@ PDNNET_ARG_MAIN
   std::cout << "TLS handshake with " << PDNNET_CLIOPT(host) << " completed" <<
     std::endl;
   // get stream size limits from context
-  // TODO: handle is invalid if context buffer is lost after handshake call
+  // TODO: QueryContextAttributes complains that the context handle is invalid
+  // when called after the handshake call function completes. only seems to
+  // work when called from the same function that did the handshake
   // SecPkgContext_StreamSizes sc_sizes;
   // sec_status = QueryContextAttributes(&context, SECPKG_ATTR_SIZES, &sc_sizes);
   // PDNNET_ERROR_EXIT_IF(
