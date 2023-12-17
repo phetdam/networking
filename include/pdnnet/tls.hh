@@ -59,11 +59,13 @@ auto create_schannel_cred(DWORD protocols, DWORD op_flags)
 /**
  * Return a new `SCHANNEL_CRED` from the given inputs.
  *
- * @param protocols Allowed SSL/TLS protocols, zero to let Schannel decide
+ * Allows Schannel to decided what the SSL/TLS protocol used will be.
+ *
+ * @param op_flags Schannel operation flags, e.g. `SCH_CRED_NO_DEFAULT_CREDS`
  */
-inline auto create_schannel_cred(DWORD protocols = 0u)
+inline auto create_schannel_cred(DWORD op_flags = 0u)
 {
-  return create_schannel_cred(protocols, 0u);
+  return create_schannel_cred(0u, op_flags);
 }
 
 /**
