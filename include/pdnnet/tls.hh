@@ -177,6 +177,118 @@ private:
       FreeCredentialsHandle(&handle_);
   }
 };
+
+/**
+ * Windows SSPI context handle class with unique ownership.
+ *
+ * @note Although `CredHandle` and `CtxtHandle` are both typedefs of the SSPI
+ *  `SecHandle` type, their methods of deletion are different.
+ */
+class unique_ctxt_handle {
+public:
+  /**
+   * Default ctor.
+   *
+   * Calling `valid()` on a default-constructed instance will return `false`.
+   */
+  unique_ctxt_handle() noexcept : handle_{} {}
+
+  /**
+   * Ctor.
+   *
+   * @handle Credential handle struct to take ownership of
+   */
+  explicit unique_ctxt_handle(const CtxtHandle& handle) noexcept
+    : handle_{handle}
+  {}
+
+  /**
+   * Deleted copy ctor.
+   */
+  unique_ctxt_handle(const unique_ctxt_handle&) = delete;
+
+  /**
+   * Move ctor.
+   */
+  unique_ctxt_handle(unique_ctxt_handle&& other) noexcept
+    : handle_{other.release()}
+  {}
+
+  /**
+   * Move assignment operator.
+   */
+  auto& operator=(unique_ctxt_handle&& other) noexcept
+  {
+    destroy_handle();
+    handle_ = other.release();
+    return *this;
+  }
+
+  /**
+   * Dtor.
+   */
+  ~unique_ctxt_handle()
+  {
+    destroy_handle();
+  }
+
+  /**
+   * Return a const reference to the managed `CtxtHandle` struct.
+   */
+  const auto& handle() const noexcept { return handle_; }
+
+  /**
+   * Release ownership of the managed `CtxtHandle`.
+   *
+   * After calling `release()`, calling `valid()` will return `false`.
+   */
+  CtxtHandle release() noexcept
+  {
+    auto old_handle = handle_;
+    handle_ = {};
+    return old_handle;
+  }
+
+  /**
+   * Implicitly convert to a `const CtxtHandle&` credential handle.
+   */
+  operator const CtxtHandle&() const noexcept
+  {
+    return handle_;
+  }
+
+  /**
+   * `true` if the object is managing a valid `CtxtHandle`, `false` otherwise.
+   *
+   * @note See the note in the `unique_cred_handle::valid` comments.
+   */
+  bool valid() const noexcept
+  {
+    return handle_.dwLower && handle_.dwUpper;
+  }
+
+  /**
+   * `true` if the object is managing a valid `CtxtHandle`, `false` otherwise.
+   */
+  operator bool() const noexcept
+  {
+    return valid();
+  }
+
+private:
+  CtxtHandle handle_;
+
+  /**
+   * Free the `CtxtHandle` if it is valid.
+   *
+   * Return value ignored since a managed `CtxtHandle` should not be invalid.
+   */
+  void destroy_handle() noexcept
+  {
+    if (valid())
+      DeleteSecurityContext(&handle_);
+  }
+};
 #endif  // _WIN32
 
 #ifdef PDNNET_UNIX
