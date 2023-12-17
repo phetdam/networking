@@ -233,35 +233,30 @@ PDNNET_ARG_MAIN
   client.connect(PDNNET_CLIOPT(host), 443).exit_on_error();
   // on Windows, attempt to perform handshake via Schannel
 #if defined(_WIN32)
-  // credential handle to get credential + security functions return status
+  // credential handle to get credential
   pdnnet::unique_cred_handle cred;
-  SECURITY_STATUS sec_status;
   // Schannel credentials struct. not using SCH_CREDENTIALS since it refuses
   // to be defined correctly despite the documentation
   auto sc_cred = pdnnet::create_schannel_cred();
   // acquire credential handle for Schannel, exit on error
   schannel_acquire_creds(cred, sc_cred).exit_on_error();
-  // security context to use later
-  CtxtHandle context;
-  // build security context by performing TLS handshake
-  schannel_perform_handshake(context, client.socket(), cred).exit_on_error();
+  // raw security context to use later
+  CtxtHandle raw_context;
+  // build security context by performing TLS handshake + owning context
+  schannel_perform_handshake(raw_context, client.socket(), cred).exit_on_error();
+  pdnnet::unique_ctxt_handle context{raw_context};
   std::cout << "TLS handshake with " << PDNNET_CLIOPT(host) << " completed" <<
     std::endl;
   // get stream size limits from context
   // TODO: QueryContextAttributes complains that the context handle is invalid.
   // schannel_perform_handshake is exiting since server closed connection
   // SecPkgContext_StreamSizes sc_sizes;
-  // sec_status = QueryContextAttributes(&context, SECPKG_ATTR_SIZES, &sc_sizes);
+  // auto status = QueryContextAttributes(&context, SECPKG_ATTR_SIZES, &sc_sizes);
   // PDNNET_ERROR_EXIT_IF(
-  //   (sec_status != SEC_E_OK),
+  //   (status != SEC_E_OK),
   //   pdnnet::windows_error(sec_status, "Failed to get stream size limits").c_str()
   // );
   // TODO: make EncryptMessage and DecryptMessage calls for communication
-  // done, clean up security context
-  PDNNET_ERROR_EXIT_IF(
-    (sec_status = DeleteSecurityContext(&context)) != SEC_E_OK,
-    pdnnet::windows_error(sec_status, "Could not delete security context").c_str()
-  );
   // HTTPS request logic on *nix only for now
 #else
   // create OpenSSL TLS layer using default context + attempt to connect
