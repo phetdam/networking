@@ -100,10 +100,14 @@ pdnnet::optional_error schannel_perform_handshake(
   CtxtHandle& context,
   pdnnet::socket_handle handle,
   const CredHandle& cred,
+  // TODO: do we really need all these flags?
   ULONG ctx_init_flags =
+    ISC_REQ_USE_SUPPLIED_CREDS |
     ISC_REQ_ALLOCATE_MEMORY |
     ISC_REQ_CONFIDENTIALITY |
-    ISC_REQ_REPLAY_DETECT)
+    ISC_REQ_REPLAY_DETECT |
+    ISC_REQ_SEQUENCE_DETECT |
+    ISC_REQ_STREAM)
 {
   // true if first InitializeSecurityContext call succeeded
   bool building_context = false;
@@ -133,7 +137,7 @@ pdnnet::optional_error schannel_perform_handshake(
     auto status = InitializeSecurityContext(
       // MS documentation is incorrect, PCredHandle must always be passed
       const_cast<PCredHandle>(&cred),
-      NULL,
+      (!building_context) ? NULL : &context,
       const_cast<SEC_CHAR*>(PDNNET_CLIOPT(host)),
       context_flags,
       0,     // Reserved1
@@ -145,6 +149,20 @@ pdnnet::optional_error schannel_perform_handshake(
       &context_flags,
       NULL
     );
+    // might be too much input for Schannel to handle, in which case the second
+    // buffer is now SECBUFFER_EXTRA and indicates number of unprocessed bytes
+    if (input_bufs[1].BufferType == SECBUFFER_EXTRA) {
+      // shift unprocessed bytes and update buffer size
+      std::memcpy(
+        ctx_buffer,
+        ctx_buffer + (ctx_bufsize - input_bufs[1].cbBuffer),
+        input_bufs[1].cbBuffer
+      );
+      ctx_bufsize = input_bufs[1].cbBuffer;
+    }
+    // reset buffer size, we are going to write into it from the beginning
+    else
+      ctx_bufsize = 0;
     // switch off of status value
     switch (status) {
       // done, return with no error
@@ -169,8 +187,8 @@ pdnnet::optional_error schannel_perform_handshake(
           static_cast<int>(max_tls_message_size - ctx_bufsize),
           0
         );
-        // server closed connection, ok
-        // TODO: is it really ok? QueryContextAttributes says context invalid
+        // server closed connection
+        // TODO: maybe treat this as an error
         if (!n_read)
           return {};
         // error
@@ -221,14 +239,12 @@ PDNNET_ARG_MAIN
   std::cout << "TLS handshake with " << PDNNET_CLIOPT(host) << " completed" <<
     std::endl;
   // get stream size limits from context
-  // TODO: QueryContextAttributes complains that the context handle is invalid.
-  // schannel_perform_handshake is exiting since server closed connection
-  // SecPkgContext_StreamSizes sc_sizes;
-  // auto status = QueryContextAttributes(&raw_context, SECPKG_ATTR_SIZES, &sc_sizes);
-  // PDNNET_ERROR_EXIT_IF(
-  //   (status != SEC_E_OK),
-  //   pdnnet::windows_error(status, "Failed to get stream size limits").c_str()
-  // );
+  SecPkgContext_StreamSizes sc_sizes;
+  auto status = QueryContextAttributes(&raw_context, SECPKG_ATTR_SIZES, &sc_sizes);
+  PDNNET_ERROR_EXIT_IF(
+    (status != SEC_E_OK),
+    pdnnet::windows_error(status, "Failed to get stream size limits").c_str()
+  );
   // TODO: make EncryptMessage and DecryptMessage calls for communication
   // HTTPS request logic on *nix only for now
 #else
