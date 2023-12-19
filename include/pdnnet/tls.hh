@@ -291,6 +291,37 @@ private:
       DeleteSecurityContext(&handle_);
   }
 };
+
+/**
+ * Acquire unique Schannel credential handle for use in TLS handshake.
+ *
+ * @param cred Empty credential handle written to for use in TLS handshake
+ * @param sc_cred Schannel credential struct
+ * @returns Optional empty on success, with error message on failure
+ */
+inline optional_error acquire_schannel_creds(
+  unique_cred_handle& cred, const SCHANNEL_CRED& sc_cred)
+{
+  CredHandle raw_cred;
+  // acquire credentials handle for Schannel
+  auto status = AcquireCredentialsHandle(
+    NULL,
+    UNISP_NAME,
+    SECPKG_CRED_OUTBOUND,
+    NULL,  // pvLogonID
+    (PVOID) &sc_cred,
+    NULL,  // pGetKeyFn
+    NULL,  // pvGetKeyArgument
+    &raw_cred,
+    NULL
+  );
+  // if failure, return error string
+  if (status != SEC_E_OK)
+    return pdnnet::windows_error(status);
+  // otherwise move + return nothing
+  cred = pdnnet::unique_cred_handle{raw_cred};
+  return {};
+}
 #endif  // _WIN32
 
 #ifdef PDNNET_UNIX

@@ -89,37 +89,6 @@ std::string http_get_request(
 #endif  // PDNNET_UNIX
 
 #ifdef _WIN32
-/**
- * Acquire unique Schannel credential handle for use in TLS handshake.
- *
- * @param cred Empty credential handle written to for use in TLS handshake
- * @param sc_cred Schannel credential struct
- * @returns Optional empty on success, with error message on failure
- */
-pdnnet::optional_error schannel_acquire_creds(
-  pdnnet::unique_cred_handle& cred, const SCHANNEL_CRED& sc_cred)
-{
-  CredHandle raw_cred;
-  // acquire credentials handle for Schannel
-  auto status = AcquireCredentialsHandle(
-    NULL,
-    UNISP_NAME,
-    SECPKG_CRED_OUTBOUND,
-    NULL,  // pvLogonID
-    (PVOID) &sc_cred,
-    NULL,  // pGetKeyFn
-    NULL,  // pvGetKeyArgument
-    &raw_cred,
-    NULL
-  );
-  // if failure, return error string
-  if (status != SEC_E_OK)
-    return pdnnet::windows_error(status);
-  // otherwise move + return nothing
-  cred = pdnnet::unique_cred_handle{raw_cred};
-  return {};
-}
-
 // max TLS message size + overhead for header/mac/padding (overestimated).
 // from https://gist.github.com/mmozeiko/c0dfcc8fec527a90a02145d2cc0bfb6d
 constexpr std::size_t max_tls_message_size = 16384 + 512;
@@ -237,9 +206,13 @@ PDNNET_ARG_MAIN
   pdnnet::unique_cred_handle cred;
   // Schannel credentials struct. not using SCH_CREDENTIALS since it refuses
   // to be defined correctly despite the documentation
-  auto sc_cred = pdnnet::create_schannel_cred();
+  auto sc_cred = pdnnet::create_schannel_cred(
+    SCH_USE_STRONG_CRYPTO |
+    SCH_CRED_AUTO_CRED_VALIDATION |  // enabled by default
+    SCH_CRED_NO_DEFAULT_CREDS
+  );
   // acquire credential handle for Schannel, exit on error
-  schannel_acquire_creds(cred, sc_cred).exit_on_error();
+  pdnnet::acquire_schannel_creds(cred, sc_cred).exit_on_error();
   // raw security context to use later
   CtxtHandle raw_context;
   // build security context by performing TLS handshake + owning context
@@ -251,10 +224,10 @@ PDNNET_ARG_MAIN
   // TODO: QueryContextAttributes complains that the context handle is invalid.
   // schannel_perform_handshake is exiting since server closed connection
   // SecPkgContext_StreamSizes sc_sizes;
-  // auto status = QueryContextAttributes(&context, SECPKG_ATTR_SIZES, &sc_sizes);
+  // auto status = QueryContextAttributes(&raw_context, SECPKG_ATTR_SIZES, &sc_sizes);
   // PDNNET_ERROR_EXIT_IF(
   //   (status != SEC_E_OK),
-  //   pdnnet::windows_error(sec_status, "Failed to get stream size limits").c_str()
+  //   pdnnet::windows_error(status, "Failed to get stream size limits").c_str()
   // );
   // TODO: make EncryptMessage and DecryptMessage calls for communication
   // HTTPS request logic on *nix only for now
