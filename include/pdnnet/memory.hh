@@ -13,7 +13,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <memory>
-#include <new>
 #include <type_traits>
 
 namespace pdnnet {
