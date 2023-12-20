@@ -89,10 +89,6 @@ std::string http_get_request(
 #endif  // PDNNET_UNIX
 
 #ifdef _WIN32
-// max TLS message size + overhead for header/mac/padding (overestimated).
-// from https://gist.github.com/mmozeiko/c0dfcc8fec527a90a02145d2cc0bfb6d
-constexpr std::size_t max_tls_message_size = 16384 + 512;
-
 /**
  * Perform Schannel TLS handshake.
  */
@@ -115,7 +111,7 @@ pdnnet::optional_error schannel_perform_handshake(
   pdnnet::socket_writer writer{handle};
   // raw buffer to receive security context data + current written size
   // TODO: this buffer has to persist past the function's scope
-  char ctx_buffer[max_tls_message_size];  // maybe put on heap?
+  char ctx_buffer[pdnnet::tls_record_size_limit];  // maybe put on heap?
   unsigned long ctx_bufsize = 0;          // largest type needed is ULONG
   // handshake loop
   while (true) {
@@ -178,13 +174,14 @@ pdnnet::optional_error schannel_perform_handshake(
         if ((status = FreeContextBuffer(output_buf.pvBuffer)) != SEC_E_OK)
           return pdnnet::windows_error(status, "Failed to free token buffer");
         // buffer full, so server could be misbehaving
-        if (ctx_bufsize == max_tls_message_size)
+        if (ctx_bufsize == sizeof ctx_buffer)
           return "Error: Token buffer full, server not following TLS protocol";
         // read data back from server to ctx_buffer
         auto n_read = ::recv(
           handle,
           ctx_buffer + ctx_bufsize,
-          static_cast<int>(max_tls_message_size - ctx_bufsize),
+          // note: due to precedence, read as (sizeof ctx_buffer) - ctx_bufsize
+          static_cast<int>(sizeof ctx_buffer - ctx_bufsize),
           0
         );
         // server closed connection

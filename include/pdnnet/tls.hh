@@ -36,6 +36,15 @@
 
 namespace pdnnet {
 
+/**
+ * Maximum TLS record size with extra space for header, MAC address, padding.
+ *
+ * See RFC 8449. Value used here from the following GitHub Gist:
+ *
+ * https://gist.github.com/mmozeiko/c0dfcc8fec527a90a02145d2cc0bfb6d
+ */
+constexpr std::size_t tls_record_size_limit = 16384 + 512;
+
 #ifdef _WIN32
 /**
  * Return a new `SCHANNEL_CRED` from the given inputs.
