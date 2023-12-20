@@ -111,16 +111,19 @@ pdnnet::optional_error schannel_perform_handshake(
   pdnnet::socket_writer writer{handle};
   // raw buffer to receive security context data + current written size
   // TODO: this buffer has to persist past the function's scope
-  char ctx_buffer[pdnnet::tls_record_size_limit];  // maybe put on heap?
-  unsigned long ctx_bufsize = 0;          // largest type needed is ULONG
+  char ctx_buffer[pdnnet::tls_record_size_limit];
+  unsigned long ctx_bufsize = 0;  // largest type needed is ULONG
   // handshake loop
   while (true) {
     // flags sent and received that indicate requests for the context
     auto context_flags = ctx_init_flags;
     // input security buffers
     SecBuffer input_bufs[2]{};
+    // token buffer, points to ctx_buffer with size ctx_bufsize
     input_bufs[0].BufferType = SECBUFFER_TOKEN;
     input_bufs[0].pvBuffer = ctx_buffer;
+    // sentinel buffer, can be SECBUFFER_EXTRA after InitializeSecurityContext
+    // if server was not able to process all of the provided input
     input_bufs[0].cbBuffer = ctx_bufsize;
     input_bufs[1].BufferType = SECBUFFER_EMPTY;
     // output security buffer
@@ -133,11 +136,13 @@ pdnnet::optional_error schannel_perform_handshake(
     auto status = InitializeSecurityContext(
       // MS documentation is incorrect, PCredHandle must always be passed
       const_cast<PCredHandle>(&cred),
+      // supply PCtxtHandle after first InitializeSecurityContext call
       (!building_context) ? NULL : &context,
       const_cast<SEC_CHAR*>(PDNNET_CLIOPT(host)),
       context_flags,
       0,     // Reserved1
       NULL,  // TargetDataRep
+      // supply input SecBufferDesc after first InitializeSecurityContext call
       (!building_context) ? NULL : &input_desc,
       0,     // Reserved2
       &context,
