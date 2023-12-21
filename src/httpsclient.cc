@@ -77,7 +77,7 @@ std::string http_get_request(
   const std::string& host, const std::filesystem::path& path)
 {
   return
-    // note: HTTP/1.0 disables chunked transfer
+    // note: HTTP/1.0 disables chunked transfer. implies Connection: close
     "GET " + path.string() + " HTTP/1.0\r\n"
     // only interested in receiving text
     "Accept: text/html,application/xhtml+xml,application/xml\r\n"
@@ -242,7 +242,9 @@ PDNNET_ARG_MAIN
     std::endl;
   // get stream size limits from context
   SecPkgContext_StreamSizes sc_sizes;
-  auto status = QueryContextAttributes(&raw_context, SECPKG_ATTR_SIZES, &sc_sizes);
+  auto status = QueryContextAttributes(
+    static_cast<PCtxtHandle>(context), SECPKG_ATTR_SIZES, &sc_sizes
+  );
   PDNNET_ERROR_EXIT_IF(
     (status != SEC_E_OK),
     pdnnet::windows_error(status, "Failed to get stream size limits").c_str()
@@ -287,7 +289,8 @@ PDNNET_ARG_MAIN
   //   SSL_shutdown(layer) < 0,
   //   pdnnet::openssl_error_string("Failed to close write end").c_str()
   // );
-  // read contents from server and print to stdout
+  // read contents from server until connection close and print to stdout
+  // TODO: need better handling to work when socket is kept alive
   char buf[512];
   int n_read;
   int read_err;
