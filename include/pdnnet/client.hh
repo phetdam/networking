@@ -175,7 +175,7 @@ public:
 /**
  * Client reader class for abstracting raw socket reads.
  *
- * Can be used as a drp-in for `socket_reader` when using clients.
+ * Can be used as a drop-in for `socket_reader` when using clients.
  */
 class client_reader : public socket_reader {
 public:
