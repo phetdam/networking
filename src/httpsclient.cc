@@ -77,8 +77,8 @@ std::string http_get_request(
   const std::string& host, const std::filesystem::path& path)
 {
   return
-    // note: HTTP/1.0 disables chunked transfer. implies Connection: close
-    "GET " + path.string() + " HTTP/1.0\r\n"
+    // note: HTTP/1.0 disables chunked transfer + implies Connection: close
+    "GET " + path.string() + " HTTP/1.1\r\n"
     // only interested in receiving text
     "Accept: text/html,application/xhtml+xml,application/xml\r\n"
     // host required for HTTP 1.1 requests
@@ -293,7 +293,7 @@ PDNNET_ARG_MAIN
   // TODO: need better handling to work when socket is kept alive
   char buf[512];
   int n_read;
-  int read_err;
+  int read_err = SSL_ERROR_NONE;
   do {
     n_read = SSL_read(layer, buf, sizeof buf);
     // if successful (read some bytes), print to stdout
@@ -302,18 +302,21 @@ PDNNET_ARG_MAIN
     // if unsuccessful, continue if we can retry
     else {
       read_err = SSL_get_error(layer, n_read);
-      if (read_err == SSL_ERROR_WANT_READ)       {
+      // can read some more, just retry
+      if (read_err == SSL_ERROR_WANT_READ) {
         std::cout << "Content read failed: retrying..." << std::endl;
         continue;
       }
+      // break and print error message before exit
+      else
+        break;
     }
-    // otherwise, we will break out of loop
   }
-  while (n_read > 0);
+  while (SSL_has_pending(layer));
   // check for error. typically read_err is SSL_ERROR_SSL and we can use
   // ERR_get_error() called in openssl_error_string() for more info
   PDNNET_ERROR_EXIT_IF(
-    read_err != SSL_ERROR_ZERO_RETURN,
+    read_err != SSL_ERROR_NONE,
     pdnnet::openssl_error_string("Content read failed: OpenSSL error").c_str()
   );
 #endif  // !defined(_WIN32)
