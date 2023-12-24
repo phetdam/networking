@@ -284,13 +284,8 @@ PDNNET_ARG_MAIN
     // decrement remaining
     remaining -= n_written;
   }
-  // done, shut down write end
-  // PDNNET_ERROR_EXIT_IF(
-  //   SSL_shutdown(layer) < 0,
-  //   pdnnet::openssl_error_string("Failed to close write end").c_str()
-  // );
-  // read contents from server until connection close and print to stdout
-  // TODO: need better handling to work when socket is kept alive
+  // read contents from server until no more pending and print to stdout. under
+  // HTTP standard the socket should not be closed automatically
   char buf[512];
   int n_read;
   int read_err = SSL_ERROR_NONE;
