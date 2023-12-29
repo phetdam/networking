@@ -8,14 +8,7 @@
 #ifndef PDNNET_TLS_HH_
 #define PDNNET_TLS_HH_
 
-#include <optional>
-#include <string>
-
-#include "pdnnet/error.hh"
-#include "pdnnet/platform.h"
-#include "pdnnet/socket.hh"
-
-#if defined(_WIN32)
+#ifdef _WIN32
 // consistently use WIN32_LEAN_AND_MEAN like the other headers do
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -26,13 +19,26 @@
 #if !defined(SECURITY_WIN32) && !defined(SECURITY_KERNEL)
 #define SECURITY_WIN32
 #endif  // defined(SECURITY_WIN32) || defined(SECURITY_KERNEL)
+// don't allow use of the obsolete (?) SECURITY_MAC macro
+#ifdef SECURITY_MAC
+#error "Only SECURITY_WIN32 or SECURITY_KERNEL may be defined"
+#endif  // SECURITY_MAC
 #include <security.h>
-#else
+#endif  // _WIN32
+
+#include <optional>
+#include <string>
+
+#include "pdnnet/error.hh"
+#include "pdnnet/platform.h"
+#include "pdnnet/socket.hh"
+
 // OpenSSL used for *nix systems
+#ifdef PDNNET_UNIX
 #include <openssl/err.h>
 #include <openssl/opensslv.h>
 #include <openssl/ssl.h>
-#endif  // !defined(_WIN32)
+#endif  // PDNNET_UNIX
 
 namespace pdnnet {
 
