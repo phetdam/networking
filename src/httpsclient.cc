@@ -191,10 +191,9 @@ pdnnet::optional_error schannel_perform_handshake(
           static_cast<int>(sizeof ctx_buffer - ctx_bufsize),
           0
         );
-        // server closed connection
-        // TODO: maybe treat this as an error
+        // server closed connection. not what we want when doing handshake
         if (!n_read)
-          return {};
+          return "Server closed connection gracefully during handshake";
         // error
         if (n_read < 0)
           return pdnnet::winsock_error("Could not read token back from server");
