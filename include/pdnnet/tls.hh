@@ -146,9 +146,27 @@ public:
   }
 
   /**
-   * Implicitly convert to a `const CredHandle&` credential handle.
+   * Implicitly convert to a `PCredHandle`.
+   *
+   * This is mostly useful when working with the Win32 SSPI functions.
+   */
+  operator PCredHandle() noexcept
+  {
+    return &handle_;
+  }
+
+  /**
+   * Implicitly convert to a `CredHandle` const reference.
    */
   operator const CredHandle&() const noexcept
+  {
+    return handle_;
+  }
+
+  /**
+   * Implicitly convert to a `CredHandle` reference.
+   */
+  operator CredHandle&() noexcept
   {
     return handle_;
   }
@@ -261,9 +279,27 @@ public:
   }
 
   /**
-   * Implicitly convert to a `const CtxtHandle&` credential handle.
+   * Implicitly convert to a `PCtxtHandle`.
+   *
+   * This is mostly useful when working with the Win32 SSPI functions.
+   */
+  operator PCtxtHandle() noexcept
+  {
+    return &handle_;
+  }
+
+  /**
+   * Implicitly convert to a `CtxtHandle` const reference.
    */
   operator const CtxtHandle&() const noexcept
+  {
+    return handle_;
+  }
+
+  /**
+   * Implicitly convert to a `CtxtHandle` reference.
+   */
+  operator CtxtHandle&() noexcept
   {
     return handle_;
   }

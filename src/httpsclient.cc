@@ -233,17 +233,16 @@ PDNNET_ARG_MAIN
   );
   // acquire credential handle for Schannel, exit on error
   pdnnet::acquire_schannel_creds(cred, sc_cred).exit_on_error();
-  // raw security context to use later
-  CtxtHandle raw_context;
-  // build security context by performing TLS handshake + owning context
-  schannel_perform_handshake(raw_context, client.socket(), cred).exit_on_error();
-  pdnnet::unique_ctxt_handle context{raw_context};
+  // security context to build
+  pdnnet::unique_ctxt_handle context;
+  // build security context by performing TLS handshake
+  schannel_perform_handshake(context, client.socket(), cred).exit_on_error();
   std::cout << "TLS handshake with " << PDNNET_CLIOPT(host) << " completed" <<
     std::endl;
   // get stream size limits from context
   SecPkgContext_StreamSizes sc_sizes;
   auto status = QueryContextAttributes(
-    static_cast<PCtxtHandle>(context), SECPKG_ATTR_STREAM_SIZES, &sc_sizes
+    context, SECPKG_ATTR_STREAM_SIZES, &sc_sizes
   );
   PDNNET_ERROR_EXIT_IF(
     (status != SEC_E_OK),
