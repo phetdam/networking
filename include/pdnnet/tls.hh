@@ -23,9 +23,9 @@
 #include <Windows.h>
 #include <schannel.h>
 // by default, use Win32 security APIs in user application mode
-#ifndef SECURITY_WIN32
+#if !defined(SECURITY_WIN32) && !defined(SECURITY_KERNEL)
 #define SECURITY_WIN32
-#endif  // SECURITY_WIN32
+#endif  // defined(SECURITY_WIN32) || defined(SECURITY_KERNEL)
 #include <security.h>
 #else
 // OpenSSL used for *nix systems

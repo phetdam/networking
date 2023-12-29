@@ -5,6 +5,14 @@
  * @copyright MIT License
  */
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#define SECURITY_WIN32  // for user-mode security
+#include <schannel.h>
+#include <security.h>
+#endif  // _WIN32
+
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
@@ -27,17 +35,11 @@
 #include "pdnnet/error.hh"
 #include "pdnnet/platform.h"
 
-#if defined(_WIN32)
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-#define SECURITY_WIN32  // for user-mode security
-#include <schannel.h>
-#include <security.h>
-#else
+#ifdef PDNNET_UNIX
 #include <openssl/err.h>
 #include <openssl/opensslv.h>
 #include <openssl/ssl.h>
-#endif  // !defined(_WIN32)
+#endif  // PDNNET_UNIX
 
 #include "pdnnet/tls.hh"
 
