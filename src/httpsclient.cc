@@ -243,12 +243,14 @@ PDNNET_ARG_MAIN
   // get stream size limits from context
   SecPkgContext_StreamSizes sc_sizes;
   auto status = QueryContextAttributes(
-    static_cast<PCtxtHandle>(context), SECPKG_ATTR_SIZES, &sc_sizes
+    static_cast<PCtxtHandle>(context), SECPKG_ATTR_STREAM_SIZES, &sc_sizes
   );
   PDNNET_ERROR_EXIT_IF(
     (status != SEC_E_OK),
     pdnnet::windows_error(status, "Failed to get stream size limits").c_str()
   );
+  // max message size
+  std::cout << "Max TLS message size: " << sc_sizes.cbMaximumMessage << std::endl;
   // TODO: make EncryptMessage and DecryptMessage calls for communication
   // HTTPS request logic on *nix only for now
 #else
