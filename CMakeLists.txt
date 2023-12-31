@@ -17,12 +17,11 @@ project(
     LANGUAGES C CXX
 )
 
-option(BUILD_SHARED_LIBS "Build pdnnet support library as a shared library" ON)
-if(BUILD_SHARED_LIBS)
-    message(STATUS "pdnnet library configuration: SHARED")
-else()
-    message(STATUS "pdnnet library configuration: STATIC")
-endif()
+option(BUILD_SHARED_LIBS "Build libraries as shared" ON)
+option(ENABLE_ASAN "Enable AddressSanitizer instrumentation" OFF)
+
+# check if multi-config generator
+get_property(PDNNET_IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 
 # set some system information variables used for the version info. note the
 # relevant CMake variables used will be empty if used before project()
@@ -34,7 +33,6 @@ set(PDNNET_SYSTEM_ARCH ${CMAKE_SYSTEM_PROCESSOR})
 set(PDNNET_BUILD_CONFIGS Debug Release)
 # use Debug as the default build
 if(NOT CMAKE_BUILD_TYPE)
-    message(STATUS "CMAKE_BUILD_TYPE not set, using Debug")
     set(CMAKE_BUILD_TYPE Debug)
 endif()
 # check that user didn't specify something unrecognized
@@ -44,6 +42,16 @@ else()
         FATAL_ERROR
         "Error: CMAKE_BUILD_TYPE must be one of ${PDNNET_BUILD_CONFIGS}"
     )
+endif()
+# if single-config generator, print config
+if(NOT PDNNET_IS_MULTI_CONFIG)
+    message(STATUS "Config: ${CMAKE_BUILD_TYPE}")
+endif()
+# print library config
+if(BUILD_SHARED_LIBS)
+    message(STATUS "Libraries: Shared")
+else()
+    message(STATUS "Libraries: Static")
 endif()
 
 set(CMAKE_C_STANDARD 17)
