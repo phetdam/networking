@@ -486,6 +486,17 @@ inline std::string openssl_ssl_error_string(int ssl_error)
 }
 
 /**
+ * Return an error string from a `SSL_get_error` value prefixed with a message.
+ *
+ * @param ssl_error Status returned by `SSL_get_error`
+ * @param message Message to prefix with
+ */
+inline auto openssl_ssl_error_string(int ssl_error, const std::string& message)
+{
+  return message + ": " + openssl_ssl_error_string(ssl_error);
+}
+
+/**
  * TLS context class with unique ownership.
  *
  * This is typically used for initializing a TLS connection layer. On UNIX-like
