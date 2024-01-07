@@ -448,6 +448,11 @@ inline auto openssl_error_string()
   return openssl_error_string(ERR_get_error());
 }
 
+/**
+ * Return an error string from a `SSL_get_error` return value.
+ *
+ * @param ssl_error Status returned by `SSL_get_error`.
+ */
 inline std::string openssl_ssl_error_string(int ssl_error)
 {
   switch (ssl_error) {
@@ -456,14 +461,21 @@ inline std::string openssl_ssl_error_string(int ssl_error)
     case SSL_ERROR_ZERO_RETURN:
       return "Connection for writing closed by peer";
     case SSL_ERROR_WANT_READ:
-      return "Unable to complete retryable nonblocking read";
+      return "Try again, unable to complete nonblocking BIO read";
     case SSL_ERROR_WANT_WRITE:
-      return "Unable to complete retryable nonblocking write";
+      return "Try again, unable to complete nonblocking BIO write";
     case SSL_ERROR_WANT_CONNECT:
-      return "Unable to complete retryable connect";
+      return "Try again, unable to connect to BIO without blocking";
     case SSL_ERROR_WANT_ACCEPT:
-      return "Unable to complete retryable accept";
-    // TODO: not done handling all the SSL error values
+      return "Try again, unable to accept BIO without blocking";
+    case SSL_ERROR_WANT_X509_LOOKUP:
+      return "Try again, client certificate callback asked to be called again";
+    case SSL_ERROR_WANT_ASYNC:
+      return "Try again, async engine processing not yet complete";
+    case SSL_ERROR_WANT_ASYNC_JOB:
+      return "Try again, no async jobs in pool available to be started";
+    case SSL_ERROR_WANT_CLIENT_HELLO_CB:
+      return "Try again, client hello callback asked to be called again";
     case SSL_ERROR_SYSCALL:
       return errno_error("Fatal I/O error");
     case SSL_ERROR_SSL:
