@@ -183,10 +183,10 @@ public:
    * Ctor.
    *
    * @param client Client instance
-   * @param close_read `true` to close socket read end after reading
+   * @param until_close Ignore
    */
-  client_reader(const ipv4_client& client, bool close_read = false)
-    : socket_reader{client.socket(), close_read}
+  client_reader(const ipv4_client& client, bool until_close = false)
+    : socket_reader{client.socket(), until_close}
   {}
 };
 
