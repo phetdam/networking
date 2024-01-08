@@ -190,7 +190,7 @@ public:
           {
             // own handle to automatically close later
             unique_socket socket{cli_sockfd};
-            // read from socket until end of tranmission is received
+            // read from socket until end of transmission is received
             std::stringstream stream;
             stream << socket_reader{socket, true};
             // TODO: if we want to add server print, we need synchronization
