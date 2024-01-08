@@ -182,6 +182,8 @@ public:
   /**
    * Ctor.
    *
+   * @todo `until_close` will be replaced with `unsigned int poll_freq = 1`
+   *
    * @param client Client instance
    * @param until_close Ignore
    */

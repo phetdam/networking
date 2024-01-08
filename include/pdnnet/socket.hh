@@ -715,6 +715,8 @@ public:
    *
    * Buffer read size is given by `socket_read_size`.
    *
+   * @todo `until_close` will be replaced with `unsigned int poll_freq = 1`
+   *
    * @param handle Socket handle
    * @param until_close Ignored
    */
@@ -724,6 +726,8 @@ public:
 
   /**
    * Ctor.
+   *
+   * @todo `until_close` will be replaced with `unsigned int poll_freq = 1`
    *
    * @param handle Socket handle
    * @param buf_size Read buffer size, i.e. number of bytes per read
@@ -755,7 +759,8 @@ public:
     ssize_type n_read;
     // loop until we read zero bytes
     do {
-      // poll to check if there is anything to read. if not, return
+      // poll to check if there is anything to read. if not, return. note that
+      // if write end is not closed, POLLIN is possible with read() returning 0
       // TODO: currently timeout is fixed at 1 ms, one might want to change it
       if (!(poll(handle_, POLLIN) & POLLIN))
         return {};
