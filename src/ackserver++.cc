@@ -73,8 +73,8 @@ void handle_client(pdnnet::socket_handle sockfd)
     throw std::runtime_error{
       pdnnet::socket_error("Could not get client socket address")
     };
-  // read from socket until end of transmission is received
-  auto read_text = pdnnet::read(socket, true);
+  // read text from socket into string
+  auto read_text = pdnnet::read(socket);
   // if verbose, print the stream contents to stdout with header
   if (PDNNET_CLIOPT(verbose)) {
     std::cout << PDNNET_PROGRAM_NAME << ": Received from " <<
@@ -85,9 +85,9 @@ void handle_client(pdnnet::socket_handle sockfd)
 #endif  // !defined(_WIN32) && !defined(PDNNET_BSD_DEFAULT_SOURCE)
       ": " << read_text << std::flush;
   }
-  // write our acknowledgment message + shut down write end to finish
+  // write our acknowledgment message
   // TODO: a write() counterpart to read() would be less verbose
-  pdnnet::socket_writer{socket, true}.read("Acknowledged message received");
+  pdnnet::socket_writer{socket}.read("Acknowledged message received");
 }
 
 /**

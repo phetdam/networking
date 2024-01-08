@@ -43,14 +43,19 @@ PDNNET_ARG_MAIN
   // create IPv4 TCP/IP client + attempt connection
   pdnnet::ipv4_client client{};
   client.connect(PDNNET_CLIOPT(host), PDNNET_CLIOPT(port)).exit_on_error();
-  // read from stdin and write to socket + signal end of transmission
-  std::cin >> pdnnet::client_writer{client, true};
+  // read from stdin and write to socket + block until response is detected
+  std::cin >> pdnnet::client_writer{client};
+  // TODO: timeout should be provided via command-line with a default value
+  if (!(pdnnet::poll(client.socket(), POLLIN, 1000 * 10) & POLLIN)) {
+    std::cerr << "Error: 10 second timeout reached" << std::endl;
+    return EXIT_FAILURE;
+  }
   // print identifying header like original ackclient. we flush instead of
   // using std::endl since we don't want newline
   std::cout << PDNNET_PROGRAM_NAME << ": Received from " <<
     client.host_name() << ": " << std::flush;
   // read from socket until end of transmission and write to output stream,
   // include trailing newline. socket is fully closed on exit
-  std::cout << pdnnet::client_reader{client, true} << std::endl;
+  std::cout << pdnnet::client_reader{client} << std::endl;
   return EXIT_SUCCESS;
 }
