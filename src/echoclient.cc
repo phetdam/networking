@@ -53,6 +53,6 @@ PDNNET_ARG_MAIN
   }
   // read from socket until end of transmission and write to output stream,
   // include trailing newline. socket is fully closed on exit
-  std::cout << pdnnet::client_reader{client, true} << std::endl;
+  std::cout << pdnnet::client_reader{client} << std::endl;
   return EXIT_SUCCESS;
 }
