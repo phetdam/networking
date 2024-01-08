@@ -716,7 +716,7 @@ public:
    * Buffer read size is given by `socket_read_size`.
    *
    * @param handle Socket handle
-   * @param until_close `true` to loop until end of transmission is received
+   * @param until_close Ignored
    */
   socket_reader(socket_handle handle, bool until_close = false)
     : socket_reader{handle, socket_read_size, until_close}
@@ -727,7 +727,7 @@ public:
    *
    * @param handle Socket handle
    * @param buf_size Read buffer size, i.e. number of bytes per read
-   * @param until_close `true` to loop until end of transmission is received
+   * @param until_close Ignored
    */
   socket_reader(
     socket_handle handle, std::size_t buf_size, bool until_close = false)
@@ -753,8 +753,12 @@ public:
   {
     // number of bytes read
     ssize_type n_read;
-    // until client signals end of transmission
+    // loop until we read zero bytes
     do {
+      // poll to check if there is anything to read. if not, return
+      // TODO: currently timeout is fixed at 1 ms, one might want to change it
+      if (!(poll(handle_, POLLIN) & POLLIN))
+        return {};
       // read and handle errors
 #if defined(_WIN32)
       n_read = ::recv(
@@ -773,8 +777,9 @@ public:
       out.write(reinterpret_cast<const CharT*>(buf_.get()), n_read / sizeof(CharT));
       memset(buf_.get(), 0, buf_size_);
     }
-    while (until_close_ && n_read);
-    return {};
+    while (n_read);
+    // if we made it here, the connection was closed
+    return {};  // TODO: maybe return an "error"? generally don't want this
   }
 
   /**
