@@ -24,7 +24,7 @@
 #define PDNNET_ADD_CLIOPT_PORT
 #define PDNNET_CLIOPT_PORT_DEFAULT 8888
 #define PDNNET_ADD_CLIOPT_TIMEOUT
-#define PDNNET_CLIOPT_TIMEOUT_DEFAULT (1000 * 10)  // 10s
+#define PDNNET_CLIOPT_TIMEOUT_DEFAULT 10'000  // 10s
 
 #include "pdnnet/client.hh"
 #include "pdnnet/cliopt.h"
@@ -45,8 +45,9 @@ PDNNET_ARG_MAIN
   // create IPv4 TCP/IP client + attempt connection
   pdnnet::ipv4_client client{};
   client.connect(PDNNET_CLIOPT(host), PDNNET_CLIOPT(port)).exit_on_error();
-  // read from stdin and write to socket + block until response is detected
+  // read from stdin and write to socket
   std::cin >> pdnnet::client_writer{client};
+  // block until response is detected
   if (!pdnnet::wait_pollin(client.socket(), PDNNET_CLIOPT(timeout))) {
     std::cerr << "Error: Operation timed out after " <<
       PDNNET_CLIOPT(timeout) << " ms" << std::endl;
