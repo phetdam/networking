@@ -85,6 +85,9 @@ static bool PDNNET_CLIOPT(print_usage) = false;
  * `PDNNET_CLIOPT_<ARG>_DEFAULT`
  *    Default value for the command-line option. Not all command-line options
  *    have default values, so this may not be necessary for each `<ARG>`.
+ * `PDNNET_CLIOPT_<ARG>_MAX`
+ *    Maximum value for an arithmetic-valued command-line option. Not all
+ *    command-line options have maximum values and should be defined as needed.
  *
  * Below are additional macros that are defined when `PDNNET_CLIOPT_<ARG>` are
  * defined, but which should not be redefined by the user. Any macros not

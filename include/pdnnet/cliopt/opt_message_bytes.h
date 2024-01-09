@@ -25,10 +25,9 @@
 #ifndef PDNNET_CLIOPT_MESSAGE_BYTES_DEFAULT
 #define PDNNET_CLIOPT_MESSAGE_BYTES_DEFAULT 512
 #endif  // PDNNET_CLIOPT_MESSAGE_BYTES_DEFAULT
-// TODO: should be written as PDNNET_CLIOPT_MESSAGE_BYTES_MAX for consistency
-#ifndef PDNNET_CLIOPT_MAX_MESSAGE_BYTES
-#define PDNNET_CLIOPT_MAX_MESSAGE_BYTES BUFSIZ
-#endif  // PDNNET_CLIOPT_MAX_MESSAGE_BYTES
+#ifndef PDNNET_CLIOPT_MESSAGE_BYTES_MAX
+#define PDNNET_CLIOPT_MESSAGE_BYTES_MAX BUFSIZ
+#endif  // PDNNET_CLIOPT_MESSAGE_BYTES_MAX
 static size_t PDNNET_CLIOPT(message_bytes) = PDNNET_CLIOPT_MESSAGE_BYTES_DEFAULT;
 #define PDNNET_CLIOPT_MESSAGE_BYTES_USAGE \
   "  " \
@@ -39,7 +38,7 @@ static size_t PDNNET_CLIOPT(message_bytes) = PDNNET_CLIOPT_MESSAGE_BYTES_DEFAULT
   "                        Number of bytes requested per read/write to/from a\n" \
   "                        client, default " \
     PDNNET_STRINGIFY(PDNNET_CLIOPT_MESSAGE_BYTES_DEFAULT) " bytes, max " \
-    PDNNET_STRINGIFY(PDNNET_CLIOPT_MAX_MESSAGE_BYTES) " bytes\n"
+    PDNNET_STRINGIFY(PDNNET_CLIOPT_MESSAGE_BYTES_MAX) " bytes\n"
 
 /**
  * Parse number of bytes to request for each socket read/write call.
@@ -66,13 +65,13 @@ pdnnet_cliopt_parse_message_bytes(const char *arg)
     fprintf(stderr, "Error: Message size value must be positive\n");
     return false;
   }
-  // must not exceed MAX_READ_SIZE
-  if (value > PDNNET_CLIOPT_MAX_MESSAGE_BYTES) {
+  // must not exceed PDNNET_CLIOPT_MESSAGE_BYTES_MAX
+  if (value > PDNNET_CLIOPT_MESSAGE_BYTES_MAX) {
     fprintf(
       stderr,
       "Error: Message size value %lld exceeds allowed max %zu\n",
       value,
-      (size_t) PDNNET_CLIOPT_MAX_MESSAGE_BYTES
+      (size_t) PDNNET_CLIOPT_MESSAGE_BYTES_MAX
     );
     return false;
   }

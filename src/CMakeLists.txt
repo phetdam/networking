@@ -15,7 +15,7 @@ if(UNIX)
     target_compile_definitions(
         ackserver
         PRIVATE
-            PDNNET_CLIOPT_MAX_MESSAGE_BYTES=4096
+            PDNNET_CLIOPT_MESSAGE_BYTES_MAX=4096
             PDNNET_ADD_CLIOPT_MAX_CONNECT_DEFAULT=5
     )
 endif()
