@@ -22,6 +22,7 @@
  *  PATH
  *  MESSAGE_BYTES
  *  MAX_CONNECT
+ *  TIMEOUT
  */
 
 #ifndef PDNNET_CLIOPT_H_
@@ -39,6 +40,7 @@
 #include "pdnnet/cliopt/opt_path.h"
 #include "pdnnet/cliopt/opt_port.h"
 #include "pdnnet/cliopt/opt_verbose.h"
+#include "pdnnet/cliopt/opt_timeout.h"
 #include "pdnnet/common.h"
 #include "pdnnet/sa.h"
 
@@ -177,6 +179,8 @@ pdnnet_cliopt_parse_args(int argc, PDNNET_SA(In) char **argv)
     PDNNET_CLIOPT_MESSAGE_BYTES_PARSE_CASE(argc, argv, i)
     // max number of accepted connections
     PDNNET_CLIOPT_MAX_CONNECT_PARSE_CASE(argc, argv, i)
+    // operation timeout
+    PDNNET_CLIOPT_TIMEOUT_PARSE_CASE(argc, argv, i)
     else {
       fprintf(stderr, "Error: Unknown option %s\n", argv[i]);
       return false;
@@ -211,7 +215,8 @@ pdnnet_cliopt_internal_print_usage(PDNNET_SA(In) char **argv, const char *desc)
       PDNNET_CLIOPT_PORT_USAGE
       PDNNET_CLIOPT_PATH_USAGE
       PDNNET_CLIOPT_MESSAGE_BYTES_USAGE
-      PDNNET_CLIOPT_MAX_CONNECT_USAGE,
+      PDNNET_CLIOPT_MAX_CONNECT_USAGE
+      PDNNET_CLIOPT_TIMEOUT_USAGE,
     PDNNET_PROGRAM_NAME,
     desc,
     desc_pad
@@ -226,6 +231,7 @@ pdnnet_cliopt_internal_print_usage(PDNNET_SA(In) char **argv, const char *desc)
 #undef PDNNET_CLOPT_PATH_USAGE
 #undef PDNNET_CLIOPT_MESSAGE_BYTES_USAGE
 #undef PDNNET_CLIOPT_MAX_CONNECT_USAGE
+#undef PDNNET_CLIOPT_TIMEOUT_USAGE
 
 /**
  * Print program usage.
