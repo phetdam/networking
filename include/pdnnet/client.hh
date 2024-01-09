@@ -21,6 +21,7 @@
 #include <sys/types.h>
 
 #include <cerrno>
+#include <chrono>
 #include <cstring>
 #endif  // !defined(_WIN32)
 
@@ -182,13 +183,13 @@ public:
   /**
    * Ctor.
    *
-   * @todo `until_close` will be replaced with `unsigned int poll_freq = 1`
-   *
    * @param client Client instance
-   * @param poll_freq Timeout in milliseconds when polling socket for input
+   * @param poll_timeout Timeout to use when polling socket for input
    */
-  client_reader(const ipv4_client& client, unsigned int poll_freq = 1u)
-    : socket_reader{client.socket(), poll_freq}
+  client_reader(
+    const ipv4_client& client,
+    std::chrono::milliseconds poll_timeout = poll_timeout_default)
+    : socket_reader{client.socket(), poll_timeout}
   {}
 };
 

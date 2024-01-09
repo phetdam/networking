@@ -29,6 +29,7 @@
 #endif  // !defined(_WIN32)
 
 #include <cerrno>
+#include <chrono>
 #include <climits>
 #include <cstdint>
 #include <cstring>
@@ -661,6 +662,10 @@ inline bool getsockname(socket_handle handle, AddressType& addr) noexcept
 /**
  * Poll a single socket for events.
  *
+ * @todo Consider updating interface to be more type-safe + allow automatic
+ *  duration conversions by making `timeout` of type `poll_duration`, which is
+ *  tenatively a type alias for `std::chrono::duration<int, std::milli>`.
+ *
  * @param handle Socket handle
  * @param events Events to poll for, e.g. `POLLIN | POLLOUT`
  * @param timeout Timeout in milliseconds to block for when waiting for events.
@@ -711,15 +716,22 @@ inline short poll(socket_handle handle, short events, int timeout = 1)
 class socket_reader {
 public:
   /**
+   * Default timeout duration to use when polling socket for input.
+   */
+  static inline constexpr std::chrono::milliseconds poll_timeout_default{1};
+
+  /**
    * Ctor.
    *
    * Buffer read size is given by `socket_read_size`.
    *
    * @param handle Socket handle
-   * @param poll_freq Timeout in milliseconds when polling socket for input
+   * @param poll_timeout Timeout to use when polling socket for input
    */
-  socket_reader(socket_handle handle, unsigned int poll_freq = 1u)
-    : socket_reader{handle, socket_read_size, poll_freq}
+  socket_reader(
+    socket_handle handle,
+    std::chrono::milliseconds poll_timeout = poll_timeout_default)
+    : socket_reader{handle, socket_read_size, poll_timeout}
   {}
 
   /**
@@ -727,14 +739,16 @@ public:
    *
    * @param handle Socket handle
    * @param buf_size Read buffer size, i.e. number of bytes per read
-   * @param poll_freq Timeout in milliseconds when polling socket for input
+   * @param poll_timeout Timeout to use when polling socket for input
    */
   socket_reader(
-    socket_handle handle, std::size_t buf_size, unsigned int poll_freq = 1u)
+    socket_handle handle,
+    std::size_t buf_size,
+    std::chrono::milliseconds poll_timeout = poll_timeout_default)
     : handle_{handle},
       buf_size_{buf_size},
       buf_{std::make_unique<unsigned char[]>(buf_size_)},
-      poll_freq_{poll_freq}
+      poll_timeout_{poll_timeout}
   {}
 
   /**
@@ -757,8 +771,8 @@ public:
     do {
       // poll to check if there is anything to read. if not, return. note that
       // if write end is not closed, POLLIN is possible with read() returning 0
-      // TODO: currently timeout is fixed at 1 ms, one might want to change it
-      if (!(poll(handle_, POLLIN) & POLLIN))
+      // TODO: see poll() todo. might use std::chrono::duration for timeout
+      if (!(poll(handle_, POLLIN, static_cast<int>(poll_timeout_.count())) & POLLIN))
         return {};
       // read and handle errors
 #if defined(_WIN32)
@@ -803,7 +817,7 @@ private:
   socket_handle handle_;
   std::size_t buf_size_;
   std::unique_ptr<unsigned char[]> buf_;
-  unsigned int poll_freq_;
+  std::chrono::milliseconds poll_timeout_;
 };
 
 /**
@@ -831,13 +845,15 @@ inline auto& operator<<(
  *
  * @param handle Socket handle
  * @param buf_size Read buffer size, i.e. number of bytes per read
- * @param until_close `true` to loop until end of transmission is received
+ * @param poll_timeout Timeout to use when polling socket for input
  */
 template <typename CharT = char, typename Traits = std::char_traits<CharT>>
 inline auto read(
-  socket_handle handle, std::size_t buf_size, bool until_close = false)
+  socket_handle handle,
+  std::size_t buf_size,
+  std::chrono::milliseconds poll_timeout = socket_reader::poll_timeout_default)
 {
-  return socket_reader{handle, buf_size, until_close}
+  return socket_reader{handle, buf_size, poll_timeout}
     .operator std::basic_string<CharT, Traits>();
 }
 
@@ -850,12 +866,14 @@ inline auto read(
  * @tparam Traits Char traits
  *
  * @param handle Socket handle
- * @param until_close `true` to loop until end of transmission is received
+ * @param poll_timeout Timeout to use when polling socket for input
  */
 template <typename CharT = char, typename Traits = std::char_traits<CharT>>
-inline auto read(socket_handle handle, bool until_close = false)
+inline auto read(
+  socket_handle handle,
+  std::chrono::milliseconds poll_timeout = socket_reader::poll_timeout_default)
 {
-  return read<CharT, Traits>(handle, socket_read_size, until_close);
+  return read<CharT, Traits>(handle, socket_read_size, poll_timeout);
 }
 
 /**
