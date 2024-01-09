@@ -51,4 +51,11 @@
 #define PDNNET_PATH_SEP_STRING "/"
 #endif  // !defined(_WIN32)
 
+// C-compatible noexcept specifier
+#if defined(__cplusplus)
+#define PDNNET_NOEXCEPT noexcept
+#else
+#define PDNNET_NOEXCEPT
+#endif  // !defined(__cplusplus)
+
 #endif  // PDNNET_COMMON_H_
