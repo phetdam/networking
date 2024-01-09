@@ -99,7 +99,7 @@ static bool PDNNET_CLIOPT(print_usage) = false;
  *    Not all command-line options will take arguments so this may not be
  *    defined for each particular `<ARG>` option.
  * `PDNNET_CLIOPT_<ARG>_USAGE`
- *    Use-defined help text for the specified command-line option. Must start
+ *    User-defined help text for the specified command-line option. Must start
  *    with two spaces, the short and long options separated by ", ", another
  *    space, the respective `PDNNET_CLIOPT_<ARG>_ARG_NAME` if any, possibly
  *    encased in square brackets if optional. If there is not enough room to
