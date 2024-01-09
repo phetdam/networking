@@ -23,6 +23,8 @@
 #define PDNNET_ADD_CLIOPT_HOST
 #define PDNNET_ADD_CLIOPT_PORT
 #define PDNNET_CLIOPT_PORT_DEFAULT 8888
+#define PDNNET_ADD_CLIOPT_TIMEOUT
+#define PDNNET_CLIOPT_TIMEOUT_DEFAULT (1000 * 10)  // 10s
 
 #include "pdnnet/client.hh"
 #include "pdnnet/cliopt.h"
@@ -45,9 +47,19 @@ PDNNET_ARG_MAIN
   client.connect(PDNNET_CLIOPT(host), PDNNET_CLIOPT(port)).exit_on_error();
   // read from stdin and write to socket + block until response is detected
   std::cin >> pdnnet::client_writer{client};
-  // TODO: timeout should be provided via command-line with a default value
-  if (!(pdnnet::poll(client.socket(), POLLIN, 1000 * 10) & POLLIN)) {
-    std::cerr << "Error: 10 second timeout reached" << std::endl;
+  // TODO: improve interface (maybe add wrapper)
+  if (
+    !(
+      pdnnet::poll(
+        client.socket(),
+        POLLIN,
+        static_cast<int>(PDNNET_CLIOPT(timeout))
+      ) &
+      POLLIN
+    )
+  ) {
+    std::cerr << "Error: No response received from server before " <<
+      PDNNET_CLIOPT(timeout) << " ms timeout" << std::endl;
     return EXIT_FAILURE;
   }
   // print identifying header like original ackclient. we flush instead of
