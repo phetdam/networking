@@ -37,6 +37,7 @@
 #include <istream>
 #include <optional>
 #include <ostream>
+#include <ratio>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -662,24 +663,25 @@ inline bool getsockname(socket_handle handle, AddressType& addr) noexcept
 /**
  * Poll a single socket for events.
  *
- * @todo Consider updating interface to be more type-safe + allow automatic
- *  duration conversions by making `timeout` of type `poll_duration`, which is
- *  tenatively a type alias for `std::chrono::duration<int, std::milli>`.
+ * @note `timeout` is cast to `int` before being passed to `::poll`.
+ *
+ * @tparam Rep Arithmetic type
  *
  * @param handle Socket handle
  * @param events Events to poll for, e.g. `POLLIN | POLLOUT`
  * @param timeout Timeout in milliseconds to block for when waiting for events.
  *  If zero, returns immediately, and if negative, timeout is infinite.
- * @returns Bitmask indicating the events that have occurred
+ * @returns Bitmask indicating the events that have occurred, zero if no events
  */
-inline short poll(socket_handle handle, short events, int timeout = 1)
+template <typename Rep, typename = std::enable_if_t<std::is_arithmetic_v<Rep>>>
+short poll(socket_handle handle, short events, Rep timeout)
 {
   // poll events for socket handle
   pollfd res{handle, events};
 #if defined(_WIN32)
-  auto status = WSAPoll(&res, 1, timeout);
+  auto status = WSAPoll(&res, 1, static_cast<int>(timeout));
 #else
-  auto status = ::poll(&res, 1, timeout);
+  auto status = ::poll(&res, 1, static_cast<int>(timeout));
 #endif  // !defined(_WIN32)
   // if negative, throw, as this is usually fatal, e.g. EFAULT, EINTR, ENOMEM
   // for *nix systems or WSAENETDOWN, WSAEFAULT, WSAEINVAL, WSAENOBUFS for
@@ -691,6 +693,103 @@ inline short poll(socket_handle handle, short events, int timeout = 1)
     return 0;
   // otherwise positive, i.e. 1, so return the received events
   return res.revents;
+}
+
+/**
+ * Poll a single socket for events with a timeout of 1 ms.
+ *
+ * @param handle Socket handle
+ * @param events Events to poll for, e.g. `POLLIN | POLLOUT`
+ * @returns Bitmask indicating the events that have occurred, zero if no events
+ */
+inline auto poll(socket_handle handle, short events)
+{
+  return poll(handle, events, 1);
+}
+
+/**
+ * Duration representing infinite `pdnnet::poll` timeout.
+ *
+ * Use signed `int` since `::poll` treats negative timeout as infinite.
+ */
+inline constexpr std::chrono::duration<int, std::milli> infinite_poll_timeout{-1};
+
+/**
+ * Poll a single socket for events.
+ *
+ * @note `timeout` is cast to `int` before being passed to `::poll`.
+ *
+ * @tparam Rep Arithmetic type
+ *
+ * @param handle Socket handle
+ * @param events Events to poll for, e.g. `POLLIN | POLLOUT`
+ * @param timeout Timeout to block for when waiting for events. If zero,
+ *  returns immediately, and if negative, timeout is infinite.
+ * @returns Bitmask indicating the events that have occurred, zero if no events
+ */
+template <typename Rep, typename = std::enable_if_t<std::is_arithmetic_v<Rep>>>
+inline auto poll(
+  socket_handle handle,
+  short events,
+  std::chrono::duration<Rep, std::milli> timeout)
+{
+  return poll(handle, events, timeout.count());
+}
+
+/**
+ * Block until socket is ready for reading or until timeout elapses.
+ *
+ * Useful for waiting until the `POLLIN` event has occurred for the socket.
+ *
+ * @note `timeout` is cast to `int` before being passed to `::poll`.
+ *
+ * @tparam Rep Arithmetic type
+ *
+ * @param handle Socket handle
+ * @param timeout Timeout in milliseconds to block for when waiting. If zero,
+ *  returns immediately, and if negative, timeout is infinite.
+ * @returns `true` if `POLLIN` has occurred, `false` if timed out
+ */
+template <typename Rep, typename = std::enable_if_t<std::is_arithmetic_v<Rep>>>
+inline bool wait_pollin(socket_handle handle, Rep timeout)
+{
+  return poll(handle, POLLIN, timeout) & POLLIN;
+}
+
+/**
+ * Block until socket is ready for reading or until 1 ms timeout elapses.
+ *
+ * Useful for waiting until the `POLLIN` event has occurred for the socket.
+ *
+ * @param handle Socket handle
+ * @param timeout Timeout in milliseconds to block for when waiting. If zero,
+ *  returns immediately, and if negative, timeout is infinite.
+ * @returns `true` if `POLLIN` has occurred, `false` if timed out
+ */
+inline bool wait_pollin(socket_handle handle)
+{
+  return wait_pollin(handle, 1);
+}
+
+/**
+ * Block until socket is ready for reading or until timeout elapses.
+ *
+ * Useful for waiting until the `POLLIN` event has occurred for the socket.
+ *
+ * @note `timeout` is cast to `int` before being passed to `::poll`.
+ *
+ * @tparam Rep Arithmetic type
+ *
+ * @param handle Socket handle
+ * @param timeout Timeout to block for when waiting for events. If zero,
+ *  returns immediately, and if negative, timeout is infinite.
+ * @returns `true` if `POLLIN` has occurred, `false` if timed out
+ */
+template <typename Rep, typename = std::enable_if_t<std::is_arithmetic_v<Rep>>>
+inline bool wait_pollin(
+  socket_handle handle, std::chrono::duration<Rep, std::milli> timeout)
+{
+  return wait_pollin(handle, timeout.count());
 }
 
 /**

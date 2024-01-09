@@ -47,19 +47,9 @@ PDNNET_ARG_MAIN
   client.connect(PDNNET_CLIOPT(host), PDNNET_CLIOPT(port)).exit_on_error();
   // read from stdin and write to socket + block until response is detected
   std::cin >> pdnnet::client_writer{client};
-  // TODO: improve interface (maybe add wrapper)
-  if (
-    !(
-      pdnnet::poll(
-        client.socket(),
-        POLLIN,
-        static_cast<int>(PDNNET_CLIOPT(timeout))
-      ) &
-      POLLIN
-    )
-  ) {
-    std::cerr << "Error: No response received from server before " <<
-      PDNNET_CLIOPT(timeout) << " ms timeout" << std::endl;
+  if (!pdnnet::wait_pollin(client.socket(), PDNNET_CLIOPT(timeout))) {
+    std::cerr << "Error: Operation timed out after " <<
+      PDNNET_CLIOPT(timeout) << " ms" << std::endl;
     return EXIT_FAILURE;
   }
   // print identifying header like original ackclient. we flush instead of

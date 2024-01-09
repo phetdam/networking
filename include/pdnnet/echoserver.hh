@@ -167,7 +167,7 @@ public:
     // TODO: consider adding a boolean member to allow starting/stopping
     while (true) {
       // poll for events on socket, accepting client if there is data to read
-      if (!(poll(socket_, POLLIN) & POLLIN))
+      if (!wait_pollin(socket_))
         continue;
       // accept client connection, possibly erroring
       auto cli_socket = accept(socket_);
