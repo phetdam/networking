@@ -47,7 +47,7 @@ static size_t PDNNET_CLIOPT(message_bytes) = PDNNET_CLIOPT_MESSAGE_BYTES_DEFAULT
  * @returns `true` on successful parse, `false` otherwise
  */
 static bool
-pdnnet_cliopt_parse_message_bytes(const char *arg)
+pdnnet_cliopt_parse_message_bytes(const char *arg) PDNNET_NOEXCEPT
 {
   // don't allow zero message size
   if (!strcmp(arg, "0")) {

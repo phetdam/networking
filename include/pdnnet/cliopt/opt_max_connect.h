@@ -41,7 +41,7 @@ static unsigned int PDNNET_CLIOPT(max_connect) = PDNNET_CLIOPT_MAX_CONNECT_DEFAU
  * @returns `true` on successful parse, `false` otherwise
  */
 static bool
-pdnnet_cliopt_parse_max_connect(const char *arg)
+pdnnet_cliopt_parse_max_connect(const char *arg) PDNNET_NOEXCEPT
 {
   // don't allow zero max connections
   if (!strcmp(arg, "0")) {

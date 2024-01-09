@@ -40,7 +40,7 @@ static unsigned short PDNNET_CLIOPT(verbose) = 0;
  * @returns `true` on successful parse, `false` otherwise
  */
 static bool
-pdnnet_cliopt_parse_verbose(const char *arg)
+pdnnet_cliopt_parse_verbose(const char *arg) PDNNET_NOEXCEPT
 {
   // zero is allowed. reassign to override previous values (if any)
   if (!strcmp(arg, "0")) {

@@ -47,7 +47,7 @@ static uint16_t PDNNET_CLIOPT(port) = PDNNET_CLIOPT_PORT_DEFAULT;
  * @returns `true` on successful parse, `false` otherwise
  */
 static bool
-pdnnet_cliopt_parse_port(const char *arg)
+pdnnet_cliopt_parse_port(const char *arg) PDNNET_NOEXCEPT
 {
   // don't allow zero port value
   if (!strcmp(arg, "0")) {

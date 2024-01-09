@@ -44,7 +44,7 @@ static const char *PDNNET_CLIOPT(path) = PDNNET_CLIOPT_PATH_DEFAULT;
  * @returns `true` on successful parse, `false` otherwise
  */
 static bool
-pdnnet_cliopt_parse_path(const char *arg)
+pdnnet_cliopt_parse_path(const char *arg) PDNNET_NOEXCEPT
 {
   // must have nonzero length
   size_t path_len = strlen(arg);

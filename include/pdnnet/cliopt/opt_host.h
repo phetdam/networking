@@ -41,7 +41,7 @@ static const char *PDNNET_CLIOPT(host) = PDNNET_CLIOPT_HOST_DEFAULT;
  * @returns `true` on successful parse, `false` otherwise
  */
 static bool
-pdnnet_cliopt_parse_host(const char *arg)
+pdnnet_cliopt_parse_host(const char *arg) PDNNET_NOEXCEPT
 {
   // no checking for now
   PDNNET_CLIOPT(host) = arg;
