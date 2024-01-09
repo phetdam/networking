@@ -138,7 +138,7 @@ static bool PDNNET_CLIOPT(print_usage) = false;
  * The body is not run again if `PDNNET_PROGRAM_NAME` has already been set.
  */
 static void
-pdnnet_internal_set_program_name(PDNNET_SA(In) char **argv)
+pdnnet_internal_set_program_name(PDNNET_SA(In) char **argv) PDNNET_NOEXCEPT
 {
   if (PDNNET_PROGRAM_NAME)
     return;
@@ -159,7 +159,7 @@ pdnnet_internal_set_program_name(PDNNET_SA(In) char **argv)
  * @return `true` on success, `false` otherwise
  */
 static bool
-pdnnet_cliopt_parse_args(int argc, PDNNET_SA(In) char **argv)
+pdnnet_cliopt_parse_args(int argc, PDNNET_SA(In) char **argv) PDNNET_NOEXCEPT
 {
   // set program name if necessary
   pdnnet_internal_set_program_name(argv);
@@ -201,7 +201,8 @@ pdnnet_cliopt_parse_args(int argc, PDNNET_SA(In) char **argv)
  * @param desc Description to print before option help text
  */
 static void
-pdnnet_cliopt_internal_print_usage(PDNNET_SA(In) char **argv, const char *desc)
+pdnnet_cliopt_internal_print_usage(
+  PDNNET_SA(In) char **argv, const char *desc) PDNNET_NOEXCEPT
 {
   pdnnet_internal_set_program_name(argv);
   // description padding. if no description, then this can be empty string
