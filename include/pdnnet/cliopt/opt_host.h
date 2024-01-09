@@ -1,7 +1,7 @@
 /**
  * @file cliopt/opt_host.h
  * @author Derek Huang
- * @brief C/C++ for the cliopt host name option
+ * @brief C/C++ header for the cliopt host name option
  * @copyright MIT License
  */
 
