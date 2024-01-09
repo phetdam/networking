@@ -715,30 +715,26 @@ public:
    *
    * Buffer read size is given by `socket_read_size`.
    *
-   * @todo `until_close` will be replaced with `unsigned int poll_freq = 1`
-   *
    * @param handle Socket handle
-   * @param until_close Ignored
+   * @param poll_freq Timeout in milliseconds when polling socket for input
    */
-  socket_reader(socket_handle handle, bool until_close = false)
-    : socket_reader{handle, socket_read_size, until_close}
+  socket_reader(socket_handle handle, unsigned int poll_freq = 1u)
+    : socket_reader{handle, socket_read_size, poll_freq}
   {}
 
   /**
    * Ctor.
    *
-   * @todo `until_close` will be replaced with `unsigned int poll_freq = 1`
-   *
    * @param handle Socket handle
    * @param buf_size Read buffer size, i.e. number of bytes per read
-   * @param until_close Ignored
+   * @param poll_freq Timeout in milliseconds when polling socket for input
    */
   socket_reader(
-    socket_handle handle, std::size_t buf_size, bool until_close = false)
+    socket_handle handle, std::size_t buf_size, unsigned int poll_freq = 1u)
     : handle_{handle},
       buf_size_{buf_size},
       buf_{std::make_unique<unsigned char[]>(buf_size_)},
-      until_close_{until_close}
+      poll_freq_{poll_freq}
   {}
 
   /**
@@ -783,8 +779,8 @@ public:
       memset(buf_.get(), 0, buf_size_);
     }
     while (n_read);
-    // if we made it here, the connection was closed
-    return {};  // TODO: maybe return an "error"? generally don't want this
+    // no bytes left in buffer (n_read is 0), so done
+    return {};
   }
 
   /**
@@ -807,7 +803,7 @@ private:
   socket_handle handle_;
   std::size_t buf_size_;
   std::unique_ptr<unsigned char[]> buf_;
-  bool until_close_;
+  unsigned int poll_freq_;
 };
 
 /**

@@ -185,10 +185,10 @@ public:
    * @todo `until_close` will be replaced with `unsigned int poll_freq = 1`
    *
    * @param client Client instance
-   * @param until_close Ignore
+   * @param poll_freq Timeout in milliseconds when polling socket for input
    */
-  client_reader(const ipv4_client& client, bool until_close = false)
-    : socket_reader{client.socket(), until_close}
+  client_reader(const ipv4_client& client, unsigned int poll_freq = 1u)
+    : socket_reader{client.socket(), poll_freq}
   {}
 };
 
