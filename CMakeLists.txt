@@ -181,9 +181,17 @@ else()
     )
 endif()
 
+# Doxygen config options
+set(DOXYGEN_HTML_COLORSTYLE "DARK")
+set(DOXYGEN_PREDEFINED "PDNNET_DOXYGEN")
+if(WIN32)
+    set(DOXYGEN_PREDEFINED ${DOXYGEN_PREDEFINED} "_WIN32")
+else()
+    set(DOXYGEN_PREDEFINED ${DOXYGEN_PREDEFINED} "PDNNET_UNIX")
+endif()
+
 # build docs if able
 if(ENABLE_DOCS)
-    set(DOXYGEN_HTML_COLORSTYLE "DARK")
     doxygen_add_docs(
         docs
         # headers
