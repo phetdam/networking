@@ -107,6 +107,7 @@ using ssize_type = ssize_t;
  */
 inline const auto& winsock_init(BYTE major, BYTE minor)
 {
+#ifndef PDNNET_DOXYGEN
   /**
    * Private class for initializing Windows Sockets.
    */
@@ -140,6 +141,7 @@ inline const auto& winsock_init(BYTE major, BYTE minor)
   private:
     WSADATA wsa_data_;
   };
+#endif  // PDNNET_DOXYGEN
 
   static wsa_init init{major, minor};
   return init.wsa_data();
