@@ -19,6 +19,7 @@ project(
 
 option(BUILD_SHARED_LIBS "Build libraries as shared" ON)
 option(ENABLE_ASAN "Enable AddressSanitizer instrumentation" OFF)
+option(ENABLE_DOCS "Enable building HTML docs target with Doxygen" ON)
 
 # check if multi-config generator
 get_property(PDNNET_IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
@@ -146,6 +147,26 @@ else()
     set(PDNNET_GTEST_FOUND GTest_FOUND)
 endif()
 
+# find Doxygen to enable documentation building. if not found, can't build
+find_package(Doxygen 1.9)
+if(NOT DOXYGEN_FOUND)
+    set(ENABLE_DOCS OFF)
+endif()
+# warn that dark mode docs will not be built if we don't have 1.9.5
+if(DOXYGEN_VERSION VERSION_LESS 1.9.5)
+    message(
+        WARNING
+        "Doxygen ${DOXYGEN_VERSION} does not support dark mode theme \
+(require 1.9.5)"
+    )
+endif()
+# print status
+if(ENABLE_DOCS)
+    message(STATUS "docs target: Yes")
+else()
+    message(STATUS "docs target: No")
+endif()
+
 add_subdirectory(src)
 
 # only add tests if Google Test was found
@@ -157,5 +178,17 @@ else()
     message(
         WARNING
         "Google Test >=${PDNNET_GTEST_VERSION} not found. No tests will be built."
+    )
+endif()
+
+# build docs if able
+if(ENABLE_DOCS)
+    set(DOXYGEN_HTML_COLORSTYLE "DARK")
+    doxygen_add_docs(
+        docs
+        # headers
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        # specifying ALL will make this part of the default build target
+        COMMENT "Building documentation"
     )
 endif()
