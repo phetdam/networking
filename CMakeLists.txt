@@ -153,7 +153,7 @@ if(NOT DOXYGEN_FOUND)
     set(ENABLE_DOCS OFF)
 endif()
 # warn that dark mode docs will not be built if we don't have 1.9.5
-if(DOXYGEN_VERSION VERSION_LESS 1.9.5)
+if(DOXYGEN_FOUND AND DOXYGEN_VERSION VERSION_LESS 1.9.5)
     message(
         WARNING
         "Doxygen ${DOXYGEN_VERSION} does not support dark mode theme \
