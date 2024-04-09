@@ -40,13 +40,13 @@ CMake_ >=3.21 is required to build from source on all platforms.
 
 Building is easy with the provided ``build.sh`` build script. For usage, type
 
-.. code:: bash
+.. code:: shell
 
    ./build.sh --help
 
 To build release binaries for this project, simply use the command
 
-.. code:: bash
+.. code:: shell
 
    ./build.sh -c Release
 
@@ -58,7 +58,7 @@ request that ``pdnnet`` be built as a static library, one should specify
 ``-DBUILD_SHARED_LIBS=0``. E.g. to build release binaries with ``pdnnet`` built
 as a static library, one can use the command
 
-.. code:: bash
+.. code:: shell
 
    ./build.sh -c Release -Ca -DBUILD_SHARED_LIBS=0
 
