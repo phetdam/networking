@@ -23,12 +23,10 @@
 #endif  // !defined(_WIN32)
 
 #include <atomic>
-#include <cstdlib>
-#include <cstring>
 #include <deque>
 #include <sstream>
 #include <stdexcept>
-#include <string>
+#include <string_view>
 #include <thread>
 
 #include "pdnnet/error.hh"
@@ -109,7 +107,7 @@ public:
    *
    * @note Value is unspecified unless server is running.
    */
-  std::string dot_address() const
+  std::string_view dot_address() const
   {
 #if defined(_WIN32) || defined(PDNNET_BSD_DEFAULT_SOURCE)
     return inet_ntoa(address_.sin_addr);
@@ -212,7 +210,7 @@ private:
   sockaddr_in address_;
   std::atomic_bool running_;
   std::deque<std::thread> thread_queue_;
-  unsigned short max_threads_;
+  unsigned int max_threads_;
   unsigned int max_pending_;
 
   /**
