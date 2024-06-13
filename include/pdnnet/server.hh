@@ -26,6 +26,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <system_error>
 #include <thread>
 
 #include "pdnnet/error.hh"
@@ -94,8 +95,14 @@ public:
 
   /**
    * Virtual dtor.
+   *
+   * If the server is running in a background thread it is joined.
    */
-  virtual ~ipv4_server() = default;
+  virtual ~ipv4_server()
+  {
+    try { join(); }
+    catch (std::system_error&) {}
+  }
 
   /**
    * Return const reference to the `unique_socket` owned by the server.
@@ -180,7 +187,7 @@ public:
     // loop until told to stop running
     while (running_) {
       // poll socket for read events. if nothing to read, continue
-      if (!(poll(socket_, POLLIN) & POLLIN))
+      if (!wait_pollin(socket_))
         continue;
       // if there is data to read, accept the socket
       auto cli_socket = accept(socket_);
@@ -277,7 +284,7 @@ private:
   /**
    * Destroy listening socket and mark server as not running.
    */
-  void reset_state()
+  void reset_state() noexcept
   {
     socket_ = {};
     running_ = false;
