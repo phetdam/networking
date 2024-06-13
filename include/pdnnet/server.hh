@@ -46,7 +46,8 @@ public:
    * Default ctor.
    *
    * Sets port to zero to indicate that the next free port should be used and
-   * uses hardware thread concurrency as the max length of the pending queue.
+   * uses hardware thread concurrency as the max length of the pending queue as
+   * well as the max number of concurrent connections handled at once.
    */
   server_params() noexcept
     : server_params{std::thread::hardware_concurrency()}
@@ -80,6 +81,8 @@ public:
 
   /**
    * Return port number.
+   *
+   * This may be zero to tell the server to use the next free port.
    */
   auto port() const noexcept { return port_; }
 
@@ -235,8 +238,7 @@ public:
       bg_thread_ = std::thread{&ipv4_server::start, this, params, false};
       return EXIT_SUCCESS;
     }
-    // otherwise, mark as running, prepare state for listening
-    running_ = true;
+    // otherwise, prepare state for listening + mark as running
     set_state(params);
     // loop until told to stop running
     while (running_) {
@@ -333,6 +335,8 @@ private:
     // attempt to start listening for connections
     if (!listen(socket_, max_pending_))
       throw std::runtime_error{socket_error("Could not listen on socket")};
+    // mark as running
+    running_ = true;
   }
 
   /**
