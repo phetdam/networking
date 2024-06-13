@@ -60,7 +60,7 @@ namespace {
  * If the server was specified to run verbosely, the text received from the
  * client will be printed to standard output.
  *
- * @param sockfd Client socket file descriptor
+ * @param sockfd Client socket file descriptor to own
  * @returns 0 on success, -EINVAL if argument invalid, -errno on error
  */
 void handle_client(pdnnet::socket_handle sockfd)
