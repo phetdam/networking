@@ -22,7 +22,7 @@
 #include <unistd.h>
 #endif  // !defined(_WIN32)
 
-#include <cerrno>
+#include <atomic>
 #include <cstdlib>
 #include <cstring>
 #include <deque>
@@ -33,6 +33,7 @@
 
 #include "pdnnet/error.hh"
 #include "pdnnet/features.h"
+#include "pdnnet/server.hh"
 #include "pdnnet/socket.hh"
 
 namespace pdnnet {
@@ -50,80 +51,63 @@ public:
   /**
    * Default ctor.
    *
-   * Binds the created socket to the local address with a random free port.
+   * Marks the server as not running.
    */
-  echoserver() : echoserver{0U} {}
-
-  /**
-   * Ctor.
-   *
-   * Maximum number of server threads used is set to the hardware concurrency.
-   *
-   * @param port Port number in host byte order
-   */
-  echoserver(inet_port_type port)
-    : echoserver{
-        port,
-        static_cast<unsigned short>(std::thread::hardware_concurrency())
-      }
-  {}
-
-  /**
-   * Ctor.
-   *
-   * @param port Port number in host byte order
-   * @param max_threads Maximum number of server threads
-   */
-  echoserver(inet_port_type port, unsigned short max_threads)
-    : socket_{AF_INET, SOCK_STREAM}, address_{}, max_threads_{max_threads}
-  {
-    // set to local address with specified port
-    address_ = make_sockaddr_in(INADDR_ANY, port);
-    // attempt to bind socket
-    if (!bind(socket_, address_))
-      throw std::runtime_error{socket_error("Could not bind socket")};
-    // get the actual socket address, e.g. if port is 0 it is resolved
-    if (!getsockname(socket_, address_))
-      throw std::runtime_error{socket_error("Could not retrieve socket address")};
-  }
+  echoserver() : running_{} {}
 
   /**
    * Dtor.
    *
    * Ensures that all threads are joined.
    */
-  ~echoserver()
-  {
-    for (auto& thread : thread_queue_) {
-      try { thread.join(); }
-      catch (const std::system_error&) {}
-    }
-  }
+  ~echoserver() { join_threads(); }
 
   /**
-   * Return const reference to the `unique_socket` owned by the server.
+   * Return const reference to the unique socket owned by the server.
    */
   const auto& socket() const noexcept { return socket_; }
 
   /**
-   * Return max number of server threads that can exist at any time.
-   */
-  auto max_threads() const noexcept { return max_threads_; }
-
-  /**
-   * Return const reference to `sockaddr_in` socket address struct.
+   * Return const reference to the socket address struct.
+   *
+   * @note Value is unspecified unless server is running.
    */
   const auto& address() const noexcept { return address_; }
 
   /**
+   * Return whether the server is running or not.
+   *
+   * @note This function is thread-safe.
+   */
+  bool running() const noexcept { return running_; }
+
+  /**
    * Return const reference to the thread deque.
+   *
+   * @note This function is not thread-safe when the server is running.
    */
   const auto& thread_queue() const noexcept { return thread_queue_; }
+
+  /**
+   * Return max number of server threads that can exist at any time.
+   *
+   * @note Value is unspecified unless server is running.
+   */
+  auto max_threads() const noexcept { return max_threads_; }
+
+  /**
+   * Return max number of pending connections at a time.
+   *
+   * @note Value is unspecified unless server is running.
+   */
+  auto max_pending() const noexcept { return max_pending_; }
 
   /**
    * Return the host address as an IPv4 decimal-dotted string.
    *
    * On platforms without `inet_ntoa`, this returns `"[unknown]"` instead.
+   *
+   * @note Value is unspecified unless server is running.
    */
   std::string dot_address() const
   {
@@ -136,6 +120,8 @@ public:
 
   /**
    * Return the port number in host byte order.
+   *
+   * @note Value is unspecified unless server is running.
    */
   inet_port_type port() const noexcept
   {
@@ -144,28 +130,34 @@ public:
 
   /**
    * Return current number of threads in the thread deque.
+   *
+   * @todo Consider making this function thread-safe.
+   * @note This function is not thread-safe.
    */
-  auto n_threads() const { return thread_queue_.size(); }
+  auto n_threads() const noexcept { return thread_queue_.size(); }
 
   /**
-   * Start listening for up to `max_connect` connections.
+   * Start the server with the given parameters.
    *
-   * Each client connection is handled via a thread, with up to `max_threads`
+   * Each client connection is handled via a thread, with up to `max_threads()`
    * threads running at any time. If the number of connections exceeds the
    * number of threads, one of the threads will join before another thread is
    * started to handle the incoming client connection.
    *
-   * @param max_connect Maximum number of connections to accept
-   * @returns `EXIT_SUCCESS` on success
+   * @note This function is thread-safe.
+   *
+   * @param params Server parameters to use when starting
+   * @returns `EXIT_SUCCESS` on success, `EXIT_FAILURE` if already running
    */
-  int start(unsigned int max_connect = std::thread::hardware_concurrency())
+  int start(const server_params& params = {})
   {
-    // start listening for connections
-    if (!listen(socket_, max_connect))
-      throw std::runtime_error{socket_error("Could not listen on socket")};
+    // cannot start while running
+    if (running_)
+      return EXIT_FAILURE;
+    // initialize state + mark as running
+    set_state(params);
     // event loop
-    // TODO: consider adding a boolean member to allow starting/stopping
-    while (true) {
+    while (running_) {
       // poll for events on socket, accepting client if there is data to read
       if (!wait_pollin(socket_))
         continue;
@@ -199,14 +191,88 @@ public:
         }
       );
     }
+    // reset state and finish
+    reset_state();
     return EXIT_SUCCESS;
+  }
+
+  /**
+   * Signal that the server should stop.
+   *
+   * If in the middle of handling a client connection, the client connection
+   * will be completed before the server exits its event loop and resets state.
+   */
+  void stop() noexcept
+  {
+    running_ = false;
   }
 
 private:
   unique_socket socket_;
   sockaddr_in address_;
-  unsigned short max_threads_;
+  std::atomic_bool running_;
   std::deque<std::thread> thread_queue_;
+  unsigned short max_threads_;
+  unsigned int max_pending_;
+
+  /**
+   * Set the server state using the given parameters.
+   *
+   * Creates a new listening socket, binds the socket to the address, resolves
+   * the address to the actual port, places the socket in listening mode for
+   * new IPv4 connections, and then marks the server as running.
+   *
+   * @param params Server parameters to set state with
+   */
+  void set_state(const server_params& params)
+  {
+    // create new socket + set to local address with specified port
+    socket_ = unique_socket{AF_INET, SOCK_STREAM};
+    address_ = make_sockaddr_in(INADDR_ANY, params.port());
+    // set max amount of threads and pending connections
+    max_threads_ = params.max_concurrency();
+    max_pending_ = params.max_pending();
+    // attempt to bind socket
+    if (!bind(socket_, address_))
+      throw std::runtime_error{socket_error("Could not bind socket")};
+    // get the actual socket address, e.g. if port is 0 it is resolved
+    if (!getsockname(socket_, address_))
+      throw std::runtime_error{socket_error("Could not retrieve socket address")};
+    // attempt to start listening for connections
+    if (!listen(socket_, max_pending_))
+      throw std::runtime_error{socket_error("Could not listen on socket")};
+    // mark as running
+    running_ = true;
+  }
+
+  /**
+   * Join all running threads in the thread queue and ignore exceptions.
+   */
+  void join_threads() noexcept
+  {
+    // join all running threads + ignore any exceptions
+    for (auto& thread : thread_queue_) {
+      try { thread.join(); }
+      catch (const std::system_error&) {}
+    }
+  }
+
+  /**
+   * Reset the server state.
+   *
+   * This joins all running threads and resets the socket, the address struct,
+   * sets the server to not running, and initializes an empty thread queue.
+   */
+  void reset_state()
+  {
+    // first mark as not running so other threads know not to check state
+    join_threads();
+    socket_ = {};
+    address_ = {};
+    running_ = false;
+    // use decltype to disambiguate from initializer list operator=
+    thread_queue_ = decltype(thread_queue_){};
+  }
 };
 
 }  // namespace pdnnet

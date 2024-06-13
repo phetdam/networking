@@ -16,9 +16,9 @@
 #include <unistd.h>
 #endif  // !defined(_WIN32)
 
-#include <cerrno>
 #include <cstdlib>
 #include <iostream>
+#include <thread>
 
 #define PDNNET_HAS_PROGRAM_USAGE
 #define PDNNET_ADD_CLIOPT_PORT
@@ -26,6 +26,7 @@
 #include "pdnnet/cliopt.h"
 #include "pdnnet/echoserver.hh"
 #include "pdnnet/process.hh"
+#include "pdnnet/server.hh"
 
 /**
  * Platform-specific note on program execution.
@@ -63,11 +64,31 @@ PDNNET_ARG_MAIN
 #else
   pdnnet::daemonize();
 #endif  // !defined(_WIN32)
-  // create server + print address and port for debugging
-  pdnnet::echoserver server{PDNNET_CLIOPT(port)};
+  // create new server
+  pdnnet::echoserver server;
+  // start server in new thread with given parameters. we need to do this so we
+  // can print the state of the running server from the current thread
+  std::thread server_thread{
+    [&server]
+    {
+      auto params = pdnnet::server_params{}
+          .port(PDNNET_CLIOPT(port))
+          .max_pending(PDNNET_CLIOPT(max_connect));
+      server.start(params);
+    }
+  };
+  // wait until the server is running to prevent race condition
+  while (!server.running());
+  // on WSL Ubuntu 22.04.2 LTS we have to flush stdout otherwise the terminal
+  // does not properly print on a new line + then display the new prompt
+#ifndef _WIN32
+  std::cout << std::flush;
+#endif  // _WIN32
+  // print address and port for debugging
   std::cout << PDNNET_PROGRAM_NAME << ": max_threads=" <<
     server.max_threads() << ", address=" << server.dot_address() << ":" <<
     server.port() << std::endl;
-  // start server
-  return server.start(PDNNET_CLIOPT(max_connect));
+  // join + return (unreachable)
+  server_thread.join();
+  return EXIT_SUCCESS;
 }
