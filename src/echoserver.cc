@@ -66,7 +66,7 @@ PDNNET_ARG_MAIN
       server.start(params);
     }
   };
-  // wait until the server is running to prevent race condition
+  // wait until the server is running to prevent undefined member access
   while (!server.running());
   // on WSL Ubuntu 22.04.2 LTS we have to flush stdout otherwise the terminal
   // does not properly print on a new line + then display the new prompt
