@@ -135,7 +135,7 @@ pdnnet_socket_onlread2(
     // call user-specified action if any
     if (read_action && (status = read_action(&read_state, read_action_param)) < 0)
       goto end;
-  } while(read_state.n_read_msg);
+  } while (read_state.n_read_msg);
   // if there is a post action, call that
   if (post_action && (status = post_action(&read_state, post_action_param)) < 0)
     goto end;
