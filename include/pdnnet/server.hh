@@ -37,6 +37,8 @@ namespace pdnnet {
 
 /**
  * Helper class holding parameters used when starting a socket-based server.
+ *
+ * Named parameter idiom can be used after default construction.
  */
 class server_params {
 public:
@@ -46,24 +48,34 @@ public:
    * Sets port to zero to indicate that the next free port should be used and
    * uses hardware thread concurrency as the max length of the pending queue.
    */
-  server_params() : server_params{std::thread::hardware_concurrency()} {}
+  server_params() noexcept
+    : server_params{std::thread::hardware_concurrency()}
+  {}
+
   /**
    * Ctor.
    *
-   * Sets port to zero to indicate that the next free port should be used.
+   * Sets port to zero to indicate that the next free port should be used. The
+   * hardware thread concurrency is used to set the max concurrent connections.
    *
    * @param max_pending Maximum length of pending connections queue
    */
-  server_params(unsigned int max_pending) : server_params{0U, max_pending} {}
+  server_params(unsigned int max_pending) noexcept
+    : server_params{0U, max_pending, std::thread::hardware_concurrency()}
+  {}
 
   /**
    * Ctor.
    *
    * @param port Port number in host byte order
    * @param max_pending Maximum length of pending connections queue
+   * @param max_concurrency Maximum number of connections to handle concurrently
    */
-  server_params(inet_port_type port, unsigned int max_pending)
-    : port_{port}, max_pending_{max_pending}
+  server_params(
+    inet_port_type port,
+    unsigned int max_pending,
+    unsigned int max_concurrency) noexcept
+    : port_{port}, max_pending_{max_pending}, max_concurrency_{max_concurrency}
   {}
 
   /**
@@ -72,13 +84,55 @@ public:
   auto port() const noexcept { return port_; }
 
   /**
+   * Set the port number.
+   *
+   * @param new_port New port number to use
+   * @returns `*this` to allow method chaining
+   */
+  auto& port(inet_port_type new_port) noexcept
+  {
+    port_ = new_port;
+    return *this;
+  }
+
+  /**
    * Return maximum length of pending connections queue.
    */
   auto max_pending() const noexcept { return max_pending_; }
 
+  /**
+   * Set the maximum length of the pending connections queue.
+   *
+   * @param new_max New max length of pending connections queue to use
+   * @returns `*this` to allow method chaining
+   */
+  auto& max_pending(unsigned int new_max) noexcept
+  {
+    max_pending_ = new_max;
+    return *this;
+  }
+
+  /**
+   * Return maximum number of concurrent connections to handle.
+   */
+  auto max_concurrency() const noexcept { return max_concurrency_; }
+
+  /**
+   * Set maximum number of concurrent connections to handle.
+   *
+   * @param new_max New max number of concurrent connections to handle
+   * @returns `*this` to allow method chaining
+   */
+  auto& max_concurrency(unsigned int new_max) noexcept
+  {
+    max_concurrency_ = new_max;
+    return *this;
+  }
+
 private:
   inet_port_type port_;
   unsigned int max_pending_;
+  unsigned int max_concurrency_;
 };
 
 /**
