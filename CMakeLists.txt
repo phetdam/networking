@@ -78,20 +78,14 @@ add_compile_definitions(
     PDNNET_SYSTEM_ARCH="${PDNNET_SYSTEM_ARCH}"
 )
 
-# eliminate per-configuration subdirs from being appended to build artifact
-# output dirs for multi-config generators, e.g. Visual Studio
-set(
-    CMAKE_RUNTIME_OUTPUT_DIRECTORY
-    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}$<$<CONFIG:Debug>:>
-)
-set(
-    CMAKE_LIBRARY_OUTPUT_DIRECTORY
-    ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}$<$<CONFIG:Debug>:>
-)
-set(
-    CMAKE_ARCHIVE_OUTPUT_DIRECTORY
-    ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}$<$<CONFIG:Debug>:>
-)
+# put all build artifacts in top-level build dir. for multi-config generators
+# like Visual Studio, each config's artifacts go into a subdirectory. it's not
+# a good idea for multi-config generators to have different configs putting
+# artifacts into the same directory since it no longer becomes possible to
+# separately install debug and release artifacts.
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 # update CMake module path for our CMake scripts
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
