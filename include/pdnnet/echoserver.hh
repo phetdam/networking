@@ -58,7 +58,10 @@ public:
    *
    * Ensures that all threads are joined.
    */
-  ~echoserver() { join_threads(); }
+  ~echoserver()
+  {
+    join_threads();
+  }
 
   /**
    * Return const reference to the unique socket owned by the server.
@@ -135,7 +138,10 @@ public:
    *
    * @note This function is not thread-safe.
    */
-  auto n_threads() const noexcept { return thread_queue_.size(); }
+  auto n_threads() const noexcept
+  {
+    return thread_queue_.size();
+  }
 
   /**
    * Start the server with the given parameters.
