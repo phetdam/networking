@@ -82,6 +82,8 @@ public:
   /**
    * Return const reference to the thread deque.
    *
+   * @todo Consider removing this function (unnecessary).
+   *
    * @note This function is not thread-safe when the server is running.
    */
   const auto& thread_queue() const noexcept { return thread_queue_; }
@@ -129,7 +131,8 @@ public:
   /**
    * Return current number of threads in the thread deque.
    *
-   * @todo Consider making this function thread-safe.
+   * @todo Consider making this function thread-safe or removing it.
+   *
    * @note This function is not thread-safe.
    */
   auto n_threads() const noexcept { return thread_queue_.size(); }
