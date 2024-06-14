@@ -74,9 +74,9 @@ PDNNET_ARG_MAIN
   std::cout << std::flush;
 #endif  // _WIN32
   // print address and port for debugging
-  std::cout << PDNNET_PROGRAM_NAME << ": max_threads=" <<
-    server.max_threads() << ", address=" << server.dot_address() << ":" <<
-    server.port() << std::endl;
+  std::cout << pdnnet::getpid() << " " << PDNNET_PROGRAM_NAME <<
+    ": max_threads=" << server.max_threads() << ", address=" <<
+    server.dot_address() << ":" << server.port() << std::endl;
   // join + return (unreachable)
   server_thread.join();
   return EXIT_SUCCESS;

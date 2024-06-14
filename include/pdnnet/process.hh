@@ -8,6 +8,14 @@
 #ifndef PDNNET_PROCESS_HH_
 #define PDNNET_PROCESS_HH_
 
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif  // WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <processthreadsapi.h>
+#endif  // _WIN32
+
 #include <cerrno>
 #include <cstring>
 #include <stdexcept>
@@ -17,6 +25,7 @@
 #include "pdnnet/platform.h"
 
 #ifdef PDNNET_UNIX
+#include <sys/types.h>
 #include <unistd.h>
 #endif  // PDNNET_UNIX
 
@@ -69,6 +78,22 @@ inline void daemonize(bool nochdir, bool noclose)
  */
 inline void daemonize() { daemonize(true, true); }
 #endif  // PDNNET_UNIX
+
+#if defined(PDNNET_UNIX) || defined(_WIN32)
+/**
+ * Return the process ID of the calling process.
+ *
+ * This function is available on POSIX and Windows.
+ */
+inline auto getpid() noexcept
+{
+#if defined(_WIN32)
+  return GetCurrentProcessId();
+#else
+  return ::getpid();
+#endif  // !defined(_WIN32)
+}
+#endif  // !defined(PDNNET_UNIX) && !defined(_WIN32)
 
 }  // namespace pdnnet
 
