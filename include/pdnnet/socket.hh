@@ -872,8 +872,7 @@ public:
     do {
       // poll to check if there is anything to read. if not, return. note that
       // if write end is not closed, POLLIN is possible with read() returning 0
-      // TODO: see poll() todo. might use std::chrono::duration for timeout
-      if (!(poll(handle_, POLLIN, static_cast<int>(poll_timeout_.count())) & POLLIN))
+      if (!wait_pollin(handle_, poll_timeout_))
         return {};
       // read and handle errors
 #if defined(_WIN32)
