@@ -890,7 +890,7 @@ public:
 #endif  // !defined(_WIN32)
       // write to stream + clear buffer
       out.write(reinterpret_cast<const CharT*>(buf_.get()), n_read / sizeof(CharT));
-      memset(buf_.get(), 0, buf_size_);
+      std::memset(buf_.get(), 0, buf_size_);
     }
     while (n_read);
     // no bytes left in buffer (n_read is 0), so done
