@@ -26,6 +26,7 @@ option(
     PDNNET_INSTALL_MULTI_CONFIG
     "Add per-config lib + bin subdirectories for Windows installations" ON
 )
+option(FETCH_GTEST "Use FetchContent to build local Google Test copy" OFF)
 
 # check if multi-config generator
 get_property(PDNNET_IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
@@ -176,7 +177,7 @@ add_subdirectory(src)
 if(PDNNET_GTEST_FOUND)
     enable_testing()
     # no tests yet, uncomment later
-    # add_subdirectory(test)
+    add_subdirectory(test)
 else()
     message(
         WARNING
