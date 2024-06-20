@@ -191,6 +191,10 @@ public:
             unique_socket socket{cli_sockfd};
             // read from socket until there is no more to read + echo back
             std::stringstream stream;
+            // TODO: if client does not send data fast enough, stream may not
+            // end up with all the necessary data. this happened in
+            // echoserver_test since many threads are being created on the same
+            // machine to simulate client connections
             stream << socket_reader{socket};
             // TODO: if we want to add server print, we need synchronization
             stream >> socket_writer{socket};
