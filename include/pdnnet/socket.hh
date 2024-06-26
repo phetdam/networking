@@ -868,6 +868,8 @@ public:
   {
     // number of bytes read
     ssize_type n_read;
+    // TODO: consider using wait_pollin with a longer timeout in order to cope
+    // with slow clients that may not provide data to read fast enough
     // loop until we read zero bytes
     do {
       // poll to check if there is anything to read. if not, return. note that
