@@ -711,10 +711,8 @@ inline auto poll(socket_handle handle, short events)
 
 /**
  * Duration representing infinite `pdnnet::poll` timeout.
- *
- * Use signed `int` since `::poll` treats negative timeout as infinite.
  */
-inline constexpr std::chrono::duration<int, std::milli> infinite_poll_timeout{-1};
+inline constexpr std::chrono::milliseconds infinite_poll_timeout{-1};
 
 /**
  * Poll a single socket for events.
