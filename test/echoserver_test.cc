@@ -18,6 +18,7 @@
 #include <gtest/gtest.h>
 
 #include "pdnnet/client.hh"
+#include "pdnnet/common.h"
 #include "pdnnet/socket.hh"
 
 namespace {
@@ -144,10 +145,10 @@ CONNECTION_TEST(AllThreadsTest, 2000ms, 0U);
  */
 CONNECTION_TEST(LoadTest, 5000ms, 100U);
 
-using ConnectionTestTypes = ::testing::Types<
-  OneConnectTest, AllThreadsTest, LoadTest
->;
-TYPED_TEST_SUITE(ConnectionTest, ConnectionTestTypes);
+TYPED_TEST_SUITE(
+  ConnectionTest,
+  PDNNET_IDENTITY(::testing::Types<OneConnectTest, AllThreadsTest, LoadTest>)
+);
 
 // old test code
 #if 0

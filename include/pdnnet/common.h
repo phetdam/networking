@@ -32,6 +32,10 @@
 #define PDNNET_CONCAT_I(x, y) x ## y
 #define PDNNET_CONCAT(x, y) PDNNET_CONCAT_I(x, y)
 
+// identity macro. this is useful for a type template instance with multiple
+// types as a single argument to a macro instead of as multiple arguments
+#define PDNNET_IDENTITY(...) __VA_ARGS__
+
 // allow C++-like use of inline in C code
 #if defined(__cplusplus)
 #define PDNNET_INLINE inline
