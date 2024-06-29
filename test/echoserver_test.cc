@@ -20,6 +20,7 @@
 #include "pdnnet/client.hh"
 #include "pdnnet/common.h"
 #include "pdnnet/socket.hh"
+#include "pdnnet/warnings.h"
 
 namespace {
 
@@ -110,7 +111,11 @@ protected:
   public: \
     auto connections() const noexcept \
     { \
+      /* suppress MSVC warning that expression is always true. this is expected \
+       * because the static assert must be true (else compile error). */ \
+  PDNNET_MSVC_WARNING_DISABLE(4296) \
       static_assert(connections_ >= 0, "connection count must be positive"); \
+  PDNNET_MSVC_WARNING_ENABLE() \
       /* if zero, use hardware concurrency */ \
       if constexpr (!connections_) \
         return std::thread::hardware_concurrency(); \
