@@ -79,7 +79,7 @@ pdnnet_socket_onlread2(
     return -EINVAL;
 #endif  // _WIN32
   // return status
-  int status;
+  int status = 0;
   // socket read state struct
   pdnnet_socket_read_state read_state;
   read_state.sockfd = sockfd;
@@ -95,6 +95,7 @@ pdnnet_socket_onlread2(
     memset(read_state.msg_buf, 0, read_size + 1);
 #if defined(_WIN32)
     // too much text to fit in a single line
+    // note: recv returns int but gets promoted to SSIZE_T (LONG_PTR)
     read_state.n_read_msg = recv(sockfd, read_state.msg_buf, read_size, 0);
     // TODO: should we try to map the error codes to errno values?
     if (read_state.n_read_msg == SOCKET_ERROR)

@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION ${CMAKE_MINIMUM_REQUIRED_VERSION})
 
 # support library, including compiled C and C++ headers
 add_library(pdnnet socket.c)
+# need to link Windows Sockets 2 libraries publicly (part of interface)
+if(WIN32)
+    target_link_libraries(pdnnet PUBLIC ws2_32)
+endif()
 # define macro during library compilation for symbol import/export
 set_target_properties(pdnnet PROPERTIES DEFINE_SYMBOL PDNNET_BUILD_DLL)
 # public headers to install. cliopt.h and cliopt headers not public

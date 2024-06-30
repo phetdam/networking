@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION ${CMAKE_MINIMUM_REQUIRED_VERSION})
 
+# C socket support library
+add_subdirectory(pdnnet)
+
 # not written portably (yet)
 if(UNIX)
-    add_subdirectory(pdnnet)
     # C toy acknowledgment client
     add_executable(ackclient ackclient.c)
     target_link_libraries(ackclient PRIVATE pdnnet)

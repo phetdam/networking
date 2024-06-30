@@ -15,7 +15,14 @@
 #if __has_include(<unistd.h>)
 #define PDNNET_HAS_UNISTD
 #endif  // !__has_include(<unistd.h>)
-#endif
+#endif  // !defined(__has_include)
+
+// test for POSIX sys/types.h
+#if defined(__has_include)
+#if __has_include(<sys/types.h>)
+#define PDNNET_HAS_SYS_TYPES
+#endif  // !__has_include(<sys/types.h>)
+#endif  // !defined(__has_include)
 
 // test for BSD/default source definitions
 #ifdef _BSD_SOURCE

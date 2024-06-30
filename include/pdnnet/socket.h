@@ -30,6 +30,7 @@
 #include "pdnnet/common.h"
 #include "pdnnet/dllexport.h"
 #include "pdnnet/error.h"
+#include "pdnnet/features.h"
 #include "pdnnet/sa.h"
 
 PDNNET_EXTERN_C_BEGIN
@@ -41,6 +42,19 @@ PDNNET_EXTERN_C_BEGIN
 typedef SOCKET pdnnet_socket_handle;
 #else
 typedef int pdnnet_socket_handle;
+#endif  // !defined(_WIN32)
+
+/**
+ * Signed size type.
+ */
+#if defined(_WIN32)
+typedef SSIZE_T pdnnet_ssize_t;
+// ssize_t is POSIX, defined in sys/types.h
+#elif defined(PDNNET_HAS_SYS_TYPES)
+typedef ssize_t pdnnet_ssize_t;
+// fallback for non-POSIX, non-Windows systems
+#else
+typedef int pdnnet_ssize_t;
 #endif  // !defined(_WIN32)
 
 /**
@@ -69,26 +83,22 @@ typedef int pdnnet_socket_handle;
  *
  * Below is a description of the members.
  *
- * `sockfd`
- *    Socket file descriptor being read from
- * `msg_buf`
- *    Buffer to whom each `read()` will write bytes to. Contains an extra null
- *    terminator so it can be treated as a string if expected to contain text.
- * `msg_buf_size`
- *    Buffer size, not including final null terminator
- * `n_reads`
- *    Number of successful `read()` calls made
- * `n_read_msg`
- *    Number of bytes last read, i.e. `read()` return value
- * `n_read_total`
- *    Total number of bytes read so far
+ * @todo Fix docs, `recv` is used on Windows
+ *
+ * @param sockfd Socket file descriptor being read from
+ * @param msg_buf Buffer to whom each `read()` will write bytes to. Contains a
+ *  null terminator so it can be treated as a string if appropriate.
+ * @param msg_buf_size Buffer size, not including final null terminator
+ * @param n_reads Number of successful `read()` calls made
+ * @param n_read_msg Number of bytes last read, i.e. `read()` return value
+ * @param n_read_total Total number of bytes read so far
  */
 typedef struct {
   pdnnet_socket_handle sockfd;
   void *msg_buf;
   size_t msg_buf_size;
   size_t n_reads;
-  ssize_t n_read_msg;
+  pdnnet_ssize_t n_read_msg;
   size_t n_read_total;
 } pdnnet_socket_read_state;
 
