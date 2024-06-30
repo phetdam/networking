@@ -13,6 +13,7 @@
 #define WIN32_LEAN_AND_MEAN
 #endif  // WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <winerror.h>
 #include <WinSock2.h>
 #else
 #include <sys/socket.h>
@@ -37,6 +38,32 @@ pdnnet_socket_create(int domain, int type, int protocol)
   // both Windows and POSIX have the same argument types
   return socket(domain, type, protocol);
 }
+
+int
+pdnnet_socket_destroy(pdnnet_socket socket)
+{
+#if defined(_WIN32)
+  return (closesocket(socket) == SOCKET_ERROR) ? -WSAGetLastError() : 0;
+#else
+  return (close(socket) < 0) ? -errno : 0;
+#endif  // !defined(_WIN32)
+}
+
+/*
+const char *
+pdnnet_strerror(int err)
+{
+#if defined(_WIN32)
+  // note: Windows Sockets error codes start from 10000
+  // note: should use TLS APIs for Windows OSes prior to Vista. see
+  // https://learn.microsoft.com/en-us/cpp/parallel/thread-local-storage-tls
+  __declspec(thread) static msg[512];
+#else
+  // otherwise, just call strerror
+  return strerror(err);
+#endif  // !defined(_WIN32)
+}
+*/
 
 int
 pdnnet_socket_onlread(

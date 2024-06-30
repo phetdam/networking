@@ -105,6 +105,15 @@ PDNNET_PUBLIC pdnnet_socket
 pdnnet_socket_create(int domain, int type, int protocol) PDNNET_NOEXCEPT;
 
 /**
+ * Close a socket descriptor.
+ *
+ * @param socket Socket descriptor to close
+ * @returns 0 on success, on error `-errno` (POSIX), `-WSAGetLastError()` (Win32)
+ */
+PDNNET_PUBLIC int
+pdnnet_socket_destroy(pdnnet_socket socket) PDNNET_NOEXCEPT;
+
+/**
  * Create a TCP socket using the default communication protocol.
  *
  * @note Check `errno` for POSIX, `WSAGetLastError` for Windows.
@@ -113,6 +122,19 @@ pdnnet_socket_create(int domain, int type, int protocol) PDNNET_NOEXCEPT;
  * @returns Socket descriptor on success, `PDNNET_INVALID_SOCKET` on error
  */
 #define PDNNET_TCP_SOCKET(domain) pdnnet_socket_create(domain, SOCK_STREAM, 0)
+
+/**
+ * Return a string message for the given error code.
+ *
+ * This is equivalent to `strerror` for POSIX systems while on Windows it is
+ * equivalent to a `FormatMessage` call on system error codes.
+ *
+ * @param err Error code, e.g. from `errno` on POSIX, `[WSA]GetLastError` Win32
+ */
+/*
+PDNNET_PUBLIC const char *
+pdnnet_strerror(int err) PDNNET_NOEXCEPT;
+*/
 
 /**
  * Max number of bytes `read` at once by an "online" socket read.
