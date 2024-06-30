@@ -24,18 +24,6 @@
 #include <unistd.h>
 
 /**
- * Max number of bytes `read` at once by an "online" socket read.
- *
- * Functions like `pdnnet_socket_onlread` and `pdnnet_socket_fwrite` use this
- * value to determine how large their internal message buffer should be.
- *
- * This can be redefined at compile time if necessary.
- */
-#ifndef PDNNET_SOCKET_ONLREAD_SIZE
-#define PDNNET_SOCKET_ONLREAD_SIZE 512
-#endif  // PDNNET_SOCKET_ONLREAD_SIZE
-
-/**
  * Read from a socket until end of transmission.
  *
  * @param sockfd Socket file descriptor to read from

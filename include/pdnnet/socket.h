@@ -28,6 +28,36 @@
 
 PDNNET_EXTERN_C_BEGIN
 
+/**
+ * Socket handle type.
+ */
+#if defined(_WIN32)
+typedef SOCKET pdnnet_socket_handle;
+#else
+typedef int pdnnet_socket_handle;
+#endif  // !defined(_WIN32)
+
+/**
+ * Invalid socket handle.
+ */
+#if defined(_WIN32)
+#define PDNNET_BAD_SOCKET_HANDLE INVALID_SOCKET
+#else
+#define PDNNET_BAD_SOCKET_HANDLE -1
+#endif  // !defined(_WIN32)
+
+/**
+ * Max number of bytes `read` at once by an "online" socket read.
+ *
+ * Functions like `pdnnet_socket_onlread` and `pdnnet_socket_fwrite` use this
+ * value to determine how large their internal message buffer should be.
+ *
+ * This can be redefined at compile time if necessary.
+ */
+#ifndef PDNNET_SOCKET_ONLREAD_SIZE
+#define PDNNET_SOCKET_ONLREAD_SIZE 512
+#endif  // PDNNET_SOCKET_ONLREAD_SIZE
+
 #ifdef PDNNET_UNIX
 /**
  * Struct holding state information when performing a socket read.
