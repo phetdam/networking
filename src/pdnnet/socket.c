@@ -7,22 +7,29 @@
 
 #include "pdnnet/socket.h"
 
+#if defined(_WIN32)
+// must define WIN32_LEAN_AND_MEAN to use Windows Sockets 2
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif  // WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <WinSock2.h>
+#else
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
+#endif  // !defined(_WIN32)
+
 #include <errno.h>
+#include <limits.h>  // note: only INT_MAX used when _WIN32 defined
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "pdnnet/error.h"
-#include "pdnnet/platform.h"
 #include "pdnnet/sa.h"
-
-#ifdef PDNNET_UNIX
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-#endif  // PDNNET_UNIX
 
 int
 pdnnet_socket_onlread(
@@ -66,6 +73,11 @@ pdnnet_socket_onlread2(
 {
   if (!read_size)
     return -EINVAL;
+// on Windows, the max read size must not exceed INT_MAX
+#ifdef _WIN32
+  if (read_size > INT_MAX)
+    return -EINVAL;
+#endif  // _WIN32
   // return status
   int status;
   // socket read state struct
@@ -81,8 +93,16 @@ pdnnet_socket_onlread2(
   do {
     // clear and read client message
     memset(read_state.msg_buf, 0, read_size + 1);
+#if defined(_WIN32)
+    // too much text to fit in a single line
+    read_state.n_read_msg = recv(sockfd, read_state.msg_buf, read_size, 0);
+    // TODO: should we try to map the error codes to errno values?
+    if (read_state.n_read_msg == SOCKET_ERROR)
+      return -WSAGetLastError();
+#else
     if ((read_state.n_read_msg = read(sockfd, read_state.msg_buf, read_size)) < 0)
       return -errno;
+#endif // !defined(_WIN32)
     // update number of reads and total bytes read
     read_state.n_reads += 1;
     read_state.n_read_total += read_state.n_read_msg;

@@ -92,6 +92,9 @@ typedef struct {
   size_t n_read_total;
 } pdnnet_socket_read_state;
 
+// TODO: update docs for any *onlread functions to indicate that negated Windows
+// Sockets error codes will be returned instead of -errno on Windows
+
 /**
  * Function pointer typedef for use with `pdnnet_socket_onlread[2]`.
  *
