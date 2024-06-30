@@ -77,7 +77,7 @@ typedef int pdnnet_ssize_t;
  * @returns Socket descriptor on success, `PDNNET_INVALID_SOCKET` on error
  */
 PDNNET_PUBLIC pdnnet_socket
-pdnnet_socket_create(int domain, int type, int protocol);
+pdnnet_socket_create(int domain, int type, int protocol) PDNNET_NOEXCEPT;
 
 /**
  * Create a TCP socket using the default communication protocol.
@@ -142,7 +142,8 @@ typedef struct {
  * function errors and sets `errno`, then -errno` should be returned.
  */
 typedef int (*pdnnet_socket_onlread_func)(
-  PDNNET_SA(In) pdnnet_socket_read_state *, PDNNET_SA(Opt(In_Out)) void *);
+  PDNNET_SA(In) pdnnet_socket_read_state *,
+  PDNNET_SA(Opt(In_Out)) void *) PDNNET_NOEXCEPT;
 
 /**
  * Declare a `pdnnet_socket_onlread_func`.
@@ -169,7 +170,7 @@ PDNNET_PUBLIC int
 pdnnet_socket_onlread(
   pdnnet_socket sockfd,
   PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func read_action,
-  PDNNET_SA(Opt(In_Out)) void *read_action_param);
+  PDNNET_SA(Opt(In_Out)) void *read_action_param) PDNNET_NOEXCEPT;
 
 /**
  * Read from a socket until end of transmission.
@@ -188,7 +189,7 @@ pdnnet_socket_onlread_s(
   pdnnet_socket sockfd,
   size_t read_size,
   PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func read_action,
-  PDNNET_SA(Opt(In_Out)) void *read_action_param);
+  PDNNET_SA(Opt(In_Out)) void *read_action_param) PDNNET_NOEXCEPT;
 
 /**
  * Read from a socket until end of transmission.
@@ -212,7 +213,7 @@ pdnnet_socket_onlread2(
   PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func read_action,
   PDNNET_SA(Opt(In_Out)) void *read_action_param,
   PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func post_action,
-  PDNNET_SA(Opt(In_Out)) void *post_action_param);
+  PDNNET_SA(Opt(In_Out)) void *post_action_param) PDNNET_NOEXCEPT;
 
 /**
  * Read from a socket until end of transmission and write bytes to a stream.
@@ -223,7 +224,7 @@ pdnnet_socket_onlread2(
  *  is `NULL`, -EIO if writing to `f` fails, -errno on error
  */
 PDNNET_PUBLIC int
-pdnnet_socket_fwrite(pdnnet_socket sockfd, PDNNET_SA(Out) FILE *f);
+pdnnet_socket_fwrite(pdnnet_socket sockfd, PDNNET_SA(Out) FILE *f) PDNNET_NOEXCEPT;
 
 /**
  * Read from a socket until end of transmission and write bytes to a stream.
@@ -236,7 +237,7 @@ pdnnet_socket_fwrite(pdnnet_socket sockfd, PDNNET_SA(Out) FILE *f);
  */
 PDNNET_PUBLIC int
 pdnnet_socket_fwrite_s(
-  pdnnet_socket sockfd, size_t read_size, PDNNET_SA(Out) FILE *f);
+  pdnnet_socket sockfd, size_t read_size, PDNNET_SA(Out) FILE *f) PDNNET_NOEXCEPT;
 
 PDNNET_EXTERN_C_END
 
