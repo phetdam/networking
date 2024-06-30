@@ -20,9 +20,9 @@
 // C++ standard detection. MSVC sets __cplusplus incorrectly
 #if defined(_MSVC_LANG)
 #define PDNNET_CPLUSPLUS _MSVC_LANG
-#else
+#elif defined(__cplusplus)
 #define PDNNET_CPLUSPLUS __cplusplus
-#endif  // !defined(_MSVC_LANG)
+#endif  // !defined(_MSVC_LANG) && !defined(__cplusplus)
 
 // stringification macros
 #define PDNNET_STRINGIFY_I(x) #x
