@@ -39,9 +39,9 @@ PDNNET_EXTERN_C_BEGIN
  * Socket handle type.
  */
 #if defined(_WIN32)
-typedef SOCKET pdnnet_socket_handle;
+typedef SOCKET pdnnet_socket;
 #else
-typedef int pdnnet_socket_handle;
+typedef int pdnnet_socket;
 #endif  // !defined(_WIN32)
 
 /**
@@ -61,9 +61,9 @@ typedef int pdnnet_ssize_t;
  * Invalid socket handle.
  */
 #if defined(_WIN32)
-#define PDNNET_BAD_SOCKET_HANDLE INVALID_SOCKET
+#define PDNNET_INVALID_SOCKET INVALID_SOCKET
 #else
-#define PDNNET_BAD_SOCKET_HANDLE -1
+#define PDNNET_INVALID_SOCKET -1
 #endif  // !defined(_WIN32)
 
 /**
@@ -94,7 +94,7 @@ typedef int pdnnet_ssize_t;
  * @param n_read_total Total number of bytes read so far
  */
 typedef struct {
-  pdnnet_socket_handle sockfd;
+  pdnnet_socket sockfd;
   void *msg_buf;
   size_t msg_buf_size;
   size_t n_reads;
@@ -144,7 +144,7 @@ typedef int (*pdnnet_socket_onlread_func)(
  */
 PDNNET_PUBLIC int
 pdnnet_socket_onlread(
-  pdnnet_socket_handle sockfd,
+  pdnnet_socket sockfd,
   PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func read_action,
   PDNNET_SA(Opt(In_Out)) void *read_action_param);
 
@@ -162,7 +162,7 @@ pdnnet_socket_onlread(
  */
 PDNNET_PUBLIC int
 pdnnet_socket_onlread_s(
-  pdnnet_socket_handle sockfd,
+  pdnnet_socket sockfd,
   size_t read_size,
   PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func read_action,
   PDNNET_SA(Opt(In_Out)) void *read_action_param);
@@ -184,7 +184,7 @@ pdnnet_socket_onlread_s(
  */
 PDNNET_PUBLIC int
 pdnnet_socket_onlread2(
-  pdnnet_socket_handle sockfd,
+  pdnnet_socket sockfd,
   size_t read_size,
   PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func read_action,
   PDNNET_SA(Opt(In_Out)) void *read_action_param,
@@ -200,7 +200,7 @@ pdnnet_socket_onlread2(
  *  is `NULL`, -EIO if writing to `f` fails, -errno on error
  */
 PDNNET_PUBLIC int
-pdnnet_socket_fwrite(pdnnet_socket_handle sockfd, PDNNET_SA(Out) FILE *f);
+pdnnet_socket_fwrite(pdnnet_socket sockfd, PDNNET_SA(Out) FILE *f);
 
 /**
  * Read from a socket until end of transmission and write bytes to a stream.
@@ -213,7 +213,7 @@ pdnnet_socket_fwrite(pdnnet_socket_handle sockfd, PDNNET_SA(Out) FILE *f);
  */
 PDNNET_PUBLIC int
 pdnnet_socket_fwrite_s(
-  pdnnet_socket_handle sockfd, size_t read_size, PDNNET_SA(Out) FILE *f);
+  pdnnet_socket sockfd, size_t read_size, PDNNET_SA(Out) FILE *f);
 
 PDNNET_EXTERN_C_END
 

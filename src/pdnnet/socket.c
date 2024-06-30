@@ -33,7 +33,7 @@
 
 int
 pdnnet_socket_onlread(
-  pdnnet_socket_handle sockfd,
+  pdnnet_socket sockfd,
   PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func read_action,
   PDNNET_SA(Opt(In_Out)) void *read_action_param)
 {
@@ -47,7 +47,7 @@ pdnnet_socket_onlread(
 
 int
 pdnnet_socket_onlread_s(
-  pdnnet_socket_handle sockfd,
+  pdnnet_socket sockfd,
   size_t read_size,
   PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func read_action,
   PDNNET_SA(Opt(In_Out)) void *read_action_param)
@@ -64,7 +64,7 @@ pdnnet_socket_onlread_s(
 
 int
 pdnnet_socket_onlread2(
-  pdnnet_socket_handle sockfd,
+  pdnnet_socket sockfd,
   size_t read_size,
   PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func read_action,
   PDNNET_SA(Opt(In_Out)) void *read_action_param,
@@ -137,14 +137,14 @@ PDNNET_SOCKET_ONLREAD_FUNC(pdnnet_socket_onlread_fwrite)
 }
 
 int
-pdnnet_socket_fwrite(pdnnet_socket_handle sockfd, PDNNET_SA(Out) FILE *f)
+pdnnet_socket_fwrite(pdnnet_socket sockfd, PDNNET_SA(Out) FILE *f)
 {
   return pdnnet_socket_fwrite_s(sockfd, PDNNET_SOCKET_ONLREAD_SIZE, (void *) f);
 }
 
 int
 pdnnet_socket_fwrite_s(
-  pdnnet_socket_handle sockfd, size_t read_size, PDNNET_SA(Out) FILE *f)
+  pdnnet_socket sockfd, size_t read_size, PDNNET_SA(Out) FILE *f)
 {
   return pdnnet_socket_onlread_s(
     sockfd,
