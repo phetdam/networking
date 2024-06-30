@@ -8,6 +8,19 @@
 #ifndef PDNNET_SOCKET_H_
 #define PDNNET_SOCKET_H_
 
+#if defined(_WIN32)
+// must define WIN32_LEAN_AND_MEAN to use Windows Sockets 2
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif  // WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <WinSock2.h>
+#else
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#endif  // !defined(_WIN32)
+
 #include <errno.h>
 #include <float.h>
 #include <limits.h>
@@ -19,12 +32,6 @@
 #include "pdnnet/dllexport.h"
 #include "pdnnet/platform.h"
 #include "pdnnet/sa.h"
-
-#ifdef PDNNET_UNIX
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#endif  // PDNNET_UNIX
 
 PDNNET_EXTERN_C_BEGIN
 
