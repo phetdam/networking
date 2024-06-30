@@ -67,6 +67,29 @@ typedef int pdnnet_ssize_t;
 #endif  // !defined(_WIN32)
 
 /**
+ * Create a socket descriptor.
+ *
+ * @note Check `errno` on error for POSIX, `WSAGetLastError` for Windows.
+ *
+ * @param domain Socket communication domain, e.g. `AF_INET`, `AF_INET6`
+ * @param type Socket type, e.g. `SOCK_STREAM`, `SOCK_DGRAM`
+ * @param protocol Socket communication protocol, e.g. `0` for the default
+ * @returns Socket descriptor on success, `PDNNET_INVALID_SOCKET` on error
+ */
+PDNNET_PUBLIC pdnnet_socket
+pdnnet_socket_create(int domain, int type, int protocol);
+
+/**
+ * Create a TCP socket using the default communication protocol.
+ *
+ * @note Check `errno` on error for POSIX, `WSAGetLastError` for Windows.
+ *
+ * @param domain Socket communication domain, e.g. `AF_INET`, `AF_INET6`
+ * @returns Socket descriptor on success, `PDNNET_INVALID_SOCKET` on error
+ */
+#define PDNNET_TCP_SOCKET(domain) socket(domain, SOCK_STREAM, 0)
+
+/**
  * Max number of bytes `read` at once by an "online" socket read.
  *
  * Functions like `pdnnet_socket_onlread` and `pdnnet_socket_fwrite` use this

@@ -31,6 +31,13 @@
 #include "pdnnet/error.h"
 #include "pdnnet/sa.h"
 
+pdnnet_socket
+pdnnet_socket_create(int domain, int type, int protocol)
+{
+  // both Windows and POSIX have the same argument types
+  return socket(domain, type, protocol);
+}
+
 int
 pdnnet_socket_onlread(
   pdnnet_socket sockfd,
