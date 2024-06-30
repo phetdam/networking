@@ -27,10 +27,9 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "pdnnet/error.h"
 #include "pdnnet/common.h"
 #include "pdnnet/dllexport.h"
-#include "pdnnet/platform.h"
+#include "pdnnet/error.h"
 #include "pdnnet/sa.h"
 
 PDNNET_EXTERN_C_BEGIN
@@ -65,7 +64,6 @@ typedef int pdnnet_socket_handle;
 #define PDNNET_SOCKET_ONLREAD_SIZE 512
 #endif  // PDNNET_SOCKET_ONLREAD_SIZE
 
-#ifdef PDNNET_UNIX
 /**
  * Struct holding state information when performing a socket read.
  *
@@ -86,7 +84,7 @@ typedef int pdnnet_socket_handle;
  *    Total number of bytes read so far
  */
 typedef struct {
-  int sockfd;
+  pdnnet_socket_handle sockfd;
   void *msg_buf;
   size_t msg_buf_size;
   size_t n_reads;
@@ -133,7 +131,7 @@ typedef int (*pdnnet_socket_onlread_func)(
  */
 PDNNET_PUBLIC int
 pdnnet_socket_onlread(
-  int sockfd,
+  pdnnet_socket_handle sockfd,
   PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func read_action,
   PDNNET_SA(Opt(In_Out)) void *read_action_param);
 
@@ -151,7 +149,7 @@ pdnnet_socket_onlread(
  */
 PDNNET_PUBLIC int
 pdnnet_socket_onlread_s(
-  int sockfd,
+  pdnnet_socket_handle sockfd,
   size_t read_size,
   PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func read_action,
   PDNNET_SA(Opt(In_Out)) void *read_action_param);
@@ -173,7 +171,7 @@ pdnnet_socket_onlread_s(
  */
 PDNNET_PUBLIC int
 pdnnet_socket_onlread2(
-  int sockfd,
+  pdnnet_socket_handle sockfd,
   size_t read_size,
   PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func read_action,
   PDNNET_SA(Opt(In_Out)) void *read_action_param,
@@ -189,7 +187,7 @@ pdnnet_socket_onlread2(
  *  is `NULL`, -EIO if writing to `f` fails, -errno on error
  */
 PDNNET_PUBLIC int
-pdnnet_socket_fwrite(int sockfd, PDNNET_SA(Out) FILE *f);
+pdnnet_socket_fwrite(pdnnet_socket_handle sockfd, PDNNET_SA(Out) FILE *f);
 
 /**
  * Read from a socket until end of transmission and write bytes to a stream.
@@ -201,8 +199,8 @@ pdnnet_socket_fwrite(int sockfd, PDNNET_SA(Out) FILE *f);
  *  is `NULL`, -EIO if writing to `f` fails, -errno on error
  */
 PDNNET_PUBLIC int
-pdnnet_socket_fwrite_s(int sockfd, size_t read_size, PDNNET_SA(Out) FILE *f);
-#endif  // PDNNET_UNIX
+pdnnet_socket_fwrite_s(
+  pdnnet_socket_handle sockfd, size_t read_size, PDNNET_SA(Out) FILE *f);
 
 PDNNET_EXTERN_C_END
 

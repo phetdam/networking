@@ -22,18 +22,11 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
+#endif  // PDNNET_UNIX
 
-/**
- * Read from a socket until end of transmission.
- *
- * @param sockfd Socket file descriptor to read from
- * @param read_action Function to invoke after each successful `read` call
- * @param read_action_param Parameter to pass to `read_action`
- * @returns 0 on success, -ENOMEM on buffer allocation failure, -errno on error
- */
 int
 pdnnet_socket_onlread(
-  int sockfd,
+  pdnnet_socket_handle sockfd,
   PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func read_action,
   PDNNET_SA(Opt(In_Out)) void *read_action_param)
 {
@@ -45,21 +38,9 @@ pdnnet_socket_onlread(
   );
 }
 
-/**
- * Read from a socket until end of transmission.
- *
- * Allows manual specification of max bytes each `read` call should request.
- *
- * @param sockfd Socket file descriptor to read from
- * @param read_size Number of bytes each `read` call should request
- * @param read_action Function to invoke after each successful `read` call
- * @param read_action_param Parameter to pass to `read_action`
- * @returns 0 on success, -EINVAL if `read_size` is zero, -ENOMEM on buffer
- *  allocation failure, -errno for other errors
- */
 int
 pdnnet_socket_onlread_s(
-  int sockfd,
+  pdnnet_socket_handle sockfd,
   size_t read_size,
   PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func read_action,
   PDNNET_SA(Opt(In_Out)) void *read_action_param)
@@ -74,24 +55,9 @@ pdnnet_socket_onlread_s(
   );
 }
 
-/**
- * Read from a socket until end of transmission.
- *
- * This function provides more control over the reads and allows calling the
- * `read_action_param` function after all the reads have been completed.
- *
- * @param sockfd Socket file descriptor to read from
- * @param read_size Number of bytes each `read` call should request
- * @param read_action Function to invoke after each successful `read` call
- * @param read_action_param Parameter to pass to `read_action`
- * @param post_action Function to invoke after the final `read_action`
- * @param post_action_param Parameter to pass to `post_action`
- * @returns 0 on success, -EINVAL if `read_size` is zero, -ENOMEM on buffer
- *  allocation failure, -errno for other errors
- */
 int
 pdnnet_socket_onlread2(
-  int sockfd,
+  pdnnet_socket_handle sockfd,
   size_t read_size,
   PDNNET_SA(Opt(In)) pdnnet_socket_onlread_func read_action,
   PDNNET_SA(Opt(In_Out)) void *read_action_param,
@@ -149,31 +115,15 @@ PDNNET_SOCKET_ONLREAD_FUNC(pdnnet_socket_onlread_fwrite)
   return 0;
 }
 
-/**
- * Read from a socket until end of transmission and write bytes to a stream.
- *
- * @param sockfd Socket file descriptor to read from
- * @param f File stream to write bytes read to
- * @returns 0 on success, -ENOMEM on buffer allocation failure, -EINVAL if `f`
- *  is `NULL`, -EIO if writing to `f` fails, -errno on error
- */
 int
-pdnnet_socket_fwrite(int sockfd, PDNNET_SA(Out) FILE *f)
+pdnnet_socket_fwrite(pdnnet_socket_handle sockfd, PDNNET_SA(Out) FILE *f)
 {
   return pdnnet_socket_fwrite_s(sockfd, PDNNET_SOCKET_ONLREAD_SIZE, (void *) f);
 }
 
-/**
- * Read from a socket until end of transmission and write bytes to a stream.
- *
- * @param sockfd Socket file descriptor to read from
- * @param read_size Number of bytes each `read` call should request
- * @param f File stream to write bytes read to
- * @returns 0 on success, -ENOMEM on buffer allocation failure, -EINVAL if `f`
- *  is `NULL`, -EIO if writing to `f` fails, -errno on error
- */
 int
-pdnnet_socket_fwrite_s(int sockfd, size_t read_size, PDNNET_SA(Out) FILE *f)
+pdnnet_socket_fwrite_s(
+  pdnnet_socket_handle sockfd, size_t read_size, PDNNET_SA(Out) FILE *f)
 {
   return pdnnet_socket_onlread_s(
     sockfd,
@@ -182,4 +132,3 @@ pdnnet_socket_fwrite_s(int sockfd, size_t read_size, PDNNET_SA(Out) FILE *f)
     (void *) f
   );
 }
-#endif  // PDNNET_UNIX
