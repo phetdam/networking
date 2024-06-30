@@ -195,8 +195,8 @@ PDNNET_ARG_MAIN
   }
 #endif  // !defined(PDNNET_BSD_DEFAULT_SOURCE)
   // create and bind socket
-  int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-  if (sockfd < 0)
+  pdnnet_socket sockfd = PDNNET_TCP_SOCKET(AF_INET);
+  if (!PDNNET_SOCKET_VALID(sockfd))
     PDNNET_ERRNO_EXIT(errno, "Could not open socket");
   // zero and fill in server socket address struct (IPv4)
   struct sockaddr_in serv_addr;

@@ -57,8 +57,8 @@ PDNNET_ARG_MAIN
 {
   PDNNET_CLIOPT_PARSE_OPTIONS();
   // open IPv4 TCP/IP socket
-  int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-  if (sockfd < 0)
+  pdnnet_socket sockfd = PDNNET_TCP_SOCKET(AF_INET);
+  if (!PDNNET_SOCKET_VALID(sockfd))
     PDNNET_ERRNO_EXIT(errno, "Failed to open socket");
   // attempt to resolve host name to server address
   struct hostent *serv_ent = gethostbyname(PDNNET_CLIOPT(host));

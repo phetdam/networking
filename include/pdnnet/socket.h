@@ -67,9 +67,34 @@ typedef int pdnnet_ssize_t;
 #endif  // !defined(_WIN32)
 
 /**
+ * Check if a socket descriptor is valid or not.
+ *
+ * @param socket `pdnnet_socket` socket descriptor
+ */
+#if defined(_WIN32)
+#define PDNNET_SOCKET_VALID(socket) ((socket) != INVALID_SOCKET)
+#else
+#define PDNNET_SOCKET_VALID(socket) ((socket) >= 0)
+#endif  // !defined(_WIN32)
+
+/**
+ * Check if a native socket function has returned an error.
+ *
+ * POSIX functions typically return -1 while Windows Sockets functions will
+ * instead return `SOCKET_ERROR`. Having this macro smooths things over.
+ *
+ * @param expr Socket function expression
+ */
+#if defined(_WIN32)
+#define PDNNET_SOCKET_ERROR(expr) ((expr) == SOCKET_ERROR)
+#else
+#define PDNNET_SOCKET_ERROR(expr) ((expr) < 0)
+#endif  // !defined(_WIN32)
+
+/**
  * Create a socket descriptor.
  *
- * @note Check `errno` on error for POSIX, `WSAGetLastError` for Windows.
+ * @note Check `errno` for POSIX, `WSAGetLastError` for Windows.
  *
  * @param domain Socket communication domain, e.g. `AF_INET`, `AF_INET6`
  * @param type Socket type, e.g. `SOCK_STREAM`, `SOCK_DGRAM`
@@ -82,12 +107,12 @@ pdnnet_socket_create(int domain, int type, int protocol) PDNNET_NOEXCEPT;
 /**
  * Create a TCP socket using the default communication protocol.
  *
- * @note Check `errno` on error for POSIX, `WSAGetLastError` for Windows.
+ * @note Check `errno` for POSIX, `WSAGetLastError` for Windows.
  *
  * @param domain Socket communication domain, e.g. `AF_INET`, `AF_INET6`
  * @returns Socket descriptor on success, `PDNNET_INVALID_SOCKET` on error
  */
-#define PDNNET_TCP_SOCKET(domain) socket(domain, SOCK_STREAM, 0)
+#define PDNNET_TCP_SOCKET(domain) pdnnet_socket_create(domain, SOCK_STREAM, 0)
 
 /**
  * Max number of bytes `read` at once by an "online" socket read.
