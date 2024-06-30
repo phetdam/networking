@@ -88,41 +88,39 @@ pdnnet_socket_onlread2(
   // return status
   int status = 0;
   // socket read state struct
-  pdnnet_socket_read_state read_state;
-  read_state.sockfd = sockfd;
-  read_state.msg_buf_size = read_size;
+  pdnnet_socket_read_state rs;
+  rs.sockfd = sockfd;
+  rs.msg_buf_size = read_size;
   // allocated buffer has an extra byte so it can be treated like a string
-  read_state.msg_buf = malloc(read_size + 1);
-  if (!read_state.msg_buf)
+  rs.msg_buf = malloc(read_size + 1);
+  if (!rs.msg_buf)
     return -ENOMEM;
-  read_state.n_reads = read_state.n_read_total = 0;
+  rs.n_reads = rs.n_read_total = 0;
   // until client signals end of transmission
   do {
     // clear and read client message
-    memset(read_state.msg_buf, 0, read_size + 1);
+    memset(rs.msg_buf, 0, read_size + 1);
 #if defined(_WIN32)
-    // too much text to fit in a single line
     // note: recv returns int but gets promoted to SSIZE_T (LONG_PTR)
-    read_state.n_read_msg = recv(sockfd, read_state.msg_buf, read_size, 0);
     // TODO: should we try to map the error codes to errno values?
-    if (read_state.n_read_msg == SOCKET_ERROR)
+    if ((rs.n_read_msg = recv(sockfd, rs.msg_buf, read_size, 0)) == SOCKET_ERROR)
       return -WSAGetLastError();
 #else
-    if ((read_state.n_read_msg = read(sockfd, read_state.msg_buf, read_size)) < 0)
+    if ((rs.n_read_msg = read(sockfd, rs.msg_buf, read_size)) < 0)
       return -errno;
 #endif // !defined(_WIN32)
     // update number of reads and total bytes read
-    read_state.n_reads += 1;
-    read_state.n_read_total += read_state.n_read_msg;
+    rs.n_reads += 1;
+    rs.n_read_total += rs.n_read_msg;
     // call user-specified action if any
-    if (read_action && (status = read_action(&read_state, read_action_param)) < 0)
+    if (read_action && (status = read_action(&rs, read_action_param)) < 0)
       goto end;
-  } while (read_state.n_read_msg);
+  } while (rs.n_read_msg);
   // if there is a post action, call that
-  if (post_action && (status = post_action(&read_state, post_action_param)) < 0)
+  if (post_action && (status = post_action(&rs, post_action_param)) < 0)
     goto end;
 end:
-  free(read_state.msg_buf);
+  free(rs.msg_buf);
   return status;
 }
 
