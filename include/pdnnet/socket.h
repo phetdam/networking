@@ -48,6 +48,7 @@ typedef int pdnnet_socket;
  * Signed size type.
  */
 #if defined(_WIN32)
+// TODO: Windows socket functions still use int, maybe typedef to int
 typedef SSIZE_T pdnnet_ssize_t;
 // ssize_t is POSIX, defined in sys/types.h
 #elif defined(PDNNET_HAS_SYS_TYPES)
