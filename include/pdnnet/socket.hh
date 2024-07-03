@@ -199,12 +199,9 @@ inline void shutdown(socket_handle handle, shutdown_type how)
 {
   if (::shutdown(handle, shutdown_value(how)) < 0)
     throw std::runtime_error{
-      "shutdown() with how=" + std::to_string(shutdown_value(how)) +
-#if defined(_WIN32)
-      winsock_error(" failed")
-#else
-      errno_error(" failed")
-#endif  // !defined(_WIN32)
+      socket_error(
+        "shutdown() with how=" + std::to_string(shutdown_value(how)) + " failed"
+      )
     };
 }
 
@@ -496,16 +493,14 @@ inline auto accept(socket_handle handle, AddressType& addr, socklen_t& addr_len)
   unique_socket socket{::accept(handle, static_cast<sockaddr*>(&addr), &addr_len_in)};
   // socket handle is invalid on error
   if (!socket.valid())
-#if defined(_WIN32)
-    throw std::runtime_error{winsock_error("accept() failed")};
-#else
-    throw std::runtime_error{errno_error("accept() failed")};
+    throw std::runtime_error{socket_error("accept() failed")};
+#ifndef _WIN32
   // if buffer is too small, address is truncated, which is still an error. the
   // Windows Sockets version of accept checks this and WSAGetLastError will
   // return WSAEFAULT if sizeof cli_addr is too small.
   if (addr_len_in > sizeof addr)
     throw std::runtime_error{"Client address buffer truncated"};
-#endif  // !defined(_WIN32)
+#endif  // _WIN32
   // done, so set addr_len and return socket
   addr_len = addr_len_in;
   return socket;
