@@ -70,12 +70,12 @@ typedef int pdnnet_ssize_t;
 /**
  * Check if a socket descriptor is valid or not.
  *
- * @param socket `pdnnet_socket` socket descriptor
+ * @param sock `pdnnet_socket` socket descriptor
  */
 #if defined(_WIN32)
-#define PDNNET_SOCKET_VALID(socket) ((socket) != INVALID_SOCKET)
+#define PDNNET_SOCKET_VALID(sock) ((sock) != INVALID_SOCKET)
 #else
-#define PDNNET_SOCKET_VALID(socket) ((socket) >= 0)
+#define PDNNET_SOCKET_VALID(sock) ((sock) >= 0)
 #endif  // !defined(_WIN32)
 
 /**
