@@ -60,33 +60,27 @@ PDNNET_ARG_MAIN
   pdnnet_socket sockfd = PDNNET_TCP_SOCKET(AF_INET);
   if (!PDNNET_SOCKET_VALID(sockfd))
     PDNNET_ERRNO_EXIT(errno, "Failed to open socket");
-  // attempt to resolve host name to server address
-  struct hostent *serv_ent = gethostbyname(PDNNET_CLIOPT(host));
-  if (!serv_ent)
-#if defined(PDNNET_BSD_DEFAULT_SOURCE)
-    PDNNET_H_ERRNO_EXIT_EX(h_errno, "No such host %s", PDNNET_CLIOPT(host));
-#else
-    PDNNET_ERROR_EXIT_EX("No such host %s", PDNNET_CLIOPT(host));
-#endif  // !defined(PDNNET_BSD_DEFAULT_SOURCE)
-  // populate socket address struct
+  // convert numeric port number to string for use with getaddrinfo. since the
+  // port number cannot exceed 65536, we need 6 chars (includes terminator)
+  char port_buf[6];
+  snprintf(port_buf, sizeof port_buf, "%u", PDNNET_CLIOPT(port));
+  // address hint struct + head of address struct linked list
+  struct addrinfo hints = {0, AF_INET, SOCK_STREAM, IPPROTO_TCP};
+  struct addrinfo *addrs;
+  // resolve host name and port to get server address list
+  int status;
+  if ((status = getaddrinfo(PDNNET_CLIOPT(host), port_buf, &hints, &addrs)))
+    PDNNET_ERROR_EXIT_EX(
+      "Could not resolve host %s with port %s: %s",
+      PDNNET_CLIOPT(host),
+      // use string port buffer since this is passed to getaddrinfo
+      port_buf,
+      gai_strerror(status)
+    );
+  // copy first address as sockaddr_in + free address list
   struct sockaddr_in serv_addr;
-  memset(&serv_addr, 0, sizeof(serv_addr));
-  serv_addr.sin_family = AF_INET;
-  memcpy(
-    &serv_addr.sin_addr.s_addr,
-// for glibc h_addr requires that _DEFAULT_SOURCE is defined, which is defined
-// by default unless __STRICT_ANSI__, _ISOC99_SOURCE, etc. are defined. see
-// feature_test_macros(7) man page for feature macro definition details. note
-// that in VS Code, none of these macros are defined, so this conditional block
-// is useful for avoiding the red squiggle that is otherwise caused.
-#if defined(h_addr)
-    serv_ent->h_addr,
-#else
-    serv_ent->h_addr_list[0],
-#endif  // !defined(h_addr)
-    serv_ent->h_length
-  );
-  serv_addr.sin_port = htons(PDNNET_CLIOPT(port));
+  memcpy(&serv_addr, addrs->ai_addr, sizeof *addrs->ai_addr);
+  freeaddrinfo(addrs);
   // attempt connection
   if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
     PDNNET_ERRNO_EXIT(errno, "Could not connect to socket");

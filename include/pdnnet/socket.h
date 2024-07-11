@@ -84,6 +84,8 @@ typedef int pdnnet_ssize_t;
  * POSIX functions typically return -1 while Windows Sockets functions will
  * instead return `SOCKET_ERROR`. Having this macro smooths things over.
  *
+ * @note This may be removed in the future.
+ *
  * @param expr Socket function expression
  */
 #if defined(_WIN32)
