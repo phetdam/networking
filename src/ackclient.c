@@ -71,7 +71,7 @@ PDNNET_ARG_MAIN
   int status;
   if ((status = getaddrinfo(PDNNET_CLIOPT(host), port_buf, &hints, &addrs)))
     PDNNET_ERROR_EXIT_EX(
-      "Could not resolve host %s with port %s: %s",
+      "Could not resolve host %s with port %s: %s\n",
       PDNNET_CLIOPT(host),
       // use string port buffer since this is passed to getaddrinfo
       port_buf,
