@@ -272,6 +272,9 @@ private:
    */
   void reset_state()
   {
+    // TODO: forgot why this comment is here. we should either consider setting
+    // running_ to false first before calling join_threads() but it doesn't
+    // really matter in how reset_state() is being used (running_ already false)
     // first mark as not running so other threads know not to check state
     join_threads();
     socket_ = {};
