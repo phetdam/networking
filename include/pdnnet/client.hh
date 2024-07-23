@@ -21,10 +21,11 @@
 #include <sys/types.h>
 
 #include <cerrno>
-#include <chrono>
-#include <cstring>
 #endif  // !defined(_WIN32)
 
+#include <chrono>
+#include <cstdio>
+#include <cstring>
 #include <optional>
 #include <string>
 
@@ -125,6 +126,8 @@ public:
    */
   optional_error connect(const std::string& host, inet_port_type port)
   {
+    // TODO: replace with getaddrinfo usage (see ackclient.c for example). the
+    // error message from gai_strerror is better than hstrerror as well
     // resolve IPv4 host by name, returning false and setting status on error
     auto serv_ent = gethostbyname(host.c_str());
     if (!serv_ent) {

@@ -1008,7 +1008,7 @@ public:
    * @returns Optional empty on success, with error message on failure
    */
   template <typename CharT, typename Traits>
-  optional_error read(const std::basic_string_view<CharT, Traits>& text) const
+  optional_error read(std::basic_string_view<CharT, Traits> text) const
   {
     // remaining bytes to send, bytes last written, total bytes sent
     auto n_remain = sizeof(CharT) * text.size();
@@ -1040,6 +1040,23 @@ public:
     if (close_write_)
       pdnnet::shutdown(handle_, shutdown_type::write);
     return {};
+  }
+
+  /**
+   * Write string contents to socket.
+   *
+   * @note Overload necessary since implicit conversions are not deduced.
+   *
+   * @tparam CharT Char type
+   * @tparam Traits Char traits
+   *
+   * @param text String to read input from
+   * @returns Optional empty on success, with error message on failure
+   */
+  template <typename CharT, typename Traits>
+  auto read(const std::basic_string<CharT, Traits>& text) const
+  {
+    return read(static_cast<std::basic_string_view<CharT, Traits>>(text));
   }
 
   /**
@@ -1085,7 +1102,7 @@ public:
   template <typename CharT, typename Traits>
   auto read(std::basic_stringstream<CharT, Traits>& in) const
   {
-    return read(static_cast<std::basic_string_view<CharT, Traits>>(in.str()));
+    return read(in.str());
   }
 
   /**

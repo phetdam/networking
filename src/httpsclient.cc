@@ -13,6 +13,7 @@
 #include <security.h>
 #endif  // _WIN32
 
+#include <climits>
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
@@ -21,6 +22,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 #define PDNNET_HAS_PROGRAM_USAGE
 #define PDNNET_ADD_CLIOPT_HOST
@@ -213,6 +215,131 @@ pdnnet::optional_error schannel_perform_handshake(
 }
 #endif  // _WIN32
 
+#ifdef PDNNET_UNIX
+/**
+ * TLS writer class for abstracting TLS socket writes.
+ */
+class tls_writer {
+public:
+  /**
+   * Ctor.
+   *
+   * @param layer TLS connection layer handle
+   */
+  tls_writer(SSL* layer) noexcept
+    : layer_{layer}, allow_retry_{true}, message_sink_{}
+  {}
+
+  /**
+   * Indicate if the writer allows TLS write retries.
+   */
+  auto allow_retry() const noexcept { return allow_retry_; }
+
+  /**
+   * Return pointer to the message sink for any messages (can be `nullptr`).
+   */
+  auto message_sink() const noexcept { return message_sink_; }
+
+  /**
+   * Enable or disable TLS write retries.
+   *
+   * For OpenSSL, a retryable write is when the `SSL_write` error retrieved via
+   * `SSL_get_error` is `SSL_ERROR_WANT_WRITE`.
+   *
+   * @param retry `true` to allow retrying writes, `false` to disallow
+   * @returns `*this` to allow method chaining
+   */
+  auto& allow_retry(bool retry) noexcept
+  {
+    allow_retry_ = retry;
+    return *this;
+  }
+
+  /**
+   * Set or unset the message sink.
+   *
+   * @param sink Address to an output stream
+   * @returns `*this` to allow method chaining
+   */
+  auto& message_sink(std::ostream* sink) noexcept
+  {
+    message_sink_ = sink;
+    return *this;
+  }
+
+  /**
+   * Write string view contents to socket.
+   *
+   * @tparam CharT Char type
+   * @tparam Traits Char traits
+   *
+   * @param text String view to read input from
+   * @returns Optional empty on success, with error message on failure
+   */
+  template <typename CharT, typename Traits>
+  pdnnet::optional_error read(std::basic_string_view<CharT, Traits> text) const
+  {
+    // total and remaining bytes to write
+    auto n_total = sizeof(CharT) * text.size();
+    auto n_remain = n_total;
+    // if total is too large, error
+    if (n_total > INT_MAX)
+      return "Message length " + std::to_string(n_total) +
+        " exceeds max allowed length " + std::to_string(INT_MAX);
+    // until done, write bytes to server through TLS layer
+    while (n_remain) {
+      auto n_written = SSL_write(
+        layer_,
+        text.data() + (n_total - n_remain),
+        static_cast<int>(n_remain)
+      );
+      // unsucessful, returned zero
+      if (n_written <= 0) {
+        auto err = SSL_get_error(layer_, n_written);
+        // write is retryable
+        if (err == SSL_ERROR_WANT_WRITE) {
+          // no retry allowed
+          if (!allow_retry_)
+            return "GET request write retryable but writer has disabled retries";
+          // non-null sink
+          if (message_sink_)
+            *message_sink_ << "GET request write failed: retrying..." << std::endl;
+          continue;
+        }
+        // give up
+        return pdnnet::openssl_error_string(err, "GET request write failed");
+      }
+      // decrement remaining
+      n_remain -= n_written;
+    }
+    return {};
+  }
+
+  /**
+   * Write string contents to socket.
+   *
+   * @note Overload necessary since implicit conversions are not deduced.
+   *
+   * @tparam CharT Char type
+   * @tparam Traits Char traits
+   *
+   * @param text String to read input from
+   * @returns Optional empty on success, with error message on failure
+   */
+  template <typename CharT, typename Traits>
+  auto read(const std::basic_string<CharT, Traits>& text) const
+  {
+    return read(static_cast<std::basic_string_view<CharT, Traits>>(text));
+  }
+
+private:
+  SSL* layer_;
+  bool allow_retry_;
+  std::ostream* message_sink_;
+};
+
+#endif  // PDNNET_UNIX
+
 }  // namespace
 
 PDNNET_ARG_MAIN
@@ -264,28 +391,7 @@ PDNNET_ARG_MAIN
     std::cout << PDNNET_PROGRAM_NAME << ": Using " << layer.protocol_string() <<
       ". Making request...\n" << get_request << std::endl;
   // write request to server
-  auto remaining = get_request.size();
-  while (remaining) {
-    auto n_written = SSL_write(
-      layer,
-      get_request.c_str() + (get_request.size() - remaining),
-      // write parameter is int, need cast
-      static_cast<int>(remaining)
-    );
-    // if unsuccesful, throw only if we can't retry
-    if (n_written <= 0) {
-      auto err = SSL_get_error(layer, n_written);
-      if (err == SSL_ERROR_WANT_WRITE) {
-        std::cout << "GET request write failed: retrying..." << std::endl;
-        continue;
-      }
-      throw std::runtime_error{
-        pdnnet::openssl_error_string(err, "GET request write failed")
-      };
-    }
-    // decrement remaining
-    remaining -= n_written;
-  }
+  tls_writer{layer}.message_sink(&std::cout).read(get_request).exit_on_error();
   // read contents from server until no more pending and print to stdout. under
   // HTTP standard the socket should not be closed automatically
   char buf[512];
