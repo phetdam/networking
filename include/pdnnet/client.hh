@@ -126,22 +126,16 @@ public:
    */
   optional_error connect(const std::string& host, inet_port_type port)
   {
-    // TODO: replace with getaddrinfo usage (see ackclient.c for example). the
-    // error message from gai_strerror is better than hstrerror as well
-    // resolve IPv4 host by name, returning false and setting status on error
-    auto serv_ent = gethostbyname(host.c_str());
-    if (!serv_ent) {
-#if defined(_WIN32)
-      return "Socket connect error: " + winsock_error();
-#elif defined(PDNNET_BSD_DEFAULT_SOURCE)
-      return "Socket connect error: " + std::string{hstrerror(h_errno)};
-#else
-      return "Socket connect error: Error resolving host name";
-#endif  // !defined(_WIN32) && !defined(PDNNET_BSD_DEFAULT_SOURCE)
+    // get list of IPv4 address structs (catch possible exception)
+    unique_addrinfo addrs;
+    try {
+      addrs = getaddrinfo(host, port);
     }
-    // create socket address struct + attempt connection
-    auto serv_addr = make_sockaddr_in(serv_ent, port);
-    // namespace specification required for correct lookup
+    catch (const std::runtime_error& exc) {
+      return exc.what();
+    }
+    // create address + attempt connection
+    auto serv_addr = addrs.addr_in();
     if (!pdnnet::connect(socket_, serv_addr))
       return "Socket connect error: " + socket_error();
     // update host address, mark as connected, and return

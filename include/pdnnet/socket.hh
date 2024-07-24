@@ -41,6 +41,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <type_traits>
 
 #include "pdnnet/error.hh"
@@ -284,6 +285,236 @@ inline auto make_sockaddr_in(const hostent* ent, inet_port_type port)
     sizeof address
   );
   return make_sockaddr_in(ntohl(address), port);
+}
+
+/**
+ * Return a new `sockaddr_in` from one of the addresses in an `addrinfo` list.
+ *
+ * This list should be provided by a prior `getaddrinfo` call.
+ *
+ * @param info Linked list of `addrinfo` objects of family `AF_INET`
+ * @param addr_i Index of the desired IPv4 address, default zero for the first
+ */
+inline auto make_sockaddr_in(const addrinfo* info, unsigned int addr_i = 0U)
+{
+  // number of addresses skipped
+  decltype(addr_i) n_skip = 0U;
+  // advance until we reach addr_ith address in list
+  while (info && n_skip < addr_i) {
+    info = info->ai_next;
+    n_skip++;
+  }
+  // if head is nullptr, not enough addresses
+  if (!info)
+    throw std::runtime_error{
+      "addrinfo list contains " + std::to_string(n_skip) +
+      " structs instead of the desired " + std::to_string(addr_i + 1)
+    };
+  // if not AF_INET, this is not an IPv4 address
+  if (info->ai_family != AF_INET)
+    throw std::runtime_error{
+      "addrinfo " + std::to_string(addr_i) + "is not of family AF_INET"
+    };
+  // otherwise, get sockaddr_in from first sockaddr
+  sockaddr_in addr;
+  std::memcpy(&addr, info->ai_addr, sizeof *info->ai_addr);
+  return addr;
+}
+
+/**
+ * Class maintaining unique ownership of an `addrinfo` list.
+ */
+class unique_addrinfo {
+public:
+  /**
+   * Default ctor.
+   *
+   * No `addrinfo` list is owned.
+   */
+  unique_addrinfo() noexcept : unique_addrinfo{nullptr} {}
+
+  /**
+   * Ctor.
+   *
+   * @param info Head of `addrinfo` list to own
+   */
+  explicit unique_addrinfo(addrinfo* info) noexcept : info_{info} {}
+
+  /**
+   * Deleted copy ctor.
+   */
+  unique_addrinfo(const unique_addrinfo&) = delete;
+
+  /**
+   * Move ctor.
+   */
+  unique_addrinfo(unique_addrinfo&& other) noexcept : info_{other.release()} {}
+
+  /**
+   * Dtor.
+   */
+  ~unique_addrinfo()
+  {
+    free_info();
+  }
+
+  /**
+   * Move assignment operator.
+   */
+  auto& operator=(unique_addrinfo&& other) noexcept
+  {
+    free_info();
+    info_ = other.release();
+    return *this;
+  }
+
+  /**
+   * Return head pointer of the `addrinfo` list.
+   */
+  auto info() const noexcept { return info_; }
+
+  /**
+   * Release ownership of the `addrinfo` list.
+   */
+  addrinfo* release() noexcept
+  {
+    auto old_info = info_;
+    info_ = nullptr;
+    return old_info;
+  }
+
+  /**
+   * Return head pointer of the `addrinfo` list for C function interop.
+   */
+  operator const addrinfo*() const noexcept
+  {
+    return info_;
+  }
+
+  /**
+   * Return number of `addrinfo` structs in the list.
+   *
+   * If no list is owned, this will return zero.
+   */
+  auto n_info() const noexcept
+  {
+    // current list head and count
+    auto head = info_;
+    auto count = 0U;
+    // iterate
+    while (head) {
+      head = head->ai_next;
+      count++;
+    }
+    return count;
+  }
+
+  /**
+   * Return the `i`th IPv4 address struct in the list.
+   *
+   * @param i Index of the IPv4 address to return, default `0` for the first
+   * @throws `std::runtime_error` if there are not enough structs in the info
+   *  list or if the address family of the desired address is not `AF_INET`
+   */
+  auto addr_in(unsigned int i = 0U) const
+  {
+    return make_sockaddr_in(info_, i);
+  }
+
+  // TODO: add similar method for IPv6 addresses
+
+private:
+  addrinfo* info_;
+
+  /**
+   * Free the list of `addrinfo` structs if the head pointer is not `nullptr`.
+   */
+  void free_info() noexcept
+  {
+    if (info_)
+      freeaddrinfo(info_);
+  }
+};
+
+/**
+ * Return a list of `addrinfo` structs for the given host and service.
+ *
+ * @param host Numerical IP host address or network host name
+ * @param service Service name, e.g. "https", or a port number, e.g. "443"
+ * @param hints `addrinfo` hints structure (see getaddrinfo(3) for details)
+ * @returns `unique_addrinfo` list of `addrinfo` structures
+ */
+inline auto getaddrinfo(
+  const char* host, const char* service, const addrinfo* hints)
+{
+  addrinfo* addrs;
+  // resolve host name and service to get address list
+  int status;
+  if ((status = ::getaddrinfo(host, service, hints, &addrs)))
+    throw std::runtime_error{
+      "Could not resolve host " + std::string{host} + " with service/port " +
+      std::string{service} + ": " + std::string{gai_strerror(status)}
+    };
+  // return owned list of addrinfo structs
+  return unique_addrinfo{addrs};
+}
+
+/**
+ * Return `addrinfo` hints struct for IPv4 TCP/IP stream sockets.
+ */
+inline const auto& ipv4_hints()
+{
+  static addrinfo hints{0, AF_INET, SOCK_STREAM, IPPROTO_TCP /* or 0 */};
+  return hints;
+}
+
+/**
+ * Return `addrinfo` hints struct for IPv6 TCP/IP stream sockets.
+ */
+inline const auto& ipv6_hints()
+{
+  static addrinfo hints{0, AF_INET6, SOCK_STREAM, 0};
+  return hints;
+}
+
+/**
+ * Return a list of `addrinfo` structs for the given host and service.
+ *
+ * @param host Numerical IP host address or network host name
+ * @param service Service name, e.g. "https", or a port number, e.g. "443"
+ * @param hints `addrinfo` hints structure (see getaddrinfo(3) for details)
+ * @returns `unique_addrinfo` list of `addrinfo` structs
+ */
+inline auto getaddrinfo(
+  std::string_view host, std::string_view service, const addrinfo& hints)
+{
+  return getaddrinfo(host.data(), service.data(), &hints);
+}
+
+/**
+ * Return a list of `addrinfo` structs for the given host and port.
+ *
+ * @param host Numerical IP host address or network host name
+ * @param port Port number in host byte order, e.g. `443`
+ * @param hints `addrinfo` hints structure (see getaddrinfo(3) for details)
+ * @returns `unique_addrinfo` list of `addrinfo` structs
+ */
+inline auto getaddrinfo(
+  std::string_view host, inet_port_type port, const addrinfo& hints)
+{
+  return getaddrinfo(host.data(), std::to_string(port).c_str(), &hints);
+}
+
+/**
+ * Return a list of IPv4 `addrinfo` structs for the given host and port.
+ *
+ * @param host Numerical IP host address or network host name
+ * @param port Port number in host byte order, e.g. `443`
+ * @returns `unique_addrinfo` list of `addrinfo` structs
+ */
+inline auto getaddrinfo(std::string_view host, inet_port_type port)
+{
+  return getaddrinfo(host, port, ipv4_hints());
 }
 
 /**
