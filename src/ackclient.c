@@ -82,7 +82,7 @@ PDNNET_ARG_MAIN
   memcpy(&serv_addr, addrs->ai_addr, sizeof *addrs->ai_addr);
   freeaddrinfo(addrs);
   // attempt connection
-  if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
+  if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof serv_addr) < 0)
     PDNNET_ERRNO_EXIT(errno, "Could not connect to socket");
   // read MESSAGE_BUFFER_SIZE - 1 chars
   char buffer[MESSAGE_BUFFER_SIZE];
