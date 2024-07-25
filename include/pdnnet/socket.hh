@@ -666,21 +666,21 @@ private:
  *
  * Currently only supports `sockaddr_in`, `sockaddr_in6` address types.
  *
- * @tparam AddressType Socket address type
+ * @tparam AddrType Socket address type
  */
-template <typename AddressType>
+template <typename AddrType>
 struct is_addr_supported : std::bool_constant<
-  std::is_same_v<AddressType, sockaddr_in> ||
-  std::is_same_v<AddressType, sockaddr_in6>
+  std::is_same_v<AddrType, sockaddr_in> ||
+  std::is_same_v<AddrType, sockaddr_in6>
 > {};
 
 /**
  * Boolean helper for checking supported socket address types.
  *
- * @tparam AddressType Socket address type
+ * @tparam AddrType Socket address type
  */
-template <typename AddressType>
-inline constexpr bool is_addr_supported_v = is_addr_supported<AddressType>::value;
+template <typename AddrType>
+inline constexpr bool is_addr_supported_v = is_addr_supported<AddrType>::value;
 
 #ifdef PDNNET_HAS_CC_20
 /**
@@ -707,7 +707,7 @@ concept inet_sockaddr = is_addr_supported_v<T>;
 /**
  * Perform a blocking accept of the next connection in the client queue.
  *
- * @tparam AddressType Socket address type
+ * @tparam AddrType Socket address type
  *
  * @param handle Socket handle
  * @param addr Socket address structure, e.g. `sockaddr_in`, `sockaddr_in6`,
@@ -715,8 +715,8 @@ concept inet_sockaddr = is_addr_supported_v<T>;
  * @param addr_len `socklen_t` that will receive the size of the socket address
  * @returns `unique_socket` managing the client socket
  */
-template <PDNNET_INET_SOCKADDR(AddressType)>
-inline auto accept(socket_handle handle, AddressType& addr, socklen_t& addr_len)
+template <PDNNET_INET_SOCKADDR(AddrType)>
+inline auto accept(socket_handle handle, AddrType& addr, socklen_t& addr_len)
 {
   // input address length, i.e. sizeof addr
   socklen_t addr_len_in = sizeof addr;
@@ -742,15 +742,15 @@ inline auto accept(socket_handle handle, AddressType& addr, socklen_t& addr_len)
  *
  * A more convenient overload of `accept` that does not require struct size.
  *
- * @tparam AddressType Socket address type
+ * @tparam AddrType Socket address type
  *
  * @param handle Socket handle
  * @param addr Socket address structure, e.g. `sockaddr_in`, `sockaddr_in6`,
  *  that will receive the address of the peer (client) socket
  * @returns `unique_socket` managing the client socket
  */
-template <PDNNET_INET_SOCKADDR(AddressType)>
-inline auto accept(socket_handle handle, AddressType& addr)
+template <PDNNET_INET_SOCKADDR(AddrType)>
+inline auto accept(socket_handle handle, AddrType& addr)
 {
   socklen_t addr_len = sizeof addr;
   return accept(handle, addr, addr_len);
@@ -782,14 +782,14 @@ inline auto accept(socket_handle handle)
  *
  * On error, `errno` (*nix) or `WSAGetLastError` (Windows) should be checked.
  *
- * @tparam AddressType Socket address type
+ * @tparam AddrType Socket address type
  *
  * @param handle Socket handle
  * @param addr Socket address structure, e.g. `sockaddr_in`, `sockaddr_in6`
  * @returns `true` on success, `false` on error
  */
-template <PDNNET_INET_SOCKADDR(AddressType)>
-inline bool bind(socket_handle handle, const AddressType& addr) noexcept
+template <PDNNET_INET_SOCKADDR(AddrType)>
+inline bool bind(socket_handle handle, const AddrType& addr) noexcept
 {
 #if defined(_WIN32)
   if (
@@ -813,14 +813,14 @@ inline bool bind(socket_handle handle, const AddressType& addr) noexcept
  *
  * @note Currently only supports `sockaddr_in`, `sockaddr_in6` address types.
  *
- * @tparam AddressType Socket address type
+ * @tparam AddrType Socket address type
  *
  * @param handle Socket handle
  * @param addr Socket address structure, e.g. `sockaddr_in`, `sockaddr_in6`
  * @returns `true` on success, `false` on error
  */
-template <PDNNET_INET_SOCKADDR(AddressType)>
-inline bool connect(socket_handle handle, const AddressType& addr) noexcept
+template <PDNNET_INET_SOCKADDR(AddrType)>
+inline bool connect(socket_handle handle, const AddrType& addr) noexcept
 {
 #if defined(_WIN32)
   if (
@@ -868,14 +868,14 @@ inline bool listen(socket_handle handle, unsigned int max_pending) noexcept
  *
  * On error, `errno` (*nix) or `WSAGetLastError` (Windows) should be checked.
  *
- * @tparam AddressType Socket address type
+ * @tparam AddrType Socket address type
  *
  * @param handle Socket handle
  * @param addr Socket address structure, e.g. `sockaddr_in`, `sockaddr_in6`
  * @returns `true` on success, `false` on error
  */
-template <PDNNET_INET_SOCKADDR(AddressType)>
-inline bool getsockname(socket_handle handle, AddressType& addr) noexcept
+template <PDNNET_INET_SOCKADDR(AddrType)>
+inline bool getsockname(socket_handle handle, AddrType& addr) noexcept
 {
   // note: sizeof(T&) == sizeof(T)
   socklen_t addr_size = sizeof addr;
