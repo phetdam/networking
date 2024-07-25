@@ -733,12 +733,11 @@ public:
     if (status == 1)
       return {};
     // otherwise, failure. use SSL_get_error to get TLS layer error code
-    auto ssl_error = SSL_get_error(layer_, status);
+    auto ssl_error = openssl_ssl_error_string(SSL_get_error(layer_, status));
     // 0 for controlled failure, otherwise fatal
     if (!status)
-      return
-        "Controlled TLS handshake error: " + openssl_ssl_error_string(ssl_error);
-    return "Fatal TLS handshake error: " + openssl_ssl_error_string(ssl_error);
+      return "Controlled TLS handshake error: " + ssl_error;
+    return "Fatal TLS handshake error: " + ssl_error;
   }
 
 private:
