@@ -1027,7 +1027,7 @@ inline bool wait_pollin(
  * pdnnet::unique_socket socket{AF_INET, SOCK_STREAM};
  * pdnnet::socket_reader reader{socket};
  * std::cout << reader;
- * // reader.write(std::cout);
+ * // reader(std::cout);
  * // auto output = reader.operator std::string();
  * @endcode
  *
@@ -1088,7 +1088,7 @@ public:
    * @returns Optional empty on success, with error message on failure
    */
   template <typename CharT, typename Traits>
-  optional_error write(std::basic_ostream<CharT, Traits>& out) const
+  optional_error operator()(std::basic_ostream<CharT, Traits>& out) const
   {
     // number of bytes read
     ssize_type n_read;
@@ -1135,7 +1135,7 @@ public:
   operator std::basic_string<CharT, Traits>() const
   {
     std::basic_stringstream<CharT, Traits> ss;
-    write(ss).throw_on_error();
+    (*this)(ss).throw_on_error();
     return ss.str();
   }
 
@@ -1159,7 +1159,7 @@ template <typename CharT, typename Traits>
 inline auto& operator<<(
   std::basic_ostream<CharT, Traits>& out, const socket_reader& reader)
 {
-  reader.write(out).throw_on_error();
+  reader(out).throw_on_error();
   return out;
 }
 
@@ -1239,7 +1239,7 @@ public:
    * @returns Optional empty on success, with error message on failure
    */
   template <typename CharT, typename Traits>
-  optional_error read(std::basic_string_view<CharT, Traits> text) const
+  optional_error operator()(std::basic_string_view<CharT, Traits> text) const
   {
     // remaining bytes to send, bytes last written, total bytes sent
     auto n_remain = sizeof(CharT) * text.size();
@@ -1285,9 +1285,9 @@ public:
    * @returns Optional empty on success, with error message on failure
    */
   template <typename CharT, typename Traits>
-  auto read(const std::basic_string<CharT, Traits>& text) const
+  auto operator()(const std::basic_string<CharT, Traits>& text) const
   {
-    return read(static_cast<std::basic_string_view<CharT, Traits>>(text));
+    return (*this)(static_cast<std::basic_string_view<CharT, Traits>>(text));
   }
 
   /**
@@ -1299,9 +1299,9 @@ public:
    * @returns Optional empty on success, with error message on failure
    */
   template <typename CharT>
-  auto read(const CharT* text) const
+  auto operator()(const CharT* text) const
   {
-    return read(std::basic_string_view{text});
+    return (*this)(std::basic_string_view{text});
   }
 
   /**
@@ -1314,11 +1314,11 @@ public:
    * @returns Optional empty on success, with error message on failure
    */
   template <typename CharT>
-  auto read(const CharT* buf, std::size_t size) const
+  auto operator()(const CharT* buf, std::size_t size) const
   {
     // handle void buffers by treating them as const char buffers
     using char_type = std::conditional_t<std::is_same_v<CharT, void>, char, CharT>;
-    return read(std::basic_string_view{static_cast<const char_type*>(buf), size});
+    return (*this)(std::basic_string_view{static_cast<const char_type*>(buf), size});
   }
 
   /**
@@ -1331,9 +1331,9 @@ public:
    * @returns Optional empty on success, with error message on failure
    */
   template <typename CharT, typename Traits>
-  auto read(std::basic_stringstream<CharT, Traits>& in) const
+  auto operator()(std::basic_stringstream<CharT, Traits>& in) const
   {
-    return read(in.str());
+    return (*this)(in.str());
   }
 
   /**
@@ -1349,7 +1349,7 @@ public:
    * @returns Optional empty on success, with error message on failure
    */
   template <typename CharT, typename Traits>
-  auto read(std::basic_istream<CharT, Traits>& in) const
+  auto operator()(std::basic_istream<CharT, Traits>& in) const
   {
     std::basic_string<CharT, Traits> line;
     std::basic_stringstream<CharT, Traits> ss;
@@ -1357,7 +1357,7 @@ public:
     while (std::getline(in, line) && !in.eof())
       ss << line << in.widen('\n');
     // write contents all at once to socket
-    return read(ss);
+    return (*this)(ss);
   }
 
 private:
@@ -1379,7 +1379,7 @@ template <typename CharT, typename Traits>
 inline auto& operator>>(
   std::basic_istream<CharT, Traits>& in, const socket_writer& writer)
 {
-  writer.read(in).throw_on_error();
+  writer(in).throw_on_error();
   return in;
 }
 
@@ -1397,7 +1397,7 @@ template <typename CharT, typename Traits>
 inline auto& operator>>(
   std::basic_stringstream<CharT, Traits>& in, const socket_writer& writer)
 {
-  writer.read(in).throw_on_error();
+  writer(in).throw_on_error();
   return in;
 }
 

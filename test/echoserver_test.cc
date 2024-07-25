@@ -227,7 +227,7 @@ TEST_F(SingleConnectionTest, Test)
   // write data to server
   std::string data{"hello world"};
   {
-    auto err = pdnnet::client_writer{client}.read(data.c_str());
+    auto err = pdnnet::client_writer{client}(data.c_str());
     ASSERT_FALSE(err) << *err;
   }
   // block until server response
@@ -284,7 +284,7 @@ std::string echo_client_connect(
   }
   // write message to server
   {
-    auto err = pdnnet::client_writer{client}.read(message);
+    auto err = pdnnet::client_writer{client}(message);
     if (err)
       return *err;
   }

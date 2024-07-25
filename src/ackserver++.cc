@@ -85,7 +85,7 @@ void handle_client(pdnnet::socket_handle sockfd)
   }
   // write our acknowledgment message
   // TODO: a write() counterpart to read() would be less verbose
-  pdnnet::socket_writer{socket}.read("Acknowledged message received");
+  pdnnet::socket_writer{socket}("Acknowledged message received");
 }
 
 /**
