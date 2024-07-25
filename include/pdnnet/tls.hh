@@ -26,8 +26,13 @@
 #include <security.h>
 #endif  // _WIN32
 
+#include <cstdint>
+#include <memory>
 #include <optional>
+#include <ostream>
+#include <stdexcept>
 #include <string>
+#include <string_view>
 
 #include "pdnnet/error.hh"
 #include "pdnnet/platform.h"
@@ -368,9 +373,9 @@ inline optional_error acquire_schannel_creds(
   );
   // if failure, return error string
   if (status != SEC_E_OK)
-    return pdnnet::windows_error(status);
+    return windows_error(status);
   // otherwise move + return nothing
-  cred = pdnnet::unique_cred_handle{raw_cred};
+  cred = unique_cred_handle{raw_cred};
   return {};
 }
 #endif  // _WIN32
@@ -742,6 +747,246 @@ public:
 
 private:
   SSL* layer_;
+};
+
+/**
+ * TLS reader/writer CRTP base class.
+ *
+ * Allows setting the TLS layer and some shared members.
+ *
+ * @note We use CRTP here because otherwise the named parameter idiom usage of
+ *  returning `*this` results in derived classes returning base class refs.
+ *
+ * @tparam Impl TLS reader/writer implementation class
+ */
+template <typename Impl>
+class tls_reader_writer_base {
+public:
+  /**
+   * Ctor.
+   *
+   * @param layer TLS connection layer handle
+   */
+  tls_reader_writer_base(SSL* layer) noexcept
+    : layer_{layer}, allow_retry_{true}, message_sink_{}
+  {}
+
+  /**
+   * Return TLS connection layer handle.
+   */
+  auto layer() const noexcept { return layer_; }
+
+  /**
+   * Indicate if TLS read/write retries are allowed.
+   */
+  auto allow_retry() const noexcept { return allow_retry_; }
+
+  /**
+   * Return pointer to the message sink for any messages (can be `nullptr`).
+   */
+  auto message_sink() const noexcept { return message_sink_; }
+
+  /**
+   * Enable or disable TLS read/write retries.
+   *
+   * For OpenSSL, a retryable write is when the `SSL_write` error retrieved via
+   * `SSL_get_error` is `SSL_ERROR_WANT_WRITE`. A retryable read is when the
+   * `SSL_read` error retrieved via `SSL_get_error` is `SSL_ERROR_WANT_READ`.
+   *
+   * @param retry `true` to allow retrying reads/writes, `false` to disallow
+   * @returns `*this` to allow method chaining
+   */
+  auto& allow_retry(bool retry) noexcept
+  {
+    allow_retry_ = retry;
+    return *static_cast<Impl*>(this);
+  }
+
+  /**
+   * Set or unset the message sink.
+   *
+   * @param sink Address to an output stream
+   * @returns `*this` to allow method chaining
+   */
+  auto& message_sink(std::ostream* sink) noexcept
+  {
+    message_sink_ = sink;
+    return *static_cast<Impl*>(this);
+  }
+
+  /**
+   * Set the message sink.
+   *
+   * This is a convenience overload to avoid using the address-of operator.
+   *
+   * @param sink Output stream
+   * @returns `*this` to allow method chaining
+   */
+  auto& message_sink(std::ostream& sink) noexcept
+  {
+    return message_sink(&sink);
+  }
+
+private:
+  SSL* layer_;
+  bool allow_retry_;
+  std::ostream* message_sink_;
+};
+
+/**
+ * TLS writer class for abstracting TLS socket writes.
+ */
+class tls_writer : public tls_reader_writer_base<tls_writer> {
+public:
+  // note: class name injection works with CRTP here
+  using tls_reader_writer_base::tls_reader_writer_base;
+
+  /**
+   * Write string view contents to socket.
+   *
+   * @tparam CharT Char type
+   * @tparam Traits Char traits
+   *
+   * @param text String view to read input from
+   * @returns Optional empty on success, with error message on failure
+   */
+  template <typename CharT, typename Traits>
+  optional_error operator()(std::basic_string_view<CharT, Traits> text) const
+  {
+    // total and remaining bytes to write
+    auto n_total = sizeof(CharT) * text.size();
+    auto n_remain = n_total;
+    // if total is too large, error
+    if (n_total > INT_MAX)
+      return "Message length " + std::to_string(n_total) +
+        " exceeds max allowed length " + std::to_string(INT_MAX);
+    // until done, write bytes to server through TLS layer
+    while (n_remain) {
+      auto n_written = SSL_write(
+        layer(),
+        text.data() + (n_total - n_remain),
+        static_cast<int>(n_remain)
+      );
+      // unsucessful, returned zero
+      if (n_written <= 0) {
+        auto err = SSL_get_error(layer(), n_written);
+        // write is retryable
+        if (err == SSL_ERROR_WANT_WRITE) {
+          // no retry allowed
+          if (!allow_retry())
+            return "TLS write retryable but writer has disabled retries";
+          // non-null sink
+          if (message_sink())
+            *message_sink() << "TLS write failed: retrying..." << std::endl;
+          continue;
+        }
+        // else give up
+        return openssl_ssl_error_string(err, "TLS write failed");
+      }
+      // decrement remaining
+      n_remain -= n_written;
+    }
+    return {};
+  }
+
+  /**
+   * Write string contents to socket.
+   *
+   * @note Overload necessary since implicit conversions are not deduced.
+   *
+   * @tparam CharT Char type
+   * @tparam Traits Char traits
+   *
+   * @param text String to read input from
+   * @returns Optional empty on success, with error message on failure
+   */
+  template <typename CharT, typename Traits>
+  auto operator()(const std::basic_string<CharT, Traits>& text) const
+  {
+    return (*this)(static_cast<std::basic_string_view<CharT, Traits>>(text));
+  }
+};
+
+/**
+ * TLS reader class for abstracting TLS socket reads.
+ *
+ * Since a `unique_ptr` is managing the buffer, if one opts to bind the reader
+ * to a name, to prevent copy ctor selection one can use `std::move`:
+ *
+ * @code{.cc}
+ * auto reader = std::move(pdnnet::tls_reader{layer}.message_sink(std::cerr));
+ * @endcode
+ *
+ * The alternative is temporary lifetime extension via `auto&&`:
+ *
+ * @code{.cc}
+ * auto&& reader = pdnnet::tls_reader{layer}.message_sink(std::cerr);
+ * @endcode
+ */
+class tls_reader : public tls_reader_writer_base<tls_reader> {
+public:
+  /**
+   * Ctor.
+   *
+   * @param layer TLS connection layer handle
+   * @param buf_size Read buffer size, i.e. max number of bytes per read
+   */
+  tls_reader(SSL* layer, std::size_t buf_size = 512U)
+    : tls_reader_writer_base(layer),
+      buf_size_{buf_size},
+      buf_{std::make_unique<decltype(buf_)::element_type[]>(buf_size_)}
+  {
+    // buffer size cannot exceed INT_MAX since SSL_read uses int
+    if (buf_size_ > INT_MAX)
+      throw std::invalid_argument{"buf_size parameter cannot exceed INT_MAX"};
+  }
+
+  /**
+   * Return size of reader buffer.
+   */
+  auto buf_size() const noexcept { return buf_size_; }
+
+  /**
+   * Read all received messages bytes and write them to a stream.
+   *
+   * @note Under HTTP standard the socket read end is not automatically closed.
+   *
+   * @tparam CharT Char type
+   * @tparam Traits Char traits
+   */
+  template <typename CharT, typename Traits>
+  optional_error operator()(std::basic_ostream<CharT, Traits>& out) const
+  {
+    // read chunks through layer until done
+    do {
+      auto n_read = SSL_read(layer(), buf_.get(), static_cast<int>(buf_size_));
+      // if unsuccessful, continue if we can retry
+      if (n_read <= 0) {
+        auto err = SSL_get_error(layer(), n_read);
+        // can read some more, just retry
+        if (err == SSL_ERROR_WANT_READ) {
+          // no retry allowed
+          if (!allow_retry())
+            return "TLS read retryable but reader has disabled retries";
+          // non-null sink
+          if (message_sink())
+            *message_sink() << "TLS read failed: retrying..."  << std::endl;
+          continue;
+        }
+        // else give up
+        return openssl_ssl_error_string(err, "TLS read failed");
+      }
+      // read is successful so write (assumes no ragged reads)
+      out.write(reinterpret_cast<const CharT*>(buf_.get()), n_read / sizeof(CharT));
+    }
+    while (SSL_has_pending(layer()));
+    // done, no error
+    return {};
+  }
+
+private:
+  std::size_t buf_size_;
+  std::unique_ptr<unsigned char[]> buf_;
 };
 #endif  // PDNNET_UNIX
 
