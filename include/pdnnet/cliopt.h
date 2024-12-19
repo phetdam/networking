@@ -11,18 +11,20 @@
  * Configuring the available command-line options and their possible defaults
  * is done by defining macros before including this header. For example, for an
  * option `<ARG>`, define `PDNNET_ADD_CLIOPT_<ARG>` to enable option parsing
- * and to print the option as part of the usage output. Some options have
- * defaults that can be redefined by defining `PDNNET_CLIOPT_<ARG>_DEFAULT` to
- * the appropriate value, usually an integral value or string literal.
+ * and to print the option as part of the usage output.
+ *
+ * Some options have defaults that can be redefined by defining the
+ * `PDNNET_CLIOPT_<ARG>_DEFAULT` macro to the appropriate value, usually an
+ * integral value or string literal, but also another user-defined C type.
  *
  * Below are the available command-line options.
- *  VERBOSE
- *  HOST
- *  PORT
- *  PATH
- *  MESSAGE_BYTES
- *  MAX_CONNECT
- *  TIMEOUT
+ * - `VERBOSE`
+ * - `HOST`
+ * - `PORT`
+ * - `PATH`
+ * - `MESSAGE_BYTES`
+ * - `MAX_CONNECT`
+ * - `TIMEOUT`
  */
 
 #ifndef PDNNET_CLIOPT_H_
@@ -74,43 +76,47 @@ static bool PDNNET_CLIOPT(print_usage) = false;
 #define PDNNET_ARGV argv
 
 /**
+ * @file cliopt.h
+ *
  * Variables and defaults for command-line arguments should be done as follows.
  *
  * Control the definitions via macro definition before including the header.
  * For an argument `<ARG>`, we list the user-definable macros below.
  *
- * `PDNNET_ADD_CLIOPT_<ARG>`
+ * - `PDNNET_ADD_CLIOPT_<ARG>`:
  *    Indicate that the program should accept this command-line option. If
  *    specified, the option will be parsed and show up in the help output.
- * `PDNNET_CLIOPT_<ARG>_DEFAULT`
+ * - `PDNNET_CLIOPT_<ARG>_DEFAULT`:
  *    Default value for the command-line option. Not all command-line options
  *    have default values, so this may not be necessary for each `<ARG>`.
- * `PDNNET_CLIOPT_<ARG>_MAX`
+ * - `PDNNET_CLIOPT_<ARG>_MAX`:
  *    Maximum value for an arithmetic-valued command-line option. Not all
  *    command-line options have maximum values and should be defined as needed.
  *
  * Below are additional macros that are defined when `PDNNET_CLIOPT_<ARG>` are
  * defined, but which should not be redefined by the user. Any macros not
  * documented below are to be considered internal and should not be redefined.
+ *
  * These should all be defined in a `pdnnet/cliopt/opt_<arg>.h` header, where
  * `<arg>` is just the lowercase form of `<ARG>`.
  *
- * `PDNNET_CLIOPT_<ARG>_SHORT_OPTION`
+ * - `PDNNET_CLIOPT_<ARG>_SHORT_OPTION`:
  *    String literal for the short option flag for `<ARG>`, e.g. `"-p"`
- * `PDNNET_CLIOPT_<ARG>_OPTION`
+ * - `PDNNET_CLIOPT_<ARG>_OPTION`:
  *    String literal for the long option flag for `<ARG>`, e.g. `"--port"`
- * `PDNNET_CLIOPT_<ARG>_ARG_NAME`
+ * - `PDNNET_CLIOPT_<ARG>_ARG_NAME`:
  *    String literal for the option's argument name for `<ARG>`, e.g. `"PORT"`.
  *    Not all command-line options will take arguments so this may not be
  *    defined for each particular `<ARG>` option.
- * `PDNNET_CLIOPT_<ARG>_USAGE`
- *    User-defined help text for the specified command-line option. Must start
- *    with two spaces, the short and long options separated by ", ", another
- *    space, the respective `PDNNET_CLIOPT_<ARG>_ARG_NAME` if any, possibly
- *    encased in square brackets if optional. If there is not enough room to
- *    put the usage on the same length starting from the 24th column, a newline
- *    should be added and then all usage justified from the 24th column. When
- *    `PDNNET_ADD_CLIOPT_<ARG>` is not defined, this should be defined as "".
+ * - `PDNNET_CLIOPT_<ARG>_USAGE`:
+ *    User-defined help text for the specified command-line option.
+ *    - Must start with two spaces, the short and long options separated by
+ *      ", ", another space, the respective `PDNNET_CLIOPT_<ARG>_ARG_NAME` if
+ *      any, possibly encased in square brackets if optional.
+ *    - If there is not enough room to put the usage on the same length
+ *      starting from the 24th column, a newline should be added and then all
+ *      usage justified from the 24th column. When `PDNNET_ADD_CLIOPT_<ARG>` is
+ *      not defined, this should simply be defined as "".
  *
  * To parse the value (if any) from a command-line argument, one may also need
  * to define a static function with the following signature:
