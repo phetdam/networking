@@ -30,6 +30,11 @@ option(FETCH_GTEST "Use FetchContent to build local Google Test copy" OFF)
 
 # check if multi-config generator
 get_property(PDNNET_IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+if(PDNNET_IS_MULTI_CONFIG)
+    message(STATUS "Generator config: Multi")
+else()
+    message(STATUS "Generator config: Single")
+endif()
 
 # set some system information variables used for the version info. note the
 # relevant CMake variables used will be empty if used before project()
@@ -39,7 +44,7 @@ set(PDNNET_SYSTEM_ARCH ${CMAKE_SYSTEM_PROCESSOR})
 
 # only Debug and Release builds available
 set(PDNNET_BUILD_CONFIGS Debug Release)
-# use Debug as the default build
+# use Debug as the default build (ignored for multi-config)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif()
@@ -53,7 +58,7 @@ else()
 endif()
 # if single-config generator, print config
 if(NOT PDNNET_IS_MULTI_CONFIG)
-    message(STATUS "Config: ${CMAKE_BUILD_TYPE}")
+    message(STATUS "Build config: ${CMAKE_BUILD_TYPE}")
 endif()
 # print library config
 if(BUILD_SHARED_LIBS)
@@ -92,6 +97,9 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # add compile options
+# note: may want to do this after FetchContent for Google Test as otherwise the
+# compiler options can bleed in and cause Google Test compilation to fail since
+# they started building treating warnings as errors
 include(ConfigCompile)
 
 # top-level include directory
@@ -114,6 +122,7 @@ endif()
 # convenient for CI/CD workflows or when on a system like Windows where there's
 # no real way to "install" Google Test anywhere and GTEST_ROOT needs to be set.
 if(FETCH_GTEST)
+    message(STATUS "Google Test fetch: Yes")
     # URL prefix to the release archive
     set(
         GTEST_RELEASE_PREFIX
@@ -145,15 +154,24 @@ if(FETCH_GTEST)
     # indicate that Google Test was found
     set(PDNNET_GTEST_FOUND TRUE)
 else()
+    message(STATUS "Google Test fetch: No")
     find_package(GTest ${PDNNET_GTEST_VERSION})
     # for consistency when using FetchContent
     set(PDNNET_GTEST_FOUND GTest_FOUND)
 endif()
+# report whether we found Google Test or not
+if(PDNNET_GTEST_FOUND)
+    message(STATUS "Google Test version: ${GTest_VERSION}")
+else()
+    message(STATUS "Google Test version: None")
+endif()
 
-# find Doxygen to enable documentation building. if not found, can't build
+# find Doxygen to enable documentation building
 find_package(Doxygen 1.9)
-if(NOT DOXYGEN_FOUND)
-    set(ENABLE_DOCS OFF)
+if(DOXYGEN_FOUND)
+    message(STATUS "Doxygen version: ${DOXYGEN_VERSION}")
+else()
+    message(STATUS "Doxygen version: None")
 endif()
 # warn that dark mode docs will not be built if we don't have 1.9.5
 if(DOXYGEN_FOUND AND DOXYGEN_VERSION VERSION_LESS 1.9.5)
@@ -164,10 +182,10 @@ if(DOXYGEN_FOUND AND DOXYGEN_VERSION VERSION_LESS 1.9.5)
     )
 endif()
 # print status
-if(ENABLE_DOCS)
-    message(STATUS "docs target: Yes")
+if(DOXYGEN_FOUND AND ENABLE_DOCS)
+    message(STATUS "Build docs: Yes")
 else()
-    message(STATUS "docs target: No")
+    message(STATUS "Build docs: No")
 endif()
 
 add_subdirectory(include)
@@ -186,22 +204,16 @@ else()
 endif()
 
 # Doxygen config options
-set(DOXYGEN_HTML_COLORSTYLE "DARK")
-set(DOXYGEN_PREDEFINED "PDNNET_DOXYGEN")
-if(WIN32)
-    set(DOXYGEN_PREDEFINED ${DOXYGEN_PREDEFINED} "_WIN32")
-else()
-    set(DOXYGEN_PREDEFINED ${DOXYGEN_PREDEFINED} "PDNNET_UNIX")
-endif()
+include(pdnnet_doxygen_config)
 
 # build docs if able
-if(ENABLE_DOCS)
+if(DOXYGEN_FOUND AND ENABLE_DOCS)
     doxygen_add_docs(
         docs
         # headers
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         # specifying ALL will make this part of the default build target
-        COMMENT "Building documentation"
+        COMMENT "Building Doxygen documentation"
     )
 endif()
 

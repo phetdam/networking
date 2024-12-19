@@ -1,0 +1,23 @@
+cmake_minimum_required(VERSION ${CMAKE_MINIMUM_REQUIRED_VERSION})
+
+# CMake script to set up preferred Doxygen configuration
+
+set(DOXYGEN_HTML_COLORSTYLE "DARK")
+set(DOXYGEN_PREDEFINED "PDNNET_DOXYGEN")
+# ensure conditional compilation on platforms works correctl
+if(WIN32)
+    set(DOXYGEN_PREDEFINED ${DOXYGEN_PREDEFINED} "_WIN32")
+else()
+    set(DOXYGEN_PREDEFINED ${DOXYGEN_PREDEFINED} "PDNNET_UNIX")
+endif()
+# ensure the cliopt headers get documentation generated
+set(
+    DOXYGEN_PREDEFINED ${DOXYGEN_PREDEFINED}
+    PDNNET_ADD_CLIOPT_VERBOSE
+    PDNNET_ADD_CLIOPT_HOST
+    PDNNET_ADD_CLIOPT_PORT
+    PDNNET_ADD_CLIOPT_PATH
+    PDNNET_ADD_CLIOPT_MESSAGE_BYTES
+    PDNNET_ADD_CLIOPT_MAX_CONNECT
+    PDNNET_ADD_CLIOPT_TIMEOUT
+)
