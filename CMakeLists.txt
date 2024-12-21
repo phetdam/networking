@@ -212,6 +212,9 @@ if(DOXYGEN_FOUND AND ENABLE_DOCS)
         docs
         # headers
         ${CMAKE_CURRENT_SOURCE_DIR}/include
+        # main page
+        # TODO: rewrite the top-level README? we can only use Markdown
+        ${CMAKE_CURRENT_SOURCE_DIR}/docs/README.md
         # specifying ALL will make this part of the default build target
         COMMENT "Building Doxygen documentation"
     )
