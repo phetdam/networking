@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION ${CMAKE_MINIMUM_REQUIRED_VERSION})
 
 set(DOXYGEN_HTML_COLORSTYLE "DARK")
 set(DOXYGEN_PREDEFINED "PDNNET_DOXYGEN")
-# ensure conditional compilation on platforms works correctl
+# ensure conditional compilation on platforms works correctly
 if(WIN32)
     set(DOXYGEN_PREDEFINED ${DOXYGEN_PREDEFINED} "_WIN32")
 else()
