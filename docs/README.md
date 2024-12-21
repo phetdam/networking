@@ -12,9 +12,9 @@ The number of max connections and the port are hardcoded.
 #include <iostream>
 #include <thread>
 
-#include "pdnnet/echoserver.hh"
-#include "pdnnet/process.hh"
-#include "pdnnet/server.hh"
+#include <pdnnet/echoserver.hh>
+#include <pdnnet/process.hh>
+#include <pdnnet/server.hh>
 
 int main()
 {
