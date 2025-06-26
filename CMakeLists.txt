@@ -27,6 +27,12 @@ option(
 )
 option(PDNNET_FETCH_GTEST "Use FetchContent to build local Google Test copy" OFF)
 
+# update CMake module path for our CMake modules
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
+# include our CMake modules
+include(pdnnet_config_compile)
+
 # find Git
 find_package(Git 2.30)
 if(Git_FOUND)
@@ -102,14 +108,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-# update CMake module path for our CMake scripts
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-
-# add compile options
+# configure compile options
 # note: may want to do this after FetchContent for Google Test as otherwise the
 # compiler options can bleed in and cause Google Test compilation to fail since
 # they started building treating warnings as errors
-include(ConfigCompile)
+pdnnet_config_compile()
 
 # top-level include directory
 set(PDNNET_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
