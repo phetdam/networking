@@ -83,15 +83,6 @@ public:
   bool running() const noexcept { return running_; }
 
   /**
-   * Return const reference to the thread deque.
-   *
-   * @todo Consider removing this function (unnecessary).
-   *
-   * @note This function is not thread-safe when the server is running.
-   */
-  const auto& thread_queue() const noexcept { return thread_queue_; }
-
-  /**
    * Return max number of server threads that can exist at any time.
    *
    * @note Value is unspecified unless server is running.
@@ -135,6 +126,8 @@ public:
    * Return current number of threads in the thread deque.
    *
    * @todo Consider making this function thread-safe or removing it.
+   *
+   * @par
    *
    * @note This function is not thread-safe.
    */
