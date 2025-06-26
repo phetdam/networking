@@ -32,9 +32,9 @@ if(MSVC)
         /wd5045 /wd5105
         # /Od applied by default when using Debug config, /O2 for Release
     )
-    # no ENABLE_ASAN for Windows yet. have had problems before getting it to
-    # work nicely with Google Test and the Windows implementation is missing
-    # LeakSanitizer that is available for *nix.
+    # no PDNNET_ENABLE_ASAN for Windows yet. have had problems before getting
+    # it to work nicely with Google Test and the Windows implementation is
+    # missing LeakSanitizer that is available for *nix.
 # Clang/GCC can accept most of the same options
 else()
     add_compile_options(
@@ -43,10 +43,12 @@ else()
         $<IF:$<CONFIG:Release>,-O3,-O0> $<$<NOT:$<CONFIG:Release>>:-g>
     )
     # enable AddressSanitizer use
-    if(ENABLE_ASAN)
-        message(STATUS "AddressSanitizer (-fsanitize=address) enabled")
+    if(PDNNET_ENABLE_ASAN)
+        message(STATUS "Enable ASan: Yes")
         # must specifiy for both compile and link
         add_compile_options(-fsanitize=address)
         add_link_options(-fsanitize=address)
+    else()
+        message(STATUS "Enable ASan: No")
     endif()
 endif()

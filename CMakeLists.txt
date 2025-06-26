@@ -18,15 +18,24 @@ project(
 )
 
 option(BUILD_SHARED_LIBS "Build libraries as shared" ON)
-option(ENABLE_ASAN "Enable AddressSanitizer instrumentation" OFF)
-option(ENABLE_DOCS "Enable building HTML docs target with Doxygen" ON)
+option(PDNNET_ENABLE_ASAN "Enable AddressSanitizer instrumentation" OFF)
 # provide an extra $<CONFIG> subdirectory for lib and bin on Windows. this is
 # on by default; we don't support flat install with "d" suffix on Windows yet
 option(
     PDNNET_INSTALL_MULTI_CONFIG
     "Add per-config lib + bin subdirectories for Windows installations" ON
 )
-option(FETCH_GTEST "Use FetchContent to build local Google Test copy" OFF)
+option(PDNNET_FETCH_GTEST "Use FetchContent to build local Google Test copy" OFF)
+
+# find Git
+find_package(Git 2.30)
+if(Git_FOUND)
+    message(STATUS "Git version: ${GIT_VERSION_STRING}")
+else()
+    message(STATUS "Git version: None")
+endif()
+
+# TODO: if Git found, get build info unless a release build is being done
 
 # check if multi-config generator
 get_property(PDNNET_IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
@@ -62,9 +71,9 @@ if(NOT PDNNET_IS_MULTI_CONFIG)
 endif()
 # print library config
 if(BUILD_SHARED_LIBS)
-    message(STATUS "Libraries: Shared")
+    message(STATUS "Build libraries: Shared")
 else()
-    message(STATUS "Libraries: Static")
+    message(STATUS "Build libraries: Static")
 endif()
 
 set(CMAKE_C_STANDARD 17)
@@ -121,7 +130,7 @@ endif()
 # find Google Test to enable testing. also allow use of FetchContent, which is
 # convenient for CI/CD workflows or when on a system like Windows where there's
 # no real way to "install" Google Test anywhere and GTEST_ROOT needs to be set.
-if(FETCH_GTEST)
+if(PDNNET_FETCH_GTEST)
     message(STATUS "Google Test fetch: Yes")
     # URL prefix to the release archive
     set(
@@ -181,12 +190,6 @@ if(DOXYGEN_FOUND AND DOXYGEN_VERSION VERSION_LESS 1.9.5)
 (require 1.9.5)"
     )
 endif()
-# print status
-if(DOXYGEN_FOUND AND ENABLE_DOCS)
-    message(STATUS "Build docs: Yes")
-else()
-    message(STATUS "Build docs: No")
-endif()
 
 add_subdirectory(include)
 add_subdirectory(src)
@@ -206,8 +209,8 @@ endif()
 # Doxygen config options
 include(pdnnet_doxygen_config)
 
-# build docs if able
-if(DOXYGEN_FOUND AND ENABLE_DOCS)
+# create documentation target
+if(DOXYGEN_FOUND)
     doxygen_add_docs(
         docs
         # headers
