@@ -128,7 +128,7 @@ protected:
     } \
     auto timeout() const \
     { \
-      using namespace std::chrono; \
+      using namespace std::chrono_literals; \
       /* extra parentheses allows use of chrono literals */ \
       static_assert((timeout_).count() > 0, "timeout must be positive"); \
       return timeout_; \
