@@ -28,6 +28,7 @@
 #include <stdexcept>
 #include <string_view>
 #include <thread>
+#include <utility>
 
 #include "pdnnet/error.hh"
 #include "pdnnet/features.h"
@@ -169,17 +170,13 @@ public:
         thread_queue_.front().join();
         thread_queue_.pop_front();
       }
-      // unneeded after previous block so release before passing to thread. if
-      // we release in the thread, cli_socket may be destructed before the
-      // actual release is done in the thread, so the descriptor will be bad
-      auto cli_sockfd = cli_socket.release();
       // emplace new running thread to manage client socket and connection. we
       // need to copy the socket handle instead of referencing to prevent
       // undefined behavior when the lambda is actually executed out of scope
       thread_queue_.emplace_back(
         std::thread{
           // own handle to automatically close later
-          [socket = unique_socket{cli_sockfd}]
+          [socket = std::move(cli_socket)]
           {
             // read from socket until there is no more to read + echo back
             std::stringstream stream;
