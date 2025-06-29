@@ -178,10 +178,9 @@ public:
       // undefined behavior when the lambda is actually executed out of scope
       thread_queue_.emplace_back(
         std::thread{
-          [cli_sockfd]
+          // own handle to automatically close later
+          [socket = unique_socket{cli_sockfd}]
           {
-            // own handle to automatically close later
-            unique_socket socket{cli_sockfd};
             // read from socket until there is no more to read + echo back
             std::stringstream stream;
             stream << socket_reader{socket};
