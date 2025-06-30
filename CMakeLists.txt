@@ -21,6 +21,7 @@ option(BUILD_SHARED_LIBS "Build libraries as shared" ON)
 option(PDNNET_ENABLE_ASAN "Enable AddressSanitizer instrumentation" OFF)
 # provide an extra $<CONFIG> subdirectory for lib and bin on Windows. this is
 # on by default; we don't support flat install with "d" suffix on Windows yet
+# TODO: remove this option since we use "d" suffix universally now
 option(
     PDNNET_INSTALL_MULTI_CONFIG
     "Add per-config lib + bin subdirectories for Windows installations" ON
@@ -116,7 +117,6 @@ pdnnet_config_compile()
 
 # top-level include directory
 set(PDNNET_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
-include_directories(${PDNNET_INCLUDE_DIR})
 
 # Google Test [minimum] version to use. allow user override
 if(NOT PDNNET_GTEST_VERSION)
@@ -222,47 +222,5 @@ if(DOXYGEN_FOUND)
         ${CMAKE_CURRENT_SOURCE_DIR}/docs/README.md
         # specifying ALL will make this part of the default build target
         COMMENT "Building Doxygen documentation"
-    )
-endif()
-
-# list of install targets
-set(
-    PDNNET_INSTALL_TARGETS
-    ackclient++ ackserver++ echoclient echoserver httpsclient pdnnet++
-)
-# on *nix, can add pdnnet library + the original C programs
-if(UNIX)
-    set(
-        PDNNET_INSTALL_TARGETS
-        ${PDNNET_INSTALL_TARGETS} ackclient ackserver pdnnet
-    )
-endif()
-
-# install rule on Windows
-if(WIN32)
-    # multi-config installation
-    if(PDNNET_INSTALL_MULTI_CONFIG)
-        install(
-            TARGETS ${PDNNET_INSTALL_TARGETS}
-            ARCHIVE DESTINATION lib/$<CONFIG>
-            LIBRARY DESTINATION lib/$<CONFIG>
-            RUNTIME DESTINATION bin/$<CONFIG>
-            PUBLIC_HEADER DESTINATION include/pdnnet
-        )
-    # flat installation. TODO: add "d" suffix to targets if doing flat install
-    else()
-        message(
-            FATAL_ERROR
-            "Flat installation with \"d\"-suffixed artifacts not supported yet"
-        )
-    endif()
-# typical flat *nix install
-else()
-    install(
-        TARGETS ${PDNNET_INSTALL_TARGETS}
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin
-        PUBLIC_HEADER DESTINATION include/pdnnet
     )
 endif()

@@ -23,22 +23,43 @@ if(UNIX)
 endif()
 # C++ toy acknowledgment client
 add_executable(ackclient++ ackclient++.cc)
+target_link_libraries(ackclient++ PRIVATE pdnnet++)
 # C++ toy acknowledgment server
 add_executable(ackserver++ ackserver++.cc)
+target_link_libraries(ackserver++ PRIVATE pdnnet++)
 # C++ toy echo client
 add_executable(echoclient echoclient.cc)
+target_link_libraries(echoclient PRIVATE pdnnet++)
 # C++ toy echo server
 add_executable(echoserver echoserver.cc)
+target_link_libraries(echoserver PRIVATE pdnnet++)
 # C++ toy HTTPS client
 add_executable(httpsclient httpsclient.cc)
-if(UNIX)
+target_link_libraries(httpsclient PRIVATE pdnnet++)
+# different platforms require different TLS libraries
+if(WIN32)
+    target_link_libraries(httpsclient PRIVATE secur32)
+else()  # UNIX
     target_link_libraries(httpsclient PRIVATE crypto ssl)
 endif()
-# on Windows, ws2_32 DLL is needed to use Windows Sockets
+# experimental programs
 if(WIN32)
-    target_link_libraries(ackclient++ PRIVATE ws2_32)
-    target_link_libraries(ackserver++ PRIVATE ws2_32)
-    target_link_libraries(echoclient PRIVATE ws2_32)
-    target_link_libraries(echoserver PRIVATE ws2_32)
-    target_link_libraries(httpsclient PRIVATE secur32 ws2_32)
+    add_executable(sspiclient sspiclient.cc)
+    target_link_libraries(sspiclient PRIVATE secur32 ws2_32)
+    add_executable(tls_client tls_client.c)
 endif()
+# list of portable executable targets
+set(
+    PDNNET_PROGRAMS
+        ackclient++
+        ackserver++
+        echoclient
+        echoserver
+        httpsclient
+)
+# note: ackclient, ackserver not available for Windows
+if(UNIX)
+    list(PREPEND PDNNET_PROGRAMS ackclient ackserver)
+endif()
+# install rule for all executable targets
+install(TARGETS ${PDNNET_PROGRAMS})

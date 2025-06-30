@@ -1,24 +1,27 @@
 cmake_minimum_required(VERSION ${CMAKE_MINIMUM_REQUIRED_VERSION})
 
-# C++ header-only library
+# pdnnet++: C++ header-only library
 add_library(pdnnet++ INTERFACE)
-# set public headers to install. cliopt.h and cliopt headers not public
-set(
-    PDNNET_PDNNETXX_PUBLIC_HEADERS
-    ${PDNNET_INCLUDE_DIR}/pdnnet/common.h
-    ${PDNNET_INCLUDE_DIR}/pdnnet/echoserver.hh
-    ${PDNNET_INCLUDE_DIR}/pdnnet/error.hh
-    ${PDNNET_INCLUDE_DIR}/pdnnet/features.h
-    ${PDNNET_INCLUDE_DIR}/pdnnet/memory.hh
-    ${PDNNET_INCLUDE_DIR}/pdnnet/platform.h
-    ${PDNNET_INCLUDE_DIR}/pdnnet/process.hh
-    ${PDNNET_INCLUDE_DIR}/pdnnet/server.hh
-    ${PDNNET_INCLUDE_DIR}/pdnnet/socket.hh
-    ${PDNNET_INCLUDE_DIR}/pdnnet/tls.hh
-    ${PDNNET_INCLUDE_DIR}/pdnnet/warnings.h
+add_library(pdnnet::pdnnet++ ALIAS pdnnet++)
+target_include_directories(
+    pdnnet++ INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
 )
-# note: must be quoted
-set_target_properties(
-    pdnnet++ PROPERTIES
-    PUBLIC_HEADER "${PDNNET_PDNNETXX_PUBLIC_HEADERS}"
+# on Windows, Windows Sockets 2 is part of the link interface
+if(WIN32)
+    target_link_libraries(pdnnet++ INTERFACE ws2_32)
+endif()
+# install rule for target
+install(TARGETS pdnnet++ EXPORT pdnnet_exports)
+# install rule for headers
+install(
+    DIRECTORY pdnnet
+    TYPE INCLUDE
+    # C and C++ headers
+    PATTERN "*.h"
+    PATTERN "*.hh"
+    # cliopt.h and cliopt headers are not public
+    PATTERN "cliopt.h" EXCLUDE
+    PATTERN "cliopt/*" EXCLUDE
 )
