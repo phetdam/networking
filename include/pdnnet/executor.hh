@@ -11,6 +11,7 @@
 #include <condition_variable>
 #include <deque>
 #include <functional>
+#include <future>
 #include <mutex>
 #include <stdexcept>
 #include <system_error>
@@ -20,6 +21,20 @@
 #include <vector>
 
 namespace pdnnet {
+
+namespace detail {
+
+/**
+ * Tag type for disambiguating overloads that will return a `std::future`.
+ */
+struct use_future_type {};
+
+}  // namespace detail
+
+/**
+ * Global for disambiguating overloads that return a `std::future`.
+ */
+constexpr detail::use_future_type use_future;
 
 /**
  * Thread-based task executor.
@@ -31,6 +46,22 @@ namespace pdnnet {
 class thread_executor {
 public:
   using task_type = std::function<void()>;
+
+  /**
+   * SFINAE helper to ensure a callable is convertible to `task_type`.
+   *
+   * @tparam F Nullary callable returning `void`
+   */
+  template <typename F>
+  using task_constraint = std::enable_if_t<std::is_invocable_r_v<void, F>>;
+
+  /**
+   * SFINAE helper for a callable we will get a future from.
+   *
+   * @tparam F Nullary callable
+   */
+  template <typename F>
+  using packaged_task_constraint = std::enable_if_t<std::is_invocable_v<F>>;
 
   /**
    * Default ctor.
@@ -148,7 +179,7 @@ public:
    *
    * @todo Decide whether posting tasks when not running is allowed.
    */
-  template <typename F, typename = std::enable_if_t<std::is_invocable_r_v<void, F>> >
+  template <typename F, typename = task_constraint<F> >
   auto& post(F&& func)
   {
     // post new task
@@ -160,6 +191,33 @@ public:
     // TODO: what if a thread that is already running a task is notified?
     cond_.notify_one();
     return *this;
+  }
+
+  /**
+   * Schedule a task for execution and retrieve a future for the result.
+   *
+   * @note This function is thread-safe.
+   *
+   * @warning If the executor is stopped before the task is run then calling
+   *  `wait()` or `get()` on the future will block indefinitely.
+   *
+   * @tparam F Nullary callable returning a non-void value.
+   */
+  template <typename F, typename = packaged_task_constraint<F>>
+  auto post(detail::use_future_type, F&& func)
+  {
+    // create packaged task from func + future we will return
+    std::packaged_task task{std::forward<F>(func)};
+    auto future = task.get_future();
+    // post task
+    {
+      std::lock_guard lk{mut_};
+      tasks_.push_back(std::move(task));
+    }
+    // notify a thread and return future
+    // TODO: what if a thread that is already running a task is notified?
+    cond_.notify_one();
+    return future;
   }
 
   /**
