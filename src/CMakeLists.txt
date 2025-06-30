@@ -42,12 +42,6 @@ if(WIN32)
 else()  # UNIX
     target_link_libraries(httpsclient PRIVATE crypto ssl)
 endif()
-# experimental programs
-if(WIN32)
-    add_executable(sspiclient sspiclient.cc)
-    target_link_libraries(sspiclient PRIVATE secur32 ws2_32)
-    add_executable(tls_client tls_client.c)
-endif()
 # list of portable executable targets
 set(
     PDNNET_PROGRAMS
