@@ -124,7 +124,7 @@ protected:
     } \
     auto max_pending() const noexcept \
     { \
-      return connections() - 1; \
+      return connections(); \
     } \
     auto timeout() const \
     { \
