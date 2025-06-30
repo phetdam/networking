@@ -200,7 +200,6 @@ add_subdirectory(src)
 # only add tests if Google Test was found
 if(PDNNET_GTEST_FOUND)
     enable_testing()
-    # no tests yet, uncomment later
     add_subdirectory(test)
 else()
     message(
