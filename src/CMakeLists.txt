@@ -56,4 +56,5 @@ if(UNIX)
     list(PREPEND PDNNET_PROGRAMS ackclient ackserver)
 endif()
 # install rule for all executable targets
+# TODO: maybe don't install them? they're not all that useful
 install(TARGETS ${PDNNET_PROGRAMS})
