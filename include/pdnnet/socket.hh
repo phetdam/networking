@@ -1370,7 +1370,7 @@ private:
 /**
  * Write input stream contents to socket.
  *
- * @param CharT Char type
+ * @tparam CharT Char type
  * @tparam Traits Char traits
  *
  * @param in Input stream to write
@@ -1388,7 +1388,7 @@ inline auto& operator>>(
 /**
  * Write input stream contents to socket.
  *
- * @param CharT Char type
+ * @tparam CharT Char type
  * @tparam Traits Char traits
  *
  * @param in String stream to write
