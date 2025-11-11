@@ -1,0 +1,35 @@
+/**
+ * pdnnet.css
+ *
+ * Doxygen CSS stylesheet overrides.
+ *
+ * Author: Derek Huang
+ * Copyright: MIT License
+ *
+ * Used with permission from the npyglue project's npyglue.css stylesheet.
+ */
+
+div.contents {
+	/* shorten content lines for easier reading */
+	width: 800px;
+	/* auto left + right margin enables centering of div content */
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.title {
+	/* make same width as div contents */
+	width: 800px;
+	/* use auto left and right margin to center title */
+	margin-left: auto;
+	margin-right: auto;
+}
+
+blockquote {
+	/* provide miniscule vertical padding to expand the box area */
+	padding-top: 1px;
+	padding-bottom: 1px;
+	/* expand vertical margins to prevent adjacent boxes from merging */
+	margin-top: 12px;
+	margin-bottom: 12px;
+}

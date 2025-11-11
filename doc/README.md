@@ -4,8 +4,8 @@ C/C++ networking examples for educational purposes.
 
 TBD.
 
-Here is a stripped version of the C++ `echoserver` program using `echoserver.hh`.
-The number of max connections and the port are hardcoded.
+Here is a stripped version of the C++ `echoserver` program using
+`echoserver.hh`. The number of max connections and the port are hardcoded.
 
 ```cpp
 #include <cstdlib>
