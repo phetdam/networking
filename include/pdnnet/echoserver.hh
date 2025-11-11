@@ -24,6 +24,8 @@
 
 #include <atomic>
 #include <deque>
+#include <exception>
+#include <future>
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
@@ -190,6 +192,45 @@ public:
     // reset state and finish
     reset_state();
     return EXIT_SUCCESS;
+  }
+
+  /**
+   * Start the server in a separate thread with the given parameters.
+   *
+   * This returns a `std::future` with a return value for `main()`.
+   *
+   * See the synchronous `start()` overload for details.
+   *
+   * @note This function is thread-safe.
+   *
+   * @param params Server parameters to use when starting
+   */
+  auto start(detail::async_tag, const server_params& params = {})
+  {
+    // promise and future
+    std::promise<decltype(start(params))> prom;
+    auto fut = prom.get_future();
+    // launch task
+    std::thread thread{
+      // params is copied as if it is a temporary it would be out of scope by
+      // the time the thread is done running the server loop
+      [this, params, prom = std::move(prom)]() mutable
+      {
+        // try to set the value with synchronous start() call
+        try {
+          prom.set_value(start(params));
+        }
+        // catch any exceptions so thread doesn't crash
+        catch (...) {
+          // set_exception() can throw std::future_error itself
+          try { prom.set_exception(std::current_exception()); }
+          catch (...) {}
+        }
+      }
+    };
+    // detach thread and return future referencing shared state
+    thread.detach();
+    return fut;
   }
 
   /**

@@ -35,6 +35,24 @@
 
 namespace pdnnet {
 
+namespace detail {
+
+/**
+ * Tag type representing async execution.
+ *
+ * @todo Move this to a different or new header.
+ */
+struct async_tag {};
+
+}  // namespace detail
+
+/**
+ * Tag global for disambiguating async overloads.
+ *
+ * @todo Move this to a different or new header.
+ */
+inline constexpr detail::async_tag async;
+
 /**
  * Helper class holding parameters used when starting a socket-based server.
  *
