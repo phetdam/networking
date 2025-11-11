@@ -57,15 +57,12 @@ PDNNET_ARG_MAIN
   pdnnet::echoserver server;
   // start server in new thread with given parameters. we need to do this so we
   // can print the state of the running server from the current thread
-  std::thread server_thread{
-    [&server]
-    {
-      auto params = pdnnet::server_params{}
-          .port(PDNNET_CLIOPT(port))
-          .max_pending(PDNNET_CLIOPT(max_connect));
-      server.start(params);
-    }
-  };
+  auto res =  server.start(
+    pdnnet::async,
+    pdnnet::server_params{}
+      .port(PDNNET_CLIOPT(port))
+      .max_pending(PDNNET_CLIOPT(max_connect))
+  );
   // wait until the server is running to prevent undefined member access
   while (!server.running());
   // on WSL Ubuntu 22.04.2 LTS we have to flush stdout otherwise the terminal
@@ -77,7 +74,6 @@ PDNNET_ARG_MAIN
   std::cout << pdnnet::getpid() << " " << PDNNET_PROGRAM_NAME <<
     ": max_threads=" << server.max_threads() << ", address=" <<
     server.dot_address() << ":" << server.port() << std::endl;
-  // join + return (unreachable)
-  server_thread.join();
-  return EXIT_SUCCESS;
+  // block for return value
+  return res.get();
 }

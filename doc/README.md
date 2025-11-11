@@ -22,16 +22,12 @@ int main()
   pdnnet::echoserver server;
   // start server in new thread with given parameters. we need to do this so we
   // can print the state of the running server from the current thread
-  std::thread server_thread{
-    [&server]
-    {
-      server.start(
-        pdnnet::server_params{}
-          .port(8888)
-          .max_pending(16)
-      );
-    }
-  };
+  auto res = server.start(
+    pdnnet::async,
+    pdnnet::server_params{}
+      .port(8888)
+      .max_pending(16)
+  );
   // wait until the server is running to prevent undefined member access
   while (!server.running());
   // on WSL Ubuntu 22.04.2 LTS we have to flush stdout otherwise the terminal
@@ -42,8 +38,7 @@ int main()
   // print address and port for debugging
   std::cout << pdnnet::getpid() << "max_threads=" << server.max_threads() <<
     ", address=" << server.dot_address() << ":" << server.port() << std::endl;
-  // join + return (unreachable)
-  server_thread.join();
-  return EXIT_SUCCESS;
+  // block for return value
+  return res.get();
 }
 ```
