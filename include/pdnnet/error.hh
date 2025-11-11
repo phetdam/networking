@@ -133,7 +133,7 @@ inline auto winsock_error(const std::string& message)
  * e.g. from `WSAGetLastError`, otherwise an `errno` value on *nix.
  *
  * @param err Socket error value
- * @param mesage Message to prefix the socket error description with
+ * @param message Message to prefix the socket error description with
  */
 inline auto socket_error(int err, const std::string& message)
 {
