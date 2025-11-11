@@ -25,10 +25,11 @@ int main()
   std::thread server_thread{
     [&server]
     {
-      auto params = pdnnet::server_params{}
-        .port(8888)
-        .max_pending(16);
-      server.start(params);
+      server.start(
+        pdnnet::server_params{}
+          .port(8888)
+          .max_pending(16)
+      );
     }
   };
   // wait until the server is running to prevent undefined member access
