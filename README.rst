@@ -52,15 +52,15 @@ To build release binaries for this project, simply use the command
 
 Simply typing ``./build.sh`` will build unoptimized binaries with debug symbols.
 
-By default, the ``pdnnnet`` support library is built as a shared library,
+By default, the ``pdnnet`` support library is built as a shared library,
 requiring that ``PDNNET_DLL`` be defined during compilation. To explicitly
-request that ``pdnnet`` be built as a static library, one should specify
-``-DBUILD_SHARED_LIBS=0``. E.g. to build release binaries with ``pdnnet`` built
-as a static library, one can use the command
+request that ``pdnnet`` be built as a static library, specify
+``-DBUILD_SHARED_LIBS=OFF``. E.g. to build release binaries with ``pdnnet``
+built as a static library, one can use the command
 
 .. code:: shell
 
-   ./build.sh -c Release -Ca -DBUILD_SHARED_LIBS=0
+   ./build.sh -c Release -Ca -DBUILD_SHARED_LIBS=OFF
 
 Windows
 ~~~~~~~
@@ -90,12 +90,12 @@ Currently, the Visual Studio toolset used will be whichever is the default.
 
 By default, the ``pdnnet`` support library is built as a shared library,
 requiring that ``PDNNET_DLL`` be defined during compilation. To explicitly
-request that ``pdnnet`` be built as a static library, one should specify
-``-DBUILD_SHARED_LIBS=0``. E.g. to build 32-bit release binaries with ``pdnnet``
-built as a static library, one can use the command
+request that ``pdnnet`` be built as a static library, specify
+``-DBUILD_SHARED_LIBS=OFF``. E.g. to build 32-bit release binaries with
+``pdnnet`` built as a static library, one can use the command
 
 .. code:: shell
 
-   build -c Release -Ca "-DBUILD_SHARED_LIBS=0"
+   build -c Release -Ca "-DBUILD_SHARED_LIBS=OFF"
 
 The extra double quotes are needed to prevent the ``=`` from confusing CMD.
