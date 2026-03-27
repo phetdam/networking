@@ -12,7 +12,7 @@ setlocal EnableDelayedExpansion
 :: program name, as any called label uses label name as %0
 set PROGNAME=%0
 :: default architecture, default build output prefix, default build config
-set BUILD_ARCH=x86
+set BUILD_ARCH=x64
 set BUILD_OUTPUT_PREFIX=build_windows
 set BUILD_CONFIG=Debug
 :: current action to take, argument parsing mode
