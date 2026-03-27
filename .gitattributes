@@ -1,0 +1,4 @@
+# ensure LF for most text files
+* text=auto
+# batch files must be CRLF
+*.bat text eol=crlf
