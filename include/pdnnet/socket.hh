@@ -1117,7 +1117,9 @@ public:
       // write to stream + clear buffer
       // FIXME: bytes are assumed to be in the same order as the receiving
       // machine. in general this will not provide the desired bytes
+PDNNET_MSVC_WARNING_DISABLE(4365)
       out.write(reinterpret_cast<const CharT*>(buf_.get()), n_read / sizeof(CharT));
+PDNNET_MSVC_WARNING_ENABLE()
       std::memset(buf_.get(), 0, buf_size_);
     }
     while (n_read);
