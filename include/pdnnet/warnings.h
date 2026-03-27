@@ -11,61 +11,73 @@
 #include "pdnnet/common.h"
 
 // macros for disabling and reenabling warnings for MSVC
-#ifdef _MSC_VER
+#if defined(_MSC_VER)
 /**
- * Push warning state and disable specified warnings.
+ * Push MSVC warning state.
+ */
+#define PDNNET_MSVC_WARNING_PUSH() __pragma(warning(push))
+
+/**
+ * Disable specified MSVC warnings.
  *
  * @param wnos MSVC warning number(s), e.g. 5045, 5105
  */
-#define PDNNET_MSVC_WARNING_DISABLE(wnos) \
-  __pragma(warning (push)) \
-  __pragma(warning(disable: wnos))
+#define PDNNET_MSVC_WARNING_DISABLE(wnos) __pragma(warning(disable: wnos))
 
 /**
- * Pop warning state.
+ * Pop MSVC warning state.
  */
-#define PDNNET_MSVC_WARNING_ENABLE() __pragma(warning(pop))
+#define PDNNET_MSVC_WARNING_POP() __pragma(warning(pop))
 #else
 /**
- * Push warning state and disable specified warnings.
+ * Push MSVC warning state onto stack.
+ */
+#define PDNNET_MSVC_WARNING_PUSH()
+
+/**
+ * Disable specified MSVC warnings.
  *
  * @param wnos MSVC warning number(s), e.g. 5045, 5105
  */
 #define PDNNET_MSVC_WARNING_DISABLE(wnos)
 
 /**
- * Pop warning state.
+ * Pop MSVC warning state.
  */
-#define PDNNET_MSVC_WARNING_ENABLE()
-#endif  // _MSC_VER
+#define PDNNET_MSVC_WARNING_POP()
+#endif  // !defined(_MSC_VER)
 
 // macros for disabling and reenabling warnings for GCC/Clang
-#ifdef __GNUC__
+#if defined(__GNUC__)
 /**
- * Push warning state and disable warning option.
+ * Push GNU/Clang warning state.
+ */
+#define PDNNET_GNU_WARNING_PUSH() _Pragma("GCC diagnostic push")
+
+/**
+ * Disable specifed GNU/Clang warning option.
  *
- * @param option Warning option, e.g. "-Wuninitialized"
+ * @param option Warning option, e.g. `-Wuninitialized`
  */
 #define PDNNET_GNU_WARNING_DISABLE(option) \
-  _Pragma("GCC diagnostic push") \
   _Pragma(PDNNET_STRINGIFY(GCC diagnostic ignored option))
 
 /**
- * Pop warning state.
+ * Pop GNU/Clang warning state.
  */
-#define PDNNET_GNU_WARNING_ENABLE() _Pragma("GCC diagnostic pop")
+#define PDNNET_GNU_WARNING_POP() _Pragma("GCC diagnostic pop")
 #else
 /**
- * Push warning state and disable warning option.
+ * Disable specified GNU/Clang warning option.
  *
- * @param option Warning option, e.g. "-Wuninitialized"
+ * @param option Warning option, e.g. `-Wuninitialized`
  */
 #define PDNNET_GNU_WARNING_DISABLE(option)
 
 /**
- * Pop warning state.
+ * Pop GNU/Clang warning state.
  */
-#define PDNNET_GNU_WARNING_ENABLE()
-#endif  // __GNUC__
+#define PDNNET_GNU_WARNING_POP()
+#endif  // !defined(__GNUC__)
 
 #endif  // PDNNET_WARNINGS_H_
